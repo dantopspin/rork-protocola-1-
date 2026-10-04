@@ -12,6 +12,10 @@ struct ProtocolaApp: App {
     // Purchases.configure(withAPIKey:) is added once the RevenueCat
     // public SDK key is available to the iOS build.
 
+    init() {
+        ProtocolaAppearance.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
