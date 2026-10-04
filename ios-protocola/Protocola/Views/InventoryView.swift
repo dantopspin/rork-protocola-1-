@@ -129,7 +129,7 @@ private extension InventoryView {
                     alignment: .firstTextBaseline
                 ) {
                     Text(vial.name)
-                        .font(.headline)
+                        .font(Theme.sectionTitle)
                         .foregroundStyle(Theme.ink)
                         .lineLimit(2)
 
@@ -155,7 +155,7 @@ private extension InventoryView {
                 }
 
                 Text(vial.compoundName)
-                    .font(.subheadline)
+                    .font(Theme.body)
                     .foregroundStyle(.secondary)
 
                 HStack(
@@ -188,7 +188,7 @@ private extension InventoryView {
                         )
                     }
                 }
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
 
                 let status =
@@ -204,7 +204,7 @@ private extension InventoryView {
                         systemImage:
                             "exclamationmark.circle"
                     )
-                    .font(.caption.weight(.medium))
+                    .font(Theme.micro)
                     .foregroundStyle(Theme.amber)
                 }
             }
