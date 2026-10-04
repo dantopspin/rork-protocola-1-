@@ -74,10 +74,13 @@ struct LogDetailView: View {
                 }
 
             } else {
-                ContentUnavailableView(
-                    "Entry unavailable",
-                    systemImage: "clock"
+                TrackingEmptyState(
+                    icon: "clock",
+                    title: "Entry unavailable",
+                    message:
+                        "This recorded entry is no longer available."
                 )
+                .screenPadding()
             }
         }
         .trackingErrors()
