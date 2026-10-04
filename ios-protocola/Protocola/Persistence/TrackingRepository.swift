@@ -174,8 +174,22 @@ import SwiftData
         guard ["Logged", "Skipped", "Partial", "Delayed"].contains(draft.status), draft.loggedAt <= now else { throw TrackingError.invalidInput("Choose a valid status and a recorded time that is not in the future.") }
         let amount = draft.status == "Skipped" ? Decimal.zero : try DoseCalculator.parse(draft.amount, label: "Actual amount")
         let scale = try DoseCalculator.parse(draft.unitsPerMl, label: "Syringe scale")
+        let route =
+            correcting?.route
+            ?? revision?.route
+            ?? .injection
+        let recordedSite =
+            route.usesInjectionSite
+            ? draft.site
+            : ""
         let vials = try all(VialRecord.self)
-        let vialID = correcting?.vialID ?? draft.vialID
+        let vialID =
+            route.usesInjectionSite
+            ? (
+                correcting?.vialID
+                ?? draft.vialID
+            )
+            : nil
         let vial = vials.first { $0.id == vialID }
         if vialID != nil && vial == nil { throw TrackingError.missingRecord }
         if correcting == nil, let vial, vial.isArchived { throw TrackingError.invalidInput("Select an available vial.") }
@@ -196,13 +210,13 @@ import SwiftData
                 let before = ["Amount": log.actualAmountText, "Unit": log.unitText, "Status": log.status, "Site": log.site, "Symptoms": log.symptoms, "Severity": String(log.symptomSeverity), "Notes": log.notes, "Recorded time": log.loggedAt.ISO8601Format()]
                 log.actualAmountText = DoseCalculator.text(amount); log.unitText = draft.unit.rawValue; log.status = draft.status
                 log.consumptionMgText = DoseCalculator.text(consumption); log.volumeMlText = volume.map(DoseCalculator.text); log.unitsPerMlText = DoseCalculator.text(scale)
-                log.site = draft.site; log.symptoms = draft.symptoms; log.symptomSeverity = draft.severity; log.notes = draft.notes; log.loggedAt = draft.loggedAt; log.correctedAt = now
+                log.site = recordedSite; log.symptoms = draft.symptoms; log.symptomSeverity = draft.severity; log.notes = draft.notes; log.loggedAt = draft.loggedAt; log.correctedAt = now
                 let after = ["Amount": log.actualAmountText, "Unit": log.unitText, "Status": log.status, "Site": log.site, "Symptoms": log.symptoms, "Severity": String(log.symptomSeverity), "Notes": log.notes, "Recorded time": log.loggedAt.ISO8601Format()]
                 let event = ProtocolEvent(protocolID: log.protocolID, title: "Dose corrected", detail: "", at: now)
                 try event.recordChanges(RecordChange.between(before, after), category: "Correction"); context.insert(event)
             } else {
                 guard let revision else { throw TrackingError.missingRecord }
-                context.insert(DoseLog(revision: revision, occurrenceID: occurrence?.id, scheduledAt: occurrence?.at, amount: amount, unit: draft.unit, vial: vial, scale: scale, consumption: consumption, volume: volume, status: draft.status, site: draft.site, symptoms: draft.symptoms, severity: draft.severity, notes: draft.notes, loggedAt: draft.loggedAt))
+                context.insert(DoseLog(revision: revision, occurrenceID: occurrence?.id, scheduledAt: occurrence?.at, amount: amount, unit: draft.unit, vial: vial, scale: scale, consumption: consumption, volume: volume, status: draft.status, site: recordedSite, symptoms: draft.symptoms, severity: draft.severity, notes: draft.notes, loggedAt: draft.loggedAt))
             }
         }
     }
