@@ -889,7 +889,7 @@ private struct TimelineRow: View {
 
                 Text(detail)
                     .font(Theme.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                     .lineLimit(2)
             }
 
@@ -904,7 +904,7 @@ private struct TimelineRow: View {
                 )
             )
             .font(Theme.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.textSecondary)
             .monospacedDigit()
         }
         .padding(
