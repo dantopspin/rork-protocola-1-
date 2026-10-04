@@ -62,6 +62,8 @@ struct TodayView: View {
 
                 if let next = nextUnloggedEntry {
                     nextEntryHero(next)
+                } else if let cycle = offCycleContext {
+                    offCycleCard(cycle)
                 } else {
                     todayEmptyState
                 }
@@ -761,7 +763,30 @@ private extension TodayView {
                     Color.white.opacity(0.14)
                 )
 
-            vialAction(next)
+            if next.revision.route
+                .usesInjectionSite {
+                vialAction(next)
+            } else {
+                HStack(
+                    spacing: Theme.spaceS
+                ) {
+                    Image(
+                        systemName:
+                            "arrow.triangle.branch"
+                    )
+
+                    Text(
+                        next.revision
+                            .routeText
+                    )
+
+                    Spacer()
+                }
+                .font(Theme.body)
+                .foregroundStyle(
+                    Color.white.opacity(0.72)
+                )
+            }
 
             Button {
                 logAsScheduled(next)
@@ -795,6 +820,20 @@ private extension TodayView {
                     onDark: true
                 )
             )
+
+            Button("Skip this entry") {
+                skipEntry(next)
+            }
+            .font(Theme.caption)
+            .foregroundStyle(
+                Color.white.opacity(0.62)
+            )
+            .frame(
+                maxWidth: .infinity,
+                minHeight:
+                    Theme.minimumTapTarget
+            )
+            .buttonStyle(.plain)
         }
         .padding(Theme.spaceL)
         .frame(
@@ -806,6 +845,74 @@ private extension TodayView {
             in: .rect(
                 cornerRadius: Theme.radiusCard
             )
+        )
+    }
+
+
+    func offCycleCard(
+        _ context: CycleOffContext
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            HStack {
+                Text("Off period")
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+
+                Spacer()
+
+                StatusBadge(
+                    text: "OFF"
+                )
+            }
+
+            Text(
+                context.revision
+                    .compoundName
+            )
+            .font(Theme.sectionTitle)
+            .foregroundStyle(
+                Theme.ink
+            )
+
+            Text(
+                CycleDisplay.status(
+                    context.config
+                )
+                ?? "Cycle is paused"
+            )
+            .font(Theme.body)
+            .foregroundStyle(
+                Theme.muted
+            )
+
+            Text(
+                "No scheduled entries are generated during the recorded OFF period."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.muted
+            )
+        }
+        .padding(Theme.spaceM)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
         )
     }
 
@@ -1195,18 +1302,66 @@ private extension TodayView {
     }
 
 
+    func skipEntry(
+        _ entry: ScheduledEntry
+    ) {
+        guard entry.log == nil else {
+            return
+        }
+
+        var draft =
+            DoseDraft(
+                revision:
+                    entry.revision
+            )
+
+        draft.status = "Skipped"
+        draft.vialID = nil
+        draft.site = ""
+        draft.symptoms = ""
+        draft.notes = ""
+
+        if store.saveDose(
+            draft,
+            revision:
+                entry.revision,
+            occurrence: entry,
+            correcting: nil
+        ),
+           let log =
+                store.logs.first(
+                    where: {
+                        $0.occurrenceID
+                            == entry.id
+                    }
+                ) {
+            undoLog = log
+        }
+    }
+
+
     func undoBanner(
         _ log: DoseLog
     ) -> some View {
         HStack(spacing: Theme.spaceS) {
             Image(
                 systemName:
-                    "checkmark.circle.fill"
+                    log.status == "Skipped"
+                    ? "xmark.circle.fill"
+                    : "checkmark.circle.fill"
             )
-            .foregroundStyle(Theme.teal)
+            .foregroundStyle(
+                log.status == "Skipped"
+                    ? Theme.muted
+                    : Theme.teal
+            )
 
             Text(
-                "Logged · "
+                (
+                    log.status == "Skipped"
+                    ? "Skipped · "
+                    : "Logged · "
+                )
                 + log.compoundName
             )
             .font(
@@ -1289,6 +1444,41 @@ private extension TodayView {
     }
 
 
+    var offCycleContext: CycleOffContext? {
+        let candidates =
+            store.revisions
+                .filter {
+                    $0.enabled
+                    && $0.effectiveUntil
+                        == nil
+                    && store.canTrack(
+                        $0.protocolID
+                    )
+                }
+
+        for revision in candidates {
+            guard
+                let config =
+                    revision.config,
+                let phase =
+                    config.cyclePhase(
+                        at: .now
+                    ),
+                phase.state == .off
+            else {
+                continue
+            }
+
+            return CycleOffContext(
+                revision: revision,
+                config: config
+            )
+        }
+
+        return nil
+    }
+
+
     func repeatDraft(
         for entry: ScheduledEntry
     ) -> DoseDraft? {
@@ -1323,4 +1513,10 @@ private extension TodayView {
             ? nil
             : draft
     }
+}
+
+
+private struct CycleOffContext {
+    let revision: ScheduleRevision
+    let config: ScheduleConfig
 }
