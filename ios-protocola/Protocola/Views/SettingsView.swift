@@ -556,7 +556,7 @@ private extension SettingsView {
 
         components.scheme = "mailto"
         components.path =
-            "taskalidaniyal@gmail.com"
+            AppInfo.supportEmail
 
         components.queryItems = [
             URLQueryItem(
