@@ -178,7 +178,7 @@ private extension InventoryView {
                                     Theme.hairline
                                 )
                                 .frame(
-                                    height: 1
+                                    height: Theme.ruleThickness
                                 )
                         }
                     }
