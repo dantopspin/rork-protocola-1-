@@ -30,19 +30,19 @@ struct PaywallView: View {
                         "No free trial. Subscriptions renew automatically "
                         + "through your Apple ID until canceled in Apple Account settings."
                     )
-                    .font(.caption2)
+                    .font(Theme.micro)
                     .foregroundStyle(Theme.muted)
 
                     if let notice = purchases.lastNotice {
                         Text(notice)
-                            .font(.caption)
+                            .font(Theme.caption)
                             .foregroundStyle(Theme.muted)
                     }
 
                     Button("Continue on Free") {
                         dismiss()
                     }
-                    .font(.subheadline.weight(.medium))
+                    .font(Theme.label)
                     .foregroundStyle(Theme.muted)
                     .frame(
                         maxWidth: .infinity,
@@ -104,7 +104,7 @@ struct PaywallView: View {
             Eyebrow(text: reason.eyebrow)
 
             Text(reason.headline)
-                .font(.largeTitle.weight(.semibold))
+                .font(Theme.pageTitle)
                 .tracking(-1)
                 .lineLimit(3)
                 .minimumScaleFactor(0.75)
@@ -153,7 +153,7 @@ struct PaywallView: View {
                         ProgressView()
 
                         Text("Loading plans…")
-                            .font(.subheadline)
+                            .font(Theme.body)
                     }
                 } else {
                     Text(
@@ -161,7 +161,7 @@ struct PaywallView: View {
                         + "Check your connection and try again. "
                         + "Core tracking is unaffected."
                     )
-                    .font(.subheadline)
+                    .font(Theme.body)
                     .foregroundStyle(Theme.muted)
 
                     Button("Try again") {
@@ -232,7 +232,7 @@ struct PaywallView: View {
                 }
             }
         }
-        .font(.caption)
+        .font(Theme.caption)
         .frame(maxWidth: .infinity)
     }
 
@@ -247,7 +247,7 @@ struct PaywallView: View {
             ) {
                 HStack(spacing: Theme.spaceXS) {
                     Text(package.storeProduct.localizedTitle)
-                        .font(.subheadline.weight(.semibold))
+                        .font(Theme.label)
                         .lineLimit(1)
 
                     if package.packageType == .annual {
@@ -259,7 +259,7 @@ struct PaywallView: View {
                     "\(package.storeProduct.localizedPriceString) "
                     + periodSuffix(package)
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(Theme.muted)
                 .monospacedDigit()
             }
@@ -296,7 +296,7 @@ struct PaywallView: View {
 
     private var bestValue: some View {
         Text("Best value")
-            .font(.caption2.weight(.semibold))
+            .font(Theme.micro)
             .foregroundStyle(Theme.ink)
             .padding(
                 .horizontal,
