@@ -127,11 +127,11 @@ Empty space is part of the interface.
 
 Only these radii are allowed in product content:
 
-- primary card: 12
-- compact card/row: 10
-- button: 10
-- text field: 8
-- badge: 6
+- primary card: 2
+- compact card/row: 2
+- button: 2
+- text field: 0
+- badge: 2
 - segmented state: capsule
 - avatar/status dot: circle
 
