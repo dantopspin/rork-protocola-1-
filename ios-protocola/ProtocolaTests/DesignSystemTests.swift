@@ -105,9 +105,7 @@ struct DesignSystemTests {
 
                 #expect(
                     match == nil,
-                    Comment(
-                        "\(file.lastPathComponent) violates the design system: \(rule.label)"
-                    )
+                    "\(file.lastPathComponent) violates the design system: \(rule.label)"
                 )
             }
 
@@ -117,9 +115,7 @@ struct DesignSystemTests {
                     !source.contains(
                         ".shadow("
                     ),
-                    Comment(
-                        "\(file.lastPathComponent) adds a local shadow. Elevation belongs in the shared surface component."
-                    )
+                    "\(file.lastPathComponent) adds a local shadow. Elevation belongs in the shared surface component."
                 )
             }
 
@@ -135,9 +131,7 @@ struct DesignSystemTests {
                     && !source.contains(
                         ".ultraThinMaterial"
                     ),
-                    Comment(
-                        "\(file.lastPathComponent) adds product material/glass. Material is reserved for native chrome or the transient Today undo surface."
-                    )
+                    "\(file.lastPathComponent) adds product material/glass. Material is reserved for native chrome or the transient Today undo surface."
                 )
             }
         }
