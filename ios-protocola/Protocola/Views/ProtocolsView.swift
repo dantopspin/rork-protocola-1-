@@ -6,6 +6,7 @@ struct ProtocolsView: View {
     @State private var create = false
     @State private var choice = false
     @State private var paywall = false
+    @State private var calculator = false
 
     private var activeProtocols: [ProtocolRecord] {
         store.protocols.filter {
@@ -82,7 +83,7 @@ struct ProtocolsView: View {
                         Image(
                             systemName: "shippingbox"
                         )
-                        .font(.title3)
+                        .font(Theme.sectionTitle)
                         .foregroundStyle(Theme.teal)
                         .frame(width: 28)
 
@@ -96,7 +97,7 @@ struct ProtocolsView: View {
                                 )
 
                             Text(inventorySummary)
-                                .font(.subheadline)
+                                .font(Theme.body)
                                 .foregroundStyle(
                                     .secondary
                                 )
@@ -109,6 +110,36 @@ struct ProtocolsView: View {
                         Theme.spaceXXS
                     )
                 }
+
+                Button {
+                    calculator = true
+                } label: {
+                    HStack(spacing: Theme.spaceM) {
+                        Image(systemName: "function")
+                            .foregroundStyle(Theme.muted)
+                            .frame(width: 28)
+
+                        VStack(
+                            alignment: .leading,
+                            spacing: Theme.spaceXXS
+                        ) {
+                            Text("Calculator")
+                                .font(Theme.label)
+                                .foregroundStyle(Theme.ink)
+
+                            Text("Dose · Volume · Units")
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.muted)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(
+                        .vertical,
+                        Theme.spaceXXS
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
         .listStyle(.insetGrouped)
@@ -135,6 +166,9 @@ struct ProtocolsView: View {
         }
         .sheet(isPresented: $choice) {
             FreeProtocolChoiceView()
+        }
+        .sheet(isPresented: $calculator) {
+            CalculatorView()
         }
         .fullScreenCover(
             isPresented: $paywall
@@ -185,7 +219,7 @@ private extension ProtocolsView {
                 alignment: .firstTextBaseline
             ) {
                 Text(record.name)
-                    .font(.headline)
+                    .font(Theme.sectionTitle)
                     .foregroundStyle(Theme.ink)
                     .lineLimit(2)
 
@@ -204,7 +238,7 @@ private extension ProtocolsView {
                     + " "
                     + primary.unitText
                 )
-                .font(.subheadline)
+                .font(Theme.body)
                 .foregroundStyle(.secondary)
 
                 Text(
@@ -213,7 +247,7 @@ private extension ProtocolsView {
                     )
                     ?? "Schedule unavailable"
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
 
                 if let next =
@@ -232,7 +266,7 @@ private extension ProtocolsView {
                                 .minute()
                         )
                     )
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                 }
@@ -246,12 +280,12 @@ private extension ProtocolsView {
                             : "compounds"
                         )
                     )
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(.secondary)
                 }
             } else {
                 Text("No active schedule")
-                    .font(.subheadline)
+                    .font(Theme.body)
                     .foregroundStyle(.secondary)
             }
         }
@@ -266,37 +300,16 @@ private extension ProtocolsView {
     func statusLabel(
         _ record: ProtocolRecord
     ) -> some View {
-        if record.status == "Active" {
-            HStack(spacing: 5) {
-                Circle()
-                    .fill(
-                        store.canTrack(record.id)
-                            ? Theme.teal
-                            : Theme.muted
-                    )
-                    .frame(
-                        width: 7,
-                        height: 7
-                    )
-
-                Text(
+        StatusBadge(
+            text:
+                record.status == "Active"
+                ? (
                     store.canTrack(record.id)
-                        ? "Active"
-                        : "Read-only"
+                    ? "Active"
+                    : "Read-only"
                 )
-            }
-            .font(.caption.weight(.medium))
-            .foregroundStyle(
-                store.canTrack(record.id)
-                    ? Theme.teal
-                    : Theme.muted
-            )
-
-        } else {
-            Text(record.status)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-        }
+                : record.status
+        )
     }
 
 
