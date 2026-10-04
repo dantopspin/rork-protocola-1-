@@ -9,7 +9,7 @@ struct Eyebrow: View {
             .font(Theme.micro)
             .foregroundStyle(
                 onDark
-                    ? Color.white.opacity(0.58)
+                    ? Theme.onDarkSecondary
                     : Theme.muted
             )
     }
