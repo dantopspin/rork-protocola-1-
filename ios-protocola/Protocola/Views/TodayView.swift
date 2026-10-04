@@ -7,6 +7,7 @@ struct TodayView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var target: ScheduledEntry?
+    @State private var manualRevision: ScheduleRevision?
     @State private var prefill: DoseDraft?
     @State private var create = false
     @State private var settings = false
@@ -19,8 +20,19 @@ struct TodayView: View {
     @State private var dropTarget: String?
     @State private var dropAfter = false
 
-    private var recordedCount: Int {
-        store.today.filter { $0.log != nil }.count
+    private var resolvedCount: Int {
+        store.today.filter {
+            $0.log != nil
+        }.count
+    }
+
+    private var asNeededRevisions: [ScheduleRevision] {
+        store.revisions.filter {
+            $0.enabled
+            && $0.effectiveUntil == nil
+            && $0.config?.kind == .asRecorded
+            && store.canTrack($0.protocolID)
+        }
     }
 
     private var nextUnloggedEntry: ScheduledEntry? {
@@ -62,10 +74,15 @@ struct TodayView: View {
 
                 if let next = nextUnloggedEntry {
                     nextEntryHero(next)
-                } else if let cycle = offCycleContext {
+                } else if store.today.isEmpty,
+                          let cycle = offCycleContext {
                     offCycleCard(cycle)
                 } else {
                     todayEmptyState
+                }
+
+                if !asNeededRevisions.isEmpty {
+                    asNeededSection
                 }
 
                 if store.isDemo {
@@ -117,7 +134,7 @@ struct TodayView: View {
         }
         .sensoryFeedback(
             .success,
-            trigger: recordedCount
+            trigger: resolvedCount
         ) { old, new in
             new > old
         }
@@ -149,6 +166,13 @@ struct TodayView: View {
                 revision: entry.revision,
                 occurrence: entry,
                 prefill: prefill
+            )
+        }
+        .sheet(item: $manualRevision) {
+            revision in
+
+            DoseEditorView(
+                revision: revision
             )
         }
         .sheet(isPresented: $create) {
@@ -206,7 +230,11 @@ private extension TodayView {
                 Text(
                     store.protocols.isEmpty
                         ? "Add an existing protocol to populate Today."
-                        : "Your recorded schedule is clear for today."
+                        : (
+                            !asNeededRevisions.isEmpty
+                            ? "No scheduled entries. As-needed protocols are available below."
+                            : "Your recorded schedule is clear for today."
+                        )
                 )
             } actions: {
                 if store.protocols.isEmpty {
@@ -234,6 +262,96 @@ private extension TodayView {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Theme.spaceS)
+    }
+
+
+    var asNeededSection: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
+        ) {
+            Text("As needed")
+                .font(Theme.sectionTitle)
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            VStack(spacing: 0) {
+                ForEach(
+                    Array(
+                        asNeededRevisions
+                            .enumerated()
+                    ),
+                    id: \.element.id
+                ) { index, revision in
+                    HStack(
+                        spacing: Theme.spaceS
+                    ) {
+                        VStack(
+                            alignment: .leading,
+                            spacing:
+                                Theme.spaceXXS
+                        ) {
+                            Text(
+                                revision
+                                    .compoundName
+                            )
+                            .font(Theme.label)
+                            .foregroundStyle(
+                                Theme.ink
+                            )
+
+                            Text(
+                                revision.amountText
+                                + " "
+                                + revision.unitText
+                                + " · "
+                                + revision.routeText
+                            )
+                            .font(Theme.caption)
+                            .foregroundStyle(
+                                Theme.muted
+                            )
+                        }
+
+                        Spacer()
+
+                        Button("Log") {
+                            manualRevision =
+                                revision
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Theme.ink)
+                        .controlSize(.small)
+                    }
+                    .padding(
+                        .vertical,
+                        Theme.spaceS
+                    )
+
+                    if index
+                        < asNeededRevisions
+                            .count - 1 {
+                        Divider()
+                    }
+                }
+            }
+            .padding(
+                .horizontal,
+                Theme.spaceM
+            )
+            .background(
+                Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
+            )
+            .inkBorder(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+        }
     }
 
 
@@ -332,7 +450,7 @@ private extension TodayView {
                 Spacer()
 
                 Text(
-                    "\(recordedCount) / \(store.today.count) logged"
+                    "\(resolvedCount) / \(store.today.count) resolved"
                 )
                 .font(Theme.caption)
                 .foregroundStyle(.secondary)
