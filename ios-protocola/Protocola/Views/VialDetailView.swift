@@ -116,7 +116,7 @@ private extension VialDetailView {
                     systemImage:
                         "exclamationmark.circle"
                 )
-                .font(.subheadline.weight(.medium))
+                .font(Theme.label)
                 .foregroundStyle(Theme.amber)
             }
         }
@@ -174,7 +174,7 @@ private extension VialDetailView {
 
             if !vial.storageNotes.isEmpty {
                 Text(vial.storageNotes)
-                    .font(.subheadline)
+                    .font(Theme.body)
             }
         }
     }
@@ -214,7 +214,7 @@ private extension VialDetailView {
                 Text(
                     "No entries use this vial yet."
                 )
-                .font(.subheadline)
+                .font(Theme.body)
                 .foregroundStyle(.secondary)
 
             } else {
@@ -237,12 +237,12 @@ private extension VialDetailView {
                                     + " "
                                     + log.unitText
                                 )
-                                .font(.headline)
+                                .font(Theme.sectionTitle)
 
                                 Spacer()
 
                                 Text(log.status)
-                                    .font(.caption)
+                                    .font(Theme.caption)
                                     .foregroundStyle(
                                         .secondary
                                     )
@@ -254,7 +254,7 @@ private extension VialDetailView {
                                     time: .shortened
                                 )
                             )
-                            .font(.caption)
+                            .font(Theme.caption)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
                         }
