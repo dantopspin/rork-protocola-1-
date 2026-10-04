@@ -47,7 +47,7 @@ struct TodayView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceL
+                spacing: Theme.spaceXL
             ) {
                 Text(
                     Date.now.formatted(
@@ -57,8 +57,8 @@ struct TodayView: View {
                             .day()
                     )
                 )
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(Theme.body)
+                .foregroundStyle(Theme.muted)
 
                 if let next = nextUnloggedEntry {
                     nextEntryHero(next)
@@ -88,7 +88,7 @@ struct TodayView: View {
                     "Your schedule, as recorded. Protocola does not recommend "
                     + "what, when, or where to administer."
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
             }
             .screenPadding()
@@ -242,13 +242,13 @@ private extension TodayView {
                 "Sample records",
                 systemImage: "eye"
             )
-            .font(.headline)
+            .font(Theme.sectionTitle)
 
             Text(
                 "Sample records stay isolated and are never saved "
                 + "to your history."
             )
-            .font(.subheadline)
+            .font(Theme.body)
             .foregroundStyle(.secondary)
 
             Button("Set up your protocol") {
@@ -278,7 +278,7 @@ private extension TodayView {
         } label: {
             HStack(spacing: Theme.spaceM) {
                 Image(systemName: "shippingbox")
-                    .font(.title3)
+                    .font(Theme.sectionTitle)
                     .foregroundStyle(Theme.teal)
                     .frame(width: 28)
 
@@ -287,20 +287,20 @@ private extension TodayView {
                     spacing: Theme.spaceXXS
                 ) {
                     Text("Add your first vial")
-                        .font(.subheadline.weight(.semibold))
+                        .font(Theme.label)
                         .foregroundStyle(Theme.ink)
 
                     Text(
                         "Track inventory and get low-balance context."
                     )
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(.secondary)
                 }
 
                 Spacer(minLength: Theme.spaceS)
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(Theme.micro)
                     .foregroundStyle(.tertiary)
             }
             .padding(Theme.spaceM)
@@ -323,14 +323,14 @@ private extension TodayView {
         ) {
             HStack {
                 Text("Today")
-                    .font(.title3.weight(.semibold))
+                    .font(Theme.sectionTitle)
 
                 Spacer()
 
                 Text(
                     "\(recordedCount) / \(store.today.count) logged"
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
             }
@@ -449,18 +449,18 @@ private extension TodayView {
                     spacing: Theme.spaceXXS
                 ) {
                     Text("Vial inventory")
-                        .font(.subheadline.weight(.medium))
+                        .font(Theme.label)
                         .foregroundStyle(Theme.ink)
 
                     Text(inventorySummary)
-                        .font(.caption)
+                        .font(Theme.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(Theme.micro)
                     .foregroundStyle(.tertiary)
             }
             .padding(Theme.spaceM)
@@ -536,7 +536,7 @@ private extension TodayView {
             }
 
             Text(next.revision.compoundName)
-                .font(.title2.weight(.semibold))
+                .font(Theme.sectionTitle)
                 .foregroundStyle(.white)
 
             if usesStackedHero {
@@ -564,7 +564,7 @@ private extension TodayView {
                 next.revision.protocolName,
                 systemImage: "list.bullet.rectangle"
             )
-            .font(.subheadline)
+            .font(Theme.body)
             .foregroundStyle(
                 Color.white.opacity(0.72)
             )
@@ -585,7 +585,9 @@ private extension TodayView {
                 )
             }
             .buttonStyle(
-                TrackingPrimaryButtonStyle()
+                TrackingPrimaryButtonStyle(
+                    inverted: true
+                )
             )
 
             Button {
@@ -651,7 +653,7 @@ private extension TodayView {
                         )
                     )
                 }
-                .font(.subheadline)
+                .font(Theme.body)
                 .foregroundStyle(
                     Color.white.opacity(0.82)
                 )
@@ -685,7 +687,7 @@ private extension TodayView {
                         )
                     )
                 }
-                .font(.subheadline.weight(.medium))
+                .font(Theme.label)
                 .foregroundStyle(
                     Color.white.opacity(0.9)
                 )
@@ -704,18 +706,12 @@ private extension TodayView {
             spacing: Theme.spaceXXS
         ) {
             Text(next.revision.amountText)
-                .font(
-                    .system(
-                        .largeTitle,
-                        design: .rounded
-                    )
-                    .weight(.semibold)
-                )
+                .font(Theme.metric)
                 .monospacedDigit()
                 .foregroundStyle(.white)
 
             Text(next.revision.unitText)
-                .font(.title3)
+                .font(Theme.sectionTitle)
                 .foregroundStyle(
                     Color.white.opacity(0.68)
                 )
@@ -727,7 +723,7 @@ private extension TodayView {
         _ next: ScheduledEntry
     ) -> some View {
         Text(next.at, style: .time)
-            .font(.title3.weight(.medium))
+            .font(Theme.sectionTitle)
             .monospacedDigit()
             .foregroundStyle(
                 Color.white.opacity(0.94)
@@ -744,15 +740,11 @@ private extension TodayView {
             text,
             systemImage: "clock"
         )
-        .font(.caption2.weight(.semibold))
+        .font(Theme.micro)
         .foregroundStyle(
             text == "Overdue"
-                ? Color(
-                    red: 1,
-                    green: 0.82,
-                    blue: 0.38
-                )
-                : Color.white.opacity(0.86)
+                ? Theme.amber
+                : Color.white.opacity(0.76)
         )
         .padding(
             .horizontal,
@@ -841,7 +833,7 @@ private extension TodayView {
                         + " "
                         + entry.revision.unitText
                 )
-                .font(.subheadline.weight(.semibold))
+                .font(Theme.label)
 
                 Text(
                     entry.at.formatted(
@@ -851,7 +843,7 @@ private extension TodayView {
                     + " · "
                     + entry.revision.protocolName
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
             }
@@ -885,7 +877,7 @@ private extension TodayView {
                 ? "checkmark.circle.fill"
                 : "circle"
         )
-        .font(.title3)
+        .font(Theme.sectionTitle)
         .foregroundStyle(
             recorded
                 ? Theme.teal
@@ -1068,11 +1060,7 @@ private extension TodayView {
                 cornerRadius: Theme.radiusCard
             )
         )
-        .shadow(
-            color: Theme.ink.opacity(0.12),
-            radius: 12,
-            y: 4
-        )
+        .quietElevation()
         .padding(
             .horizontal,
             Theme.spaceL
