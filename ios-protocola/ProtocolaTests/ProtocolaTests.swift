@@ -133,3 +133,351 @@ struct InventoryTests {
         #expect(try repository.all(DoseLog.self).count == 1)
     }
 }
+
+
+@MainActor
+struct PeptideProtocolMechanicsTests {
+
+    @Test
+    func onOffCycleSuppressesOffPeriodOccurrences() throws {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_735_689_600
+            )
+
+        let config =
+            ScheduleConfig(
+                kind: .daily,
+                weekdays: [],
+                interval: 1,
+                minutes: [480],
+                anchor: start,
+                timeZoneID: "UTC",
+                cycleOnDays: 2,
+                cycleOffDays: 2
+            )
+
+        let dates =
+            SchedulingEngine
+                .occurrences(
+                    config: config,
+                    effectiveFrom: start,
+                    effectiveUntil: nil,
+                    start: start,
+                    end:
+                        start.addingTimeInterval(
+                            6 * 86_400
+                        )
+                )
+
+        #expect(dates.count == 4)
+        #expect(
+            dates[0]
+                == start.addingTimeInterval(
+                    480 * 60
+                )
+        )
+        #expect(
+            dates[1]
+                == start.addingTimeInterval(
+                    86_400
+                    + 480 * 60
+                )
+        )
+        #expect(
+            dates[2]
+                == start.addingTimeInterval(
+                    4 * 86_400
+                    + 480 * 60
+                )
+        )
+
+        let offPhase =
+            try #require(
+                config.cyclePhase(
+                    at:
+                        start.addingTimeInterval(
+                            2 * 86_400
+                        )
+                )
+            )
+
+        #expect(
+            offPhase.state == .off
+        )
+        #expect(offPhase.day == 1)
+
+        let onAgain =
+            try #require(
+                config.cyclePhase(
+                    at:
+                        start.addingTimeInterval(
+                            4 * 86_400
+                        )
+                )
+            )
+
+        #expect(
+            onAgain.state == .on
+        )
+        #expect(onAgain.day == 1)
+    }
+
+
+    @Test
+    func asNeededCreatesNoAutomaticOccurrences() throws {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_735_689_600
+            )
+
+        let config =
+            ScheduleConfig(
+                kind: .asRecorded,
+                weekdays: [],
+                interval: 1,
+                minutes: [],
+                anchor: start,
+                timeZoneID: "UTC"
+            )
+
+        try config.validate()
+
+        #expect(
+            ScheduleDisplay.summary(
+                config
+            ) == "As needed"
+        )
+
+        #expect(
+            SchedulingEngine
+                .occurrences(
+                    config: config,
+                    effectiveFrom: start,
+                    effectiveUntil: nil,
+                    start: start,
+                    end:
+                        start.addingTimeInterval(
+                            7 * 86_400
+                        )
+                )
+                .isEmpty
+        )
+    }
+
+
+    @Test
+    func nonInjectionRouteIsSnapshottedAndDoesNotConsumeVial() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+
+        var vialDraft =
+            VialDraft()
+
+        vialDraft.name = "Vial A"
+        vialDraft.compound = "C"
+        vialDraft.amount = "10"
+        vialDraft.diluent = "2"
+
+        try repository.saveVial(
+            vialDraft,
+            id: nil
+        )
+
+        let vial =
+            try #require(
+                repository
+                    .all(
+                        VialRecord.self
+                    )
+                    .first
+            )
+
+        var protocolDraft =
+            ProtocolDraft()
+
+        protocolDraft.name = "Oral"
+        protocolDraft.compound = "C"
+        protocolDraft.amount = "1"
+        protocolDraft.unit = .mg
+        protocolDraft.route = .oral
+        protocolDraft.vialID = vial.id
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let revision =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        #expect(
+            revision.route == .oral
+        )
+        #expect(revision.vialID == nil)
+
+        var dose =
+            DoseDraft(
+                revision: revision
+            )
+
+        dose.site = "Left abdomen"
+        dose.vialID = vial.id
+
+        try repository.saveDose(
+            dose,
+            revision: revision,
+            occurrence: nil,
+            correcting: nil
+        )
+
+        let log =
+            try #require(
+                repository
+                    .all(
+                        DoseLog.self
+                    )
+                    .first
+            )
+
+        #expect(log.route == .oral)
+        #expect(log.vialID == nil)
+        #expect(log.site.isEmpty)
+        #expect(
+            try repository.balance(vial)
+                == 10
+        )
+    }
+
+
+    @Test
+    func skippedScheduledEntryConsumesZeroInventoryAndCanBeUndone() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+
+        var vialDraft =
+            VialDraft()
+
+        vialDraft.name = "V"
+        vialDraft.compound = "C"
+        vialDraft.amount = "10"
+        vialDraft.diluent = "2"
+
+        try repository.saveVial(
+            vialDraft,
+            id: nil
+        )
+
+        let vial =
+            try #require(
+                repository
+                    .all(
+                        VialRecord.self
+                    )
+                    .first
+            )
+
+        var protocolDraft =
+            ProtocolDraft()
+
+        protocolDraft.name = "P"
+        protocolDraft.compound = "C"
+        protocolDraft.amount = "1"
+        protocolDraft.unit = .mg
+        protocolDraft.vialID = vial.id
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let revision =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        let at = Date.now
+
+        let entry =
+            ScheduledEntry(
+                id:
+                    SchedulingEngine
+                        .occurrenceKey(
+                            compoundID:
+                                revision
+                                    .compoundID,
+                            revisionID:
+                                revision.id,
+                            at: at
+                        ),
+                revision: revision,
+                at: at,
+                log: nil
+            )
+
+        var draft =
+            DoseDraft(
+                revision: revision
+            )
+
+        draft.status = "Skipped"
+
+        try repository.saveDose(
+            draft,
+            revision: revision,
+            occurrence: entry,
+            correcting: nil
+        )
+
+        let log =
+            try #require(
+                repository
+                    .all(
+                        DoseLog.self
+                    )
+                    .first
+            )
+
+        #expect(
+            log.status == "Skipped"
+        )
+        #expect(log.consumptionMg == 0)
+        #expect(
+            try repository.balance(vial)
+                == 10
+        )
+
+        try repository.deleteDose(log)
+
+        #expect(
+            try repository.balance(vial)
+                == 10
+        )
+    }
+}
