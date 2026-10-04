@@ -4,7 +4,6 @@ struct ProtocolsView: View {
     @Environment(TrackingStore.self) private var store
 
     @State private var create = false
-    @State private var inventory = false
     @State private var choice = false
     @State private var paywall = false
 
@@ -76,8 +75,8 @@ struct ProtocolsView: View {
             }
 
             Section("Tools") {
-                Button {
-                    inventory = true
+                NavigationLink {
+                    InventoryView()
                 } label: {
                     HStack(spacing: Theme.spaceM) {
                         Image(
@@ -110,7 +109,6 @@ struct ProtocolsView: View {
                         Theme.spaceXXS
                     )
                 }
-                .buttonStyle(.plain)
             }
         }
         .listStyle(.insetGrouped)
@@ -146,11 +144,6 @@ struct ProtocolsView: View {
             )
         }
         .trackingRoutes()
-        .navigationDestination(
-            isPresented: $inventory
-        ) {
-            InventoryView()
-        }
         .trackingErrors()
     }
 }
@@ -215,7 +208,10 @@ private extension ProtocolsView {
                 .foregroundStyle(.secondary)
 
                 Text(
-                    scheduleSummary(primary)
+                    primary.config.map(
+                        ScheduleDisplay.summary
+                    )
+                    ?? "Schedule unavailable"
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
