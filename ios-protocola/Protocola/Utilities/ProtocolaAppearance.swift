@@ -11,49 +11,29 @@ enum ProtocolaAppearance {
 
 
     private static func configureNavigation() {
-        guard
-            let largeDescriptor =
-                UIFont.systemFont(
-                    ofSize:
-                        Theme.pageTitleSize,
-                    weight: .semibold
-                )
-                .fontDescriptor
-                .withDesign(.serif),
-            let inlineDescriptor =
-                UIFont.systemFont(
-                    ofSize:
-                        Theme.sectionTitleSize,
-                    weight: .semibold
-                )
-                .fontDescriptor
-                .withDesign(.serif)
-        else {
-            return
-        }
+        let large =
+            UIFont.systemFont(
+                ofSize:
+                    Theme.pageTitleSize,
+                weight: .bold
+            )
+        let inline =
+            UIFont.systemFont(
+                ofSize:
+                    Theme.sectionTitleSize,
+                weight: .semibold
+            )
 
         UINavigationBar.appearance()
             .largeTitleTextAttributes = [
-                .font:
-                    UIFont(
-                        descriptor:
-                            largeDescriptor,
-                        size:
-                            Theme.pageTitleSize
-                    ),
+                .font: large,
                 .foregroundColor:
                     UIColor(Theme.ink)
             ]
 
         UINavigationBar.appearance()
             .titleTextAttributes = [
-                .font:
-                    UIFont(
-                        descriptor:
-                            inlineDescriptor,
-                        size:
-                            Theme.sectionTitleSize
-                    ),
+                .font: inline,
                 .foregroundColor:
                     UIColor(Theme.ink)
             ]
@@ -61,24 +41,11 @@ enum ProtocolaAppearance {
 
 
     private static func configureTabs() {
-        guard
-            let descriptor =
-                UIFont.systemFont(
-                    ofSize:
-                        Theme.tabLabelSize,
-                    weight: .medium
-                )
-                .fontDescriptor
-                .withDesign(.serif)
-        else {
-            return
-        }
-
         let font =
-            UIFont(
-                descriptor: descriptor,
-                size:
-                    Theme.tabLabelSize
+            UIFont.systemFont(
+                ofSize:
+                    Theme.tabLabelSize,
+                weight: .medium
             )
 
         UITabBarItem.appearance()
@@ -96,29 +63,16 @@ enum ProtocolaAppearance {
 
 
     private static func configureSegments() {
-        guard
-            let descriptor =
-                UIFont.systemFont(
-                    ofSize:
-                        Theme.segmentLabelSize,
-                    weight: .medium
-                )
-                .fontDescriptor
-                .withDesign(.serif)
-        else {
-            return
-        }
-
         let font =
-            UIFont(
-                descriptor: descriptor,
-                size:
-                    Theme.segmentLabelSize
+            UIFont.systemFont(
+                ofSize:
+                    Theme.segmentLabelSize,
+                weight: .medium
             )
 
         UISegmentedControl.appearance()
             .selectedSegmentTintColor =
-                UIColor(Theme.ink)
+                UIColor(Theme.teal)
 
         UISegmentedControl.appearance()
             .setTitleTextAttributes(

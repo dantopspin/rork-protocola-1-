@@ -1,22 +1,22 @@
-# Protocola Design System v2
+# Protocola Design System v3
 
 This file is the fixed visual reference for every Protocola screen. Product UI must use shared tokens/components before introducing local styling.
 
 ## Direction
 
-**Classical Clinical Minimalism**
+**Clinical Editorial Instrument**
 
 Protocola should feel like a premium protocol record and editorial utility, not a wellness app or generic Settings screen.
 
-- warm paper canvas
-- warm-white product surfaces
-- near-black typography and primary actions
-- muted mineral teal only for semantic active/recorded/chart states
-- classical system-serif typography
-- relatively sharp geometry
-- thin hairlines
+- warm near-white paper canvas
+- almost-flat product surfaces
+- black sans-serif typography
+- dark blue-grey as the single product accent and primary-action color
+- monospaced technical numbers where precision matters
+- near-rectangular geometry
+- stronger thin rules as the main hierarchy device
 - almost no decorative shadow
-- generous whitespace
+- generous whitespace around dense records
 - native iOS interaction and navigation underneath
 
 ### Chrome vs product content
@@ -69,7 +69,9 @@ No decorative blue, purple, gradients, or random accent colors.
 
 ## Typography
 
-Use Apple's system serif design throughout product content. Native chrome can remain system-controlled.
+Use Apple's system sans-serif throughout product content. Native chrome remains system-controlled.
+
+Technical values, calculations, doses, times, and large metrics may use monospaced digits or the monospaced system design.
 
 | Token | Size | Weight | Use |
 | --- | ---: | --- | --- |
@@ -87,7 +89,7 @@ Use Apple's system serif design throughout product content. Native chrome can re
 
 Rules:
 - sentence case
-- no all-caps product headings
+- major headings remain sentence case; compact field/section labels may use tracked uppercase
 - important numbers may use monospaced digits
 - do not use native pre-styled sans typography inside product content
 - root tabs use 34 pt serif titles; detail/modal titles use inline navigation serif

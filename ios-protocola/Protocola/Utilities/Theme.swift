@@ -2,103 +2,95 @@ import SwiftUI
 
 /// Fixed visual tokens for the entire app.
 ///
-/// Product content must use these values instead of local font sizes, colors,
-/// radii, shadows, or spacing. Native iOS chrome may retain system material.
+/// Direction: clinical editorial instrument. Product content is deliberately
+/// flat, sharp, typographic, and restrained. Native iOS chrome remains native.
 enum Theme {
 
     // MARK: - Foundation colors
 
-    /// #F5F3EE — main app canvas.
+    /// #F8F7F3 — warm near-white paper canvas.
     static let paper = Color(
-        red: 0.9608,
-        green: 0.9529,
-        blue: 0.9333
+        red: 0.9725,
+        green: 0.9686,
+        blue: 0.9529
     )
 
-    /// #FCFBF8 — standard content surface.
+    /// #FBFAF7 — quiet product surface.
     static let surface = Color(
-        red: 0.9882,
-        green: 0.9843,
-        blue: 0.9725
+        red: 0.9843,
+        green: 0.9804,
+        blue: 0.9686
     )
 
-    /// #FFFFFF — rare foreground/modal surface.
     static let surfaceRaised = Color.white
 
-    /// #151513 — primary text, icons, and primary actions.
+    /// #121211 — primary type and rules.
     static let ink = Color(
-        red: 0.0824,
-        green: 0.0824,
-        blue: 0.0745
+        red: 0.0706,
+        green: 0.0706,
+        blue: 0.0667
     )
 
-    /// #706D66 — supporting text.
+    /// #67655F — supporting copy.
     static let textSecondary = Color(
-        red: 0.4392,
-        green: 0.4275,
-        blue: 0.4000
+        red: 0.4039,
+        green: 0.3961,
+        blue: 0.3725
     )
 
-    /// #96928A — dates, metadata, inactive states.
+    /// #8D8982 — quiet metadata.
     static let textTertiary = Color(
-        red: 0.5882,
-        green: 0.5725,
-        blue: 0.5412
+        red: 0.5529,
+        green: 0.5373,
+        blue: 0.5098
     )
 
-    /// Compatibility alias used throughout the existing codebase.
     static let muted = textSecondary
 
-    /// #466C64 — semantic active/recorded/chart emphasis only.
+    /// #30536B — the single product accent from the original Peptide Lens
+    /// direction. Used for primary actions, progress, selection, and charts.
     static let teal = Color(
-        red: 0.2745,
-        green: 0.4235,
-        blue: 0.3922
+        red: 0.1882,
+        green: 0.3255,
+        blue: 0.4196
     )
 
-    /// #94763F — overdue, low inventory, attention only.
     static let amber = Color(
         red: 0.5804,
         green: 0.4627,
         blue: 0.2471
     )
 
-    /// #A6534D — destructive semantics only.
     static let danger = Color(
         red: 0.6510,
         green: 0.3255,
         blue: 0.3020
     )
 
-    /// #171715 — at most one high-value dark product surface per screen.
-    static let darkSurface = Color(
-        red: 0.0902,
-        green: 0.0902,
-        blue: 0.0824
-    )
+    /// Dark editorial surface; intentionally the same family as the CTA accent.
+    static let darkSurface = teal
 
     static let onDarkPrimary = Color(
-        red: 0.9804,
-        green: 0.9765,
-        blue: 0.9608
+        red: 0.9922,
+        green: 0.9882,
+        blue: 0.9765
     )
 
-    static let onDarkSecondary = onDarkPrimary.opacity(0.62)
+    static let onDarkSecondary =
+        onDarkPrimary.opacity(0.72)
 
 
     // MARK: - Structural colors
 
-    static let hairline = ink.opacity(0.11)
+    static let hairline = ink.opacity(0.16)
     static let border = hairline
-    static let line = hairline
-    static let subtleFill = ink.opacity(0.045)
+    static let line = ink.opacity(0.12)
+    static let subtleFill = ink.opacity(0.025)
     static let neutralTint = subtleFill
-    static let tealTint = teal.opacity(0.10)
-    static let amberTint = amber.opacity(0.10)
-    static let dangerTint = danger.opacity(0.10)
-
-    /// Reserved for transient/floating surfaces only.
-    static let shadow = ink.opacity(0.055)
+    static let tealTint = teal.opacity(0.08)
+    static let amberTint = amber.opacity(0.08)
+    static let dangerTint = danger.opacity(0.08)
+    static let shadow = ink.opacity(0.035)
 
 
     // MARK: - Typography
@@ -118,103 +110,93 @@ enum Theme {
     static let tabLabelSize: CGFloat = 10
     static let segmentLabelSize: CGFloat = 13
     static let shareMetricSize: CGFloat = 64
+    static let eyebrowTracking: CGFloat = 2.0
 
     static let display =
         Font.system(
             size: displaySize,
-            weight: .semibold,
-            design: .serif
+            weight: .bold
         )
 
     static let pageTitle =
         Font.system(
             size: pageTitleSize,
-            weight: .semibold,
-            design: .serif
+            weight: .bold
         )
 
     static let metricLarge =
         Font.system(
             size: metricLargeSize,
-            weight: .medium,
-            design: .serif
+            weight: .semibold,
+            design: .monospaced
         )
 
-    /// Compatibility alias for existing metric call sites.
     static let metric = metricLarge
 
     static let metricCompact =
         Font.system(
             size: metricCompactSize,
-            weight: .medium,
-            design: .serif
+            weight: .semibold,
+            design: .monospaced
         )
 
     static let modalTitle =
         Font.system(
             size: modalTitleSize,
-            weight: .medium,
-            design: .serif
+            weight: .semibold
         )
 
     static let sectionTitle =
         Font.system(
             size: sectionTitleSize,
-            weight: .medium,
-            design: .serif
+            weight: .semibold
         )
 
     static let cardTitle =
         Font.system(
             size: cardTitleSize,
-            weight: .medium,
-            design: .serif
+            weight: .semibold
         )
 
     static let body =
         Font.system(
             size: bodySize,
-            weight: .regular,
-            design: .serif
+            weight: .regular
         )
 
     static let label =
         Font.system(
             size: labelSize,
-            weight: .medium,
-            design: .serif
+            weight: .medium
         )
 
     static let buttonLabel =
         Font.system(
             size: buttonLabelSize,
-            weight: .medium,
-            design: .serif
+            weight: .medium
         )
 
     static let caption =
         Font.system(
             size: captionSize,
-            weight: .regular,
-            design: .serif
+            weight: .regular
         )
 
     static let micro =
         Font.system(
             size: microSize,
-            weight: .medium,
-            design: .serif
+            weight: .semibold
         )
 
     static let shareMetric =
         Font.system(
             size: shareMetricSize,
-            weight: .medium,
-            design: .serif
+            weight: .semibold,
+            design: .monospaced
         )
 
 
-    // MARK: - Spacing (4 pt base grid)
+    // MARK: - Spacing
 
     static let spaceXXS: CGFloat = 4
     static let spaceXS: CGFloat = 8
@@ -229,17 +211,19 @@ enum Theme {
 
     // MARK: - Geometry
 
-    static let radiusCard: CGFloat = 12
-    static let radiusRow: CGFloat = 10
-    static let radiusButton: CGFloat = 10
-    static let radiusField: CGFloat = 8
-    static let radiusBadge: CGFloat = 6
+    /// Sharp editorial geometry. Rounded native chrome is allowed outside
+    /// product content, but app surfaces should read almost rectangular.
+    static let radiusCard: CGFloat = 2
+    static let radiusRow: CGFloat = 2
+    static let radiusButton: CGFloat = 2
+    static let radiusField: CGFloat = 0
+    static let radiusBadge: CGFloat = 2
 
-    static let buttonHeight: CGFloat = 46
+    static let buttonHeight: CGFloat = 48
     static let compactButtonHeight: CGFloat = 44
     static let rowHeight: CGFloat = 54
     static let dataRowHeight: CGFloat = 48
-    static let badgeHeight: CGFloat = 20
+    static let badgeHeight: CGFloat = 22
     static let iconColumn: CGFloat = 24
     static let iconSmall: CGFloat = 16
     static let iconMedium: CGFloat = 18
@@ -251,17 +235,17 @@ enum Theme {
     static let shareCardWidth: CGFloat = 520
     static let shareBarHeight: CGFloat = 64
 
-    static let shadowRadius: CGFloat = 8
-    static let shadowY: CGFloat = 3
+    static let shadowRadius: CGFloat = 6
+    static let shadowY: CGFloat = 2
 
     static let statusDot: CGFloat = 6
     static let siteDot: CGFloat = 8
     static let insertionLineHeight: CGFloat = 2
     static let onboardingRowHeight: CGFloat = 58
-    static let onboardingProgressHeight: CGFloat = 4
+    static let onboardingProgressHeight: CGFloat = 3
     static let onboardingProgressActiveWidth: CGFloat = 18
     static let onboardingProgressInactiveWidth: CGFloat = 6
-    static let shareBarRadius: CGFloat = 2
+    static let shareBarRadius: CGFloat = 1
     static let emptyStateMinHeight: CGFloat = 260
     static let compactMetricTileHeight: CGFloat = 92
     static let sharePreviewMinHeight: CGFloat = 240

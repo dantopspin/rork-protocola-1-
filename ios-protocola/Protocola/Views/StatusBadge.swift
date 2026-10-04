@@ -28,14 +28,27 @@ struct StatusBadge: View {
                 .horizontal,
                 Theme.spaceXS
             )
-            .frame(minHeight: Theme.badgeHeight)
+            .frame(
+                minHeight:
+                    Theme.badgeHeight
+            )
             .foregroundStyle(tint)
             .background(
-                tint.opacity(0.09),
+                tint.opacity(0.055),
                 in: .rect(
                     cornerRadius:
                         Theme.radiusBadge
                 )
             )
+            .overlay {
+                RoundedRectangle(
+                    cornerRadius:
+                        Theme.radiusBadge
+                )
+                .stroke(
+                    tint.opacity(0.22),
+                    lineWidth: 1
+                )
+            }
     }
 }

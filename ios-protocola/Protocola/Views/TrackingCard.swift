@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Standard content surface: warm white, sharp radius, quiet hairline.
-/// Avoid nested cards unless the hierarchy truly needs them.
+/// Editorial product surface. Sharp, flat, bordered, and intentionally quiet.
 struct TrackingCard<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
@@ -31,7 +30,7 @@ struct TrackingCard<Content: View>: View {
 }
 
 
-/// High-value dark surface. Use once per screen at most.
+/// Rare high-value editorial surface.
 struct TrackingHeroCard<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
@@ -45,7 +44,7 @@ struct TrackingHeroCard<Content: View>: View {
             maxWidth: .infinity,
             alignment: .leading
         )
-        .padding(Theme.spaceM)
+        .padding(Theme.heroInset)
         .background(
             Theme.darkSurface,
             in: .rect(
@@ -57,7 +56,7 @@ struct TrackingHeroCard<Content: View>: View {
 }
 
 
-/// Tappable custom row used outside native Lists.
+/// Tappable editorial row used outside native Lists.
 struct TrackingNavLink<
     Label: View,
     Trailing: View
@@ -104,20 +103,19 @@ struct TrackingNavLink<
                 .accessibilityHidden(true)
             }
             .contentShape(Rectangle())
-            .padding(Theme.spaceM)
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius:
-                        Theme.radiusRow
-                )
-            )
-            .inkBorder(
-                cornerRadius:
-                    Theme.radiusRow
+            .padding(
+                .vertical,
+                Theme.spaceS
             )
         }
         .buttonStyle(.plain)
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 }
 
@@ -129,7 +127,8 @@ extension View {
     ) -> some View {
         overlay {
             RoundedRectangle(
-                cornerRadius: cornerRadius
+                cornerRadius:
+                    cornerRadius
             )
             .stroke(
                 Theme.border,
@@ -138,7 +137,7 @@ extension View {
         }
     }
 
-    /// Rare elevation for floating overlays, previews, and transient banners.
+    /// Reserved for true floating/transient UI only.
     func quietElevation() -> some View {
         shadow(
             color: Theme.shadow,

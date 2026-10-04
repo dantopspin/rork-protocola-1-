@@ -6,44 +6,34 @@ struct RecordRow: View {
     var onDark = false
 
     var body: some View {
-        if onDark {
-            HStack(
-                alignment: .firstTextBaseline
-            ) {
-                Text(label)
-                    .font(Theme.body)
-                    .foregroundStyle(
-                        Theme.onDarkSecondary
-                    )
-
-                Spacer(
-                    minLength: Theme.spaceM
+        HStack(
+            alignment: .firstTextBaseline,
+            spacing: Theme.spaceM
+        ) {
+            Text(label)
+                .font(Theme.body)
+                .foregroundStyle(
+                    onDark
+                        ? Theme.onDarkSecondary
+                        : Theme.muted
                 )
 
-                Text(value)
-                    .font(Theme.body)
-                    .multilineTextAlignment(
-                        .trailing
-                    )
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.onDarkPrimary)
-            }
+            Spacer(
+                minLength:
+                    Theme.spaceM
+            )
 
-        } else {
-            LabeledContent {
-                Text(value)
-                    .font(Theme.body)
-                    .multilineTextAlignment(
-                        .trailing
-                    )
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.ink)
-
-            } label: {
-                Text(label)
-                    .font(Theme.body)
-                    .foregroundStyle(Theme.muted)
-            }
+            Text(value)
+                .font(Theme.body)
+                .multilineTextAlignment(
+                    .trailing
+                )
+                .monospacedDigit()
+                .foregroundStyle(
+                    onDark
+                        ? Theme.onDarkPrimary
+                        : Theme.ink
+                )
         }
     }
 }
