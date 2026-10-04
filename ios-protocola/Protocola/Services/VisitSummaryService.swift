@@ -47,11 +47,15 @@ import UIKit
                 if !record.instructionSource.isEmpty { draw("Recorded source: \(record.instructionSource)", font: .systemFont(ofSize: 11), color: .darkGray, spacingAfter: 2) }
                 for revision in revisions.filter({ $0.protocolID == record.id && $0.effectiveUntil == nil }) {
                     let compound = compounds.first { $0.id == revision.compoundID }?.name ?? revision.compoundName
-                    var line = "\(compound) · \(revision.amountText) \(revision.unitText)"
-                    if let config = revision.config, config.kind != .asRecorded {
-                        let times = config.minutes.sorted().map { String(format: "%02d:%02d", $0 / 60, $0 % 60) }.joined(separator: ", ")
-                        line += " · \(config.kind.rawValue) at \(times)"
-                    } else { line += " · As recorded" }
+                    var line = "\(compound) · \(revision.amountText) \(revision.unitText) · \(revision.routeText)"
+                    if let config = revision.config {
+                        line += " · " + ScheduleDisplay.summary(config)
+                        if let cycle = CycleDisplay.status(config, at: now) {
+                            line += " · " + cycle
+                        }
+                    } else {
+                        line += " · Schedule unavailable"
+                    }
                     draw(line, font: .systemFont(ofSize: 11), color: .darkGray)
                 }
                 if !record.notes.isEmpty { draw("Notes: \(record.notes)", font: .systemFont(ofSize: 11), color: .darkGray) }
@@ -69,8 +73,8 @@ import UIKit
             let ordered = logs.sorted { $0.loggedAt < $1.loggedAt }
             if ordered.isEmpty { draw("No entries recorded.", font: .systemFont(ofSize: 11), color: .darkGray) }
             for log in ordered {
-                var line = "\(log.loggedAt.formatted(date: .abbreviated, time: .shortened)) · \(log.compoundName) · \(log.actualAmountText) \(log.unitText) · \(log.status)"
-                if !log.site.isEmpty { line += " · site: \(log.site)" }
+                var line = "\(log.loggedAt.formatted(date: .abbreviated, time: .shortened)) · \(log.compoundName) · \(log.actualAmountText) \(log.unitText) · \(log.routeText) · \(log.status)"
+                if log.route.usesInjectionSite, !log.site.isEmpty { line += " · site: \(log.site)" }
                 draw(line, font: .systemFont(ofSize: 11), color: .darkGray, spacingAfter: 3)
             }
 
