@@ -216,34 +216,32 @@ private extension TodayView {
 
     var todayEmptyState: some View {
         VStack(spacing: Theme.spaceM) {
-            ContentUnavailableView {
-                Label(
-                    store.today.isEmpty
-                        ? "Nothing scheduled today"
-                        : "Today's entries are recorded",
-                    systemImage:
+            if store.protocols.isEmpty {
+                TrackingEmptyState(
+                    icon: "calendar",
+                    title: "Nothing scheduled today",
+                    message:
+                        "Add an existing protocol to populate Today.",
+                    actionTitle: "Add protocol"
+                ) {
+                    create = true
+                }
+
+            } else {
+                TrackingEmptyState(
+                    icon:
                         store.today.isEmpty
                         ? "calendar"
-                        : "checkmark.circle"
+                        : "checkmark.circle",
+                    title:
+                        store.today.isEmpty
+                        ? "Nothing scheduled today"
+                        : "Today's entries are recorded",
+                    message:
+                        !asNeededRevisions.isEmpty
+                        ? "No scheduled entries. As-needed protocols are available below."
+                        : "Your recorded schedule is clear for today."
                 )
-            } description: {
-                Text(
-                    store.protocols.isEmpty
-                        ? "Add an existing protocol to populate Today."
-                        : (
-                            !asNeededRevisions.isEmpty
-                            ? "No scheduled entries. As-needed protocols are available below."
-                            : "Your recorded schedule is clear for today."
-                        )
-                )
-            } actions: {
-                if store.protocols.isEmpty {
-                    Button("Add protocol") {
-                        create = true
-                    }
-                    .buttonStyle(TrackingCompactButtonStyle(prominent: true))
-                    .tint(Theme.ink)
-                }
             }
 
             if !store.today.isEmpty,
