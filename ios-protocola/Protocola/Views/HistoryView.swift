@@ -330,7 +330,7 @@ private extension HistoryView {
         .font(Theme.label)
         .foregroundStyle(
             selected
-                ? Color.white
+                ? Theme.onDarkPrimary
                 : Theme.ink
         )
         .padding(

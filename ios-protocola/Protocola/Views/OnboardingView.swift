@@ -650,7 +650,7 @@ private extension OnboardingView {
                 .monospacedDigit()
                 .foregroundStyle(
                     dark
-                        ? Color.white
+                        ? Theme.onDarkPrimary
                         : Theme.ink
                 )
 
