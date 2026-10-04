@@ -106,6 +106,7 @@ enum Theme {
     static let displaySize: CGFloat = 38
     static let pageTitleSize: CGFloat = 34
     static let metricLargeSize: CGFloat = 34
+    static let metricCompactSize: CGFloat = 26
     static let modalTitleSize: CGFloat = 20
     static let sectionTitleSize: CGFloat = 18
     static let cardTitleSize: CGFloat = 16
@@ -141,6 +142,13 @@ enum Theme {
 
     /// Compatibility alias for existing metric call sites.
     static let metric = metricLarge
+
+    static let metricCompact =
+        Font.system(
+            size: metricCompactSize,
+            weight: .medium,
+            design: .serif
+        )
 
     static let modalTitle =
         Font.system(
