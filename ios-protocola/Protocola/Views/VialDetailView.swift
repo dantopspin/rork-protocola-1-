@@ -215,7 +215,7 @@ private extension VialDetailView {
                     "No entries use this vial yet."
                 )
                 .font(Theme.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             } else {
                 ForEach(logs) { log in
@@ -255,7 +255,7 @@ private extension VialDetailView {
                                 )
                             )
                             .font(Theme.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                             .monospacedDigit()
                         }
                         .padding(
