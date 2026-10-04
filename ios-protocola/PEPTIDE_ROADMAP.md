@@ -69,8 +69,8 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 - [x] Estimated depletion date
 - [x] Reserve inventory / supply vault
 - [x] Doses-per-vial calculation surfaced in inventory
-- [ ] U-40 and U-100 syringe presets
-- [ ] Interactive syringe visualization
+- [x] U-40 and U-100 syringe presets
+- [x] Interactive syringe visualization
 - [ ] Estimated compound-level / half-life curve
 - [ ] Multi-compound estimated-level overview
 - [ ] Change-aware level curve after dose revisions

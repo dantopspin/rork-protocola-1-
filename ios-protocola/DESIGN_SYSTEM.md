@@ -253,6 +253,14 @@ Shadow is reserved for transient/floating surfaces:
 - always secondary to recorded vial values
 - photo is reference material, never interpreted as dosing guidance
 
+### SyringeVisualization
+- live arithmetic visualization only
+- U-40 and U-100 are convenience scale presets, never recommendations
+- barrel height uses the shared 44 pt compact-control token
+- fill uses teal semantic emphasis
+- over-scale state uses amber attention semantics
+- custom units-per-mL values remain supported
+
 ---
 
 ## Screen hierarchy

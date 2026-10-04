@@ -169,11 +169,50 @@ private extension DoseEditorView {
                     .labelsHidden()
                 }
 
-                TextField(
-                    "Syringe scale (units/mL)",
-                    text: $draft.unitsPerMl
-                )
-                .keyboardType(.decimalPad)
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXS
+                ) {
+                    Text("Syringe scale")
+                        .font(Theme.label)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                    HStack(
+                        spacing: Theme.spaceXS
+                    ) {
+                        ForEach(
+                            SyringeScalePreset
+                                .allCases
+                        ) { preset in
+                            Button(
+                                preset.label
+                            ) {
+                                draft.unitsPerMl =
+                                    preset.valueText
+                            }
+                            .buttonStyle(
+                                TrackingCompactButtonStyle()
+                            )
+                            .tint(
+                                SyringeScalePreset
+                                    .match(
+                                        draft.unitsPerMl
+                                    ) == preset
+                                ? Theme.teal
+                                : Theme.ink
+                            )
+                        }
+                    }
+
+                    TextField(
+                        "Units per mL",
+                        text:
+                            $draft.unitsPerMl
+                    )
+                    .keyboardType(.decimalPad)
+                }
             }
 
             DatePicker(
@@ -268,6 +307,13 @@ private extension DoseEditorView {
             RecordRow(
                 label: "Syringe units",
                 value: conversion.units
+            )
+
+            SyringeVisualization(
+                filledUnits:
+                    conversion.unitsValue,
+                scale:
+                    conversion.scaleValue
             )
 
         } header: {
@@ -512,6 +558,9 @@ private extension DoseEditorView {
                     unitsPerMl: scale
                 )
 
+            let syringeUnits =
+                volume * scale
+
             return DoseConversionPreview(
                 concentration:
                     DoseCalculator.text(
@@ -523,8 +572,11 @@ private extension DoseEditorView {
                     ),
                 units:
                     DoseCalculator.text(
-                        volume * scale
-                    )
+                        syringeUnits
+                    ),
+                unitsValue:
+                    syringeUnits,
+                scaleValue: scale
             )
 
         } catch {
@@ -576,8 +628,121 @@ private struct DoseConversionPreview {
     let concentration: String
     let volume: String
     let units: String
+    let unitsValue: Decimal
+    let scaleValue: Decimal
 }
 
+
+private struct SyringeVisualization:
+    View {
+    let filledUnits: Decimal
+    let scale: Decimal
+
+    private var fillFraction: CGFloat {
+        guard scale > 0 else {
+            return 0
+        }
+
+        let value =
+            NSDecimalNumber(
+                decimal:
+                    filledUnits / scale
+            ).doubleValue
+
+        return CGFloat(
+            min(
+                max(value, 0),
+                1
+            )
+        )
+    }
+
+    var body: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXS
+        ) {
+            GeometryReader { geometry in
+                ZStack(
+                    alignment: .leading
+                ) {
+                    RoundedRectangle(
+                        cornerRadius:
+                            Theme.radiusField
+                    )
+                    .fill(Theme.subtleFill)
+                    .overlay {
+                        RoundedRectangle(
+                            cornerRadius:
+                                Theme.radiusField
+                        )
+                        .stroke(
+                            Theme.hairline,
+                            lineWidth: 1
+                        )
+                    }
+
+                    RoundedRectangle(
+                        cornerRadius:
+                            Theme.radiusField
+                    )
+                    .fill(Theme.tealTint)
+                    .frame(
+                        width:
+                            geometry.size.width
+                            * fillFraction
+                    )
+                }
+            }
+            .frame(
+                height:
+                    Theme.compactButtonHeight
+            )
+
+            HStack {
+                Text("0")
+                Spacer()
+                Text(
+                    DoseCalculator.text(
+                        scale
+                    )
+                    + " units"
+                )
+            }
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+            .monospacedDigit()
+
+            if filledUnits > scale {
+                Text(
+                    "Calculated units exceed the selected syringe scale."
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.amber
+                )
+            }
+        }
+        .accessibilityElement(
+            children: .combine
+        )
+        .accessibilityLabel(
+            "Syringe visualization"
+        )
+        .accessibilityValue(
+            DoseCalculator.text(
+                filledUnits
+            )
+            + " of "
+            + DoseCalculator.text(
+                scale
+            )
+            + " units"
+        )
+    }
+}
 
 
 // MARK: - Injection site map

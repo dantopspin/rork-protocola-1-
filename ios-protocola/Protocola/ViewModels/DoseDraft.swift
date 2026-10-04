@@ -1,5 +1,38 @@
 import Foundation
 
+enum SyringeScalePreset:
+    Int,
+    CaseIterable,
+    Identifiable {
+    case u40 = 40
+    case u100 = 100
+
+    var id: Int { rawValue }
+
+    var label: String {
+        "U-" + String(rawValue)
+    }
+
+    var valueText: String {
+        String(rawValue)
+    }
+
+    static func match(
+        _ value: String
+    ) -> SyringeScalePreset? {
+        guard let parsed =
+            Decimal(string: value)
+        else {
+            return nil
+        }
+
+        return allCases.first {
+            parsed == Decimal($0.rawValue)
+        }
+    }
+}
+
+
 struct DoseDraft {
     var amount: String = ""
     var unit: AmountUnit = .mcg

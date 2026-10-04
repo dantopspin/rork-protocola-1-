@@ -790,3 +790,27 @@ struct VialIntelligenceTests {
         }
     }
 }
+
+
+
+struct SyringePresetTests {
+
+    @Test
+    func standardSyringeScalesMatchRecordedValues() {
+        #expect(
+            SyringeScalePreset
+                .match("40")
+                == .u40
+        )
+        #expect(
+            SyringeScalePreset
+                .match("100.0")
+                == .u100
+        )
+        #expect(
+            SyringeScalePreset
+                .match("50")
+                == nil
+        )
+    }
+}
