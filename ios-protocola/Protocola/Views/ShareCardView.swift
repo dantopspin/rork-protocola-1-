@@ -64,7 +64,7 @@ struct ShareCardView: View {
                             .frame(
                                 width: data.barWidth,
                                 height:
-                                    64
+                                    Theme.shareBarHeight
                                     * CGFloat(
                                         bar.recorded
                                     )
