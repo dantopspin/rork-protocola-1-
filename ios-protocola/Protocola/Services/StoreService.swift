@@ -5,6 +5,9 @@ import RevenueCat
 /// Bridges RevenueCat to TrackingStore access. Only the single `pro`
 /// entitlement grants Pro.
 ///
+/// Configuration happens once at launch in ProtocolaApp.configurePurchases(),
+/// using the bundled public SDK key (`RevenueCatSDKKey`).
+///
 /// A failed refresh retains the last verified state, so an offline launch never
 /// fakes expiry. All RevenueCat entry points are guarded so an unconfigured
 /// development build cannot accidentally access Purchases.shared.
@@ -20,7 +23,7 @@ final class StoreService {
     private(set) var lastNotice: String?
     private(set) var managementURL: URL?
 
-    var error: String?
+    var alert: PurchaseAlert?
 
     private weak var store: TrackingStore?
     private var started = false
@@ -143,9 +146,7 @@ final class StoreService {
 
     func purchase(_ package: Package) async {
         guard Purchases.isConfigured else {
-            error =
-                "Subscriptions are not configured "
-                + "in this build."
+            alert = .unavailable
             return
         }
 
@@ -166,6 +167,7 @@ final class StoreService {
                 )
 
             guard !result.userCancelled else {
+                alert = .purchaseCancelled
                 return
             }
 
@@ -177,21 +179,17 @@ final class StoreService {
                 + "Pro unlocks when it completes."
 
         } catch ErrorCode.purchaseCancelledError {
-            // StoreKit cancellation is not an error.
+            alert = .purchaseCancelled
 
         } catch {
-            self.error =
-                "The purchase could not be completed. "
-                + "Please try again."
+            self.alert = .purchaseFailed
         }
     }
 
 
     func restore() async {
         guard Purchases.isConfigured else {
-            lastNotice =
-                "Subscriptions are not configured "
-                + "in this build."
+            alert = .unavailable
             return
         }
 
@@ -220,9 +218,7 @@ final class StoreService {
                 : "No active Pro purchase found for this Apple ID."
 
         } catch {
-            self.error =
-                "Purchases could not be restored. "
-                + "Please try again."
+            self.alert = .restoreFailed
         }
     }
 }

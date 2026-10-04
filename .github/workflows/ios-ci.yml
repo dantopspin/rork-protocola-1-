@@ -18,6 +18,12 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 35
 
+    # RevenueCat public SDK keys (EXPO_PUBLIC_REVENUECAT_*) are injected by
+    # Rork's build service for release builds. CI compiles the checked-in
+    # Config.swift with empty literals, so Purchases stays unconfigured here
+    # and StoreService's guards keep purchases code paths inert.
+    # The keys themselves are public client identifiers, not secrets.
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4

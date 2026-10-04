@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import RevenueCat
 
 @main
 struct ProtocolaApp: App {
@@ -9,11 +10,9 @@ struct ProtocolaApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
 
-    // Purchases.configure(withAPIKey:) is added once the RevenueCat
-    // public SDK key is available to the iOS build.
-
     init() {
         ProtocolaAppearance.configure()
+        configurePurchases()
     }
 
     var body: some Scene {
@@ -104,6 +103,22 @@ struct ProtocolaApp: App {
                 }
             }
         }
+    }
+
+
+    /// Configures RevenueCat once at launch: development builds use the
+    /// Test Store key, release builds use the production App Store key.
+    /// The identifiers are public client keys (see `RevenueCatSDKKey`); when
+    /// configuration is absent — e.g. an unconfigured CI build — StoreService
+    /// reports purchases as unavailable and guards every SDK entry point, so
+    /// core tracking is unaffected.
+    private func configurePurchases() {
+        #if DEBUG
+        Purchases.logLevel = .debug
+        Purchases.configure(withAPIKey: RevenueCatSDKKey.test)
+        #else
+        Purchases.configure(withAPIKey: RevenueCatSDKKey.production)
+        #endif
     }
 
 
