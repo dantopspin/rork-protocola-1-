@@ -186,7 +186,7 @@ private extension DoseEditorView {
                 Text(
                     "The original vial and concentration snapshot are retained when correcting this entry."
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
 
             } else {
@@ -303,7 +303,7 @@ private extension DoseEditorView {
                     ? "Record the site you used. Nothing is preselected or recommended."
                     : "Tap a recently recorded site to fill it. Nothing is preselected or recommended."
             )
-            .font(.caption)
+            .font(Theme.caption)
             .foregroundStyle(.secondary)
         }
     }
