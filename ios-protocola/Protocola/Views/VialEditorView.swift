@@ -48,8 +48,8 @@ struct VialEditorView: View {
                     Text(
                         "Protocola never infers vial strength. After the first recorded entry uses this vial, its compound and original strength are retained to protect historical calculations."
                     )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
                 }
             }
             .paperList()
