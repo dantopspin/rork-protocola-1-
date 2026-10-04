@@ -21,129 +21,56 @@ struct ProtocolsView: View {
     }
 
     var body: some View {
-        List {
-            if !store.isPremium,
-               store.activeProtocolIDs.count > 1 {
-                Section {
-                    Button {
-                        choice = true
-                    } label: {
-                        Label(
-                            "Choose protocol to track on Free",
-                            systemImage: "checkmark.circle"
+        ScrollView {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXL
+            ) {
+                if !store.isPremium,
+                   store.activeProtocolIDs.count > 1 {
+                    freeChoiceCallout
+                }
+
+                if store.protocols.isEmpty {
+                    TrackingEmptyState(
+                        icon: "list.bullet.rectangle",
+                        title: "No protocols yet",
+                        message:
+                            "Add an existing protocol to start building your recorded history.",
+                        actionTitle: "Add protocol"
+                    ) {
+                        create = true
+                    }
+
+                } else {
+                    if !activeProtocols.isEmpty {
+                        protocolSection(
+                            title: "Active",
+                            records: activeProtocols,
+                            featured: true
                         )
                     }
-                }
-            }
 
-            if !activeProtocols.isEmpty {
-                Section("Active") {
-                    ForEach(activeProtocols) { record in
-                        protocolLink(record)
-                    }
-                }
-            }
-
-            if !otherProtocols.isEmpty {
-                Section("Other") {
-                    ForEach(otherProtocols) { record in
-                        protocolLink(record)
-                    }
-                }
-            }
-
-            if store.protocols.isEmpty {
-                Section {
-                    ContentUnavailableView {
-                        Label(
-                            "No protocols yet",
-                            systemImage:
-                                "list.bullet.rectangle"
+                    if !otherProtocols.isEmpty {
+                        protocolSection(
+                            title: "Other protocols",
+                            records: otherProtocols,
+                            featured: false
                         )
-                    } description: {
-                        Text(
-                            "Add an existing protocol to start "
-                            + "building your recorded history."
-                        )
-                    } actions: {
-                        Button("Add protocol") {
-                            create = true
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.teal)
                     }
+
+                    toolsSection
                 }
             }
-
-            Section("Tools") {
-                NavigationLink {
-                    InventoryView()
-                } label: {
-                    HStack(spacing: Theme.spaceM) {
-                        Image(
-                            systemName: "shippingbox"
-                        )
-                        .font(Theme.sectionTitle)
-                        .foregroundStyle(Theme.teal)
-                        .frame(width: 28)
-
-                        VStack(
-                            alignment: .leading,
-                            spacing: Theme.spaceXXS
-                        ) {
-                            Text("Vial inventory")
-                                .foregroundStyle(
-                                    Theme.ink
-                                )
-
-                            Text(inventorySummary)
-                                .font(Theme.body)
-                                .foregroundStyle(
-                                    .secondary
-                                )
-                        }
-
-                        Spacer()
-                    }
-                    .padding(
-                        .vertical,
-                        Theme.spaceXXS
-                    )
-                }
-
-                Button {
-                    calculator = true
-                } label: {
-                    HStack(spacing: Theme.spaceM) {
-                        Image(systemName: "function")
-                            .foregroundStyle(Theme.muted)
-                            .frame(width: 28)
-
-                        VStack(
-                            alignment: .leading,
-                            spacing: Theme.spaceXXS
-                        ) {
-                            Text("Calculator")
-                                .font(Theme.label)
-                                .foregroundStyle(Theme.ink)
-
-                            Text("Dose · Volume · Units")
-                                .font(Theme.caption)
-                                .foregroundStyle(Theme.muted)
-                        }
-
-                        Spacer()
-                    }
-                    .padding(
-                        .vertical,
-                        Theme.spaceXXS
-                    )
-                }
-                .buttonStyle(.plain)
-            }
+            .screenPadding()
+            .padding(
+                .bottom,
+                Theme.spaceXL
+                    + Theme.spaceL
+            )
         }
-        .listStyle(.insetGrouped)
-        .paperList()
+        .scrollIndicators(.hidden)
+        .background(Theme.paper)
         .navigationTitle("Protocols")
         .toolbar {
             ToolbarItem(
@@ -183,25 +110,109 @@ struct ProtocolsView: View {
 }
 
 
-// MARK: - Protocol rows
+// MARK: - Sections
 
 private extension ProtocolsView {
 
-    func protocolLink(
-        _ record: ProtocolRecord
+    var freeChoiceCallout: some View {
+        Button {
+            choice = true
+        } label: {
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                Image(
+                    systemName:
+                        "checkmark.circle"
+                )
+                .foregroundStyle(
+                    Theme.muted
+                )
+
+                Text(
+                    "Choose protocol to track on Free"
+                )
+                .font(Theme.label)
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+                Spacer()
+
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+                .font(Theme.micro)
+                .foregroundStyle(
+                    Theme.muted
+                )
+            }
+            .padding(Theme.spaceM)
+        }
+        .buttonStyle(.plain)
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusRow
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusRow
+        )
+    }
+
+
+    func protocolSection(
+        title: String,
+        records: [ProtocolRecord],
+        featured: Bool
     ) -> some View {
-        NavigationLink(
-            value:
-                TrackingRoute
-                    .protocolDetail(record.id)
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
         ) {
-            protocolRow(record)
+            Text(title)
+                .font(Theme.sectionTitle)
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            VStack(
+                spacing: Theme.spaceXS
+            ) {
+                ForEach(
+                    Array(
+                        records.enumerated()
+                    ),
+                    id: \.element.id
+                ) { index, record in
+                    NavigationLink(
+                        value:
+                            TrackingRoute
+                                .protocolDetail(
+                                    record.id
+                                )
+                    ) {
+                        protocolCard(
+                            record,
+                            emphasized:
+                                featured
+                                && index == 0
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
     }
 
 
-    func protocolRow(
-        _ record: ProtocolRecord
+    func protocolCard(
+        _ record: ProtocolRecord,
+        emphasized: Bool
     ) -> some View {
         let revisions =
             store.currentRevisions(
@@ -213,34 +224,64 @@ private extension ProtocolsView {
 
         return VStack(
             alignment: .leading,
-            spacing: Theme.spaceXS
+            spacing: Theme.spaceM
         ) {
             HStack(
-                alignment: .firstTextBaseline
+                alignment: .top,
+                spacing: Theme.spaceS
             ) {
-                Text(record.name)
-                    .font(Theme.sectionTitle)
-                    .foregroundStyle(Theme.ink)
-                    .lineLimit(2)
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Text(record.name)
+                        .font(Theme.sectionTitle)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+                        .lineLimit(2)
 
-                Spacer(
-                    minLength: Theme.spaceS
+                    if let primary {
+                        Text(
+                            primary.compoundName
+                            + " · "
+                            + primary.amountText
+                            + " "
+                            + primary.unitText
+                        )
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                    }
+                }
+
+                Spacer()
+
+                StatusBadge(
+                    text:
+                        record.status == "Active"
+                        ? (
+                            store.canTrack(
+                                record.id
+                            )
+                            ? "Active"
+                            : "Read-only"
+                        )
+                        : record.status
                 )
 
-                statusLabel(record)
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+                .font(Theme.micro)
+                .foregroundStyle(
+                    Theme.muted
+                )
             }
 
             if let primary {
-                Text(
-                    primary.compoundName
-                    + " · "
-                    + primary.amountText
-                    + " "
-                    + primary.unitText
-                )
-                .font(Theme.body)
-                .foregroundStyle(.secondary)
-
                 Text(
                     primary.config.map(
                         ScheduleDisplay.summary
@@ -248,70 +289,214 @@ private extension ProtocolsView {
                     ?? "Schedule unavailable"
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(
+                    Theme.muted
+                )
+            }
 
-                if let next =
-                    nextEntry(
-                        for: record.id
+            if emphasized {
+                Divider()
+
+                HStack(
+                    spacing: Theme.spaceXL
+                ) {
+                    VStack(
+                        alignment: .leading,
+                        spacing:
+                            Theme.spaceXXS
                     ) {
-                    Text(
-                        "Next: "
-                        + next.at.formatted(
-                            .dateTime
-                                .day()
-                                .month(
-                                    .abbreviated
-                                )
-                                .hour()
-                                .minute()
-                        )
-                    )
-                    .font(Theme.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                }
+                        Text("Next entry")
+                            .font(Theme.caption)
+                            .foregroundStyle(
+                                Theme.muted
+                            )
 
-                if revisions.count > 1 {
-                    Text(
-                        "+\(revisions.count - 1) more "
-                        + (
-                            revisions.count - 1 == 1
-                            ? "compound"
-                            : "compounds"
+                        Text(
+                            nextEntry(
+                                for:
+                                    record.id
+                            )?
+                            .at
+                            .formatted(
+                                date:
+                                    .abbreviated,
+                                time:
+                                    .shortened
+                            )
+                            ?? "Not scheduled"
                         )
-                    )
-                    .font(Theme.caption)
-                    .foregroundStyle(.secondary)
+                        .font(Theme.label)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+                        .monospacedDigit()
+                    }
+
+                    VStack(
+                        alignment: .leading,
+                        spacing:
+                            Theme.spaceXXS
+                    ) {
+                        Text("Compounds")
+                            .font(Theme.caption)
+                            .foregroundStyle(
+                                Theme.muted
+                            )
+
+                        Text(
+                            String(
+                                revisions.count
+                            )
+                        )
+                        .font(Theme.label)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+                        .monospacedDigit()
+                    }
                 }
-            } else {
-                Text("No active schedule")
-                    .font(Theme.body)
-                    .foregroundStyle(.secondary)
             }
         }
         .padding(
-            .vertical,
-            Theme.spaceXS
+            emphasized
+                ? Theme.spaceM
+                : Theme.spaceM
+        )
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .background(
+            emphasized
+                ? Theme.neutralTint
+                : Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
         )
     }
 
 
-    @ViewBuilder
-    func statusLabel(
-        _ record: ProtocolRecord
-    ) -> some View {
-        StatusBadge(
-            text:
-                record.status == "Active"
-                ? (
-                    store.canTrack(record.id)
-                    ? "Active"
-                    : "Read-only"
+    var toolsSection: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
+        ) {
+            Text("Tools")
+                .font(Theme.sectionTitle)
+                .foregroundStyle(
+                    Theme.ink
                 )
-                : record.status
-        )
+
+            VStack(spacing: 0) {
+                NavigationLink {
+                    InventoryView()
+                } label: {
+                    toolRow(
+                        icon: "shippingbox",
+                        title: "Vial inventory",
+                        detail: inventorySummary
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+                    .padding(
+                        .leading,
+                        48
+                    )
+
+                Button {
+                    calculator = true
+                } label: {
+                    toolRow(
+                        icon: "function",
+                        title: "Calculator",
+                        detail:
+                            "Dose · Volume · Units"
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(
+                .horizontal,
+                Theme.spaceM
+            )
+            .background(
+                Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
+            )
+            .inkBorder(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+        }
     }
 
+
+    func toolRow(
+        icon: String,
+        title: String,
+        detail: String
+    ) -> some View {
+        HStack(
+            spacing: Theme.spaceM
+        ) {
+            Image(systemName: icon)
+                .font(Theme.label)
+                .foregroundStyle(
+                    Theme.teal
+                )
+                .frame(width: 24)
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(title)
+                    .font(Theme.label)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+
+                Text(detail)
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+            }
+
+            Spacer()
+
+            Image(
+                systemName:
+                    "chevron.right"
+            )
+            .font(Theme.micro)
+            .foregroundStyle(
+                Theme.muted
+            )
+        }
+        .padding(
+            .vertical,
+            Theme.spaceS
+        )
+        .contentShape(Rectangle())
+    }
+}
+
+
+// MARK: - Derived values
+
+private extension ProtocolsView {
 
     func nextEntry(
         for protocolID: UUID
@@ -336,161 +521,6 @@ private extension ProtocolsView {
     }
 
 
-    func scheduleSummary(
-        _ revision: ScheduleRevision
-    ) -> String {
-        guard let config = revision.config else {
-            return "Schedule unavailable"
-        }
-
-        if config.kind == .asRecorded {
-            return "As recorded"
-        }
-
-        let times =
-            config.minutes
-                .sorted()
-                .map {
-                    timeText(
-                        minute: $0,
-                        timeZoneID:
-                            config.timeZoneID
-                    )
-                }
-                .joined(separator: ", ")
-
-        switch config.kind {
-        case .daily:
-            return
-                times.isEmpty
-                ? "Daily"
-                : "Daily at " + times
-
-        case .weekly:
-            let day =
-                config.weekdays.first
-                    .map(weekdayName)
-                ?? "Weekly"
-
-            return
-                times.isEmpty
-                ? day
-                : day + " at " + times
-
-        case .weekdays:
-            let days =
-                config.weekdays
-                    .sorted()
-                    .map(weekdayShort)
-                    .joined(separator: ", ")
-
-            return
-                days
-                + (
-                    times.isEmpty
-                    ? ""
-                    : " · " + times
-                )
-
-        case .everyNDays:
-            return
-                "Every "
-                + String(config.interval)
-                + (
-                    config.interval == 1
-                    ? " day"
-                    : " days"
-                )
-                + (
-                    times.isEmpty
-                    ? ""
-                    : " · " + times
-                )
-
-        case .timesPerWeek:
-            let days =
-                config.weekdays
-                    .sorted()
-                    .map(weekdayShort)
-                    .joined(separator: ", ")
-
-            return
-                days
-                + (
-                    times.isEmpty
-                    ? ""
-                    : " · " + times
-                )
-
-        case .asRecorded:
-            return "As recorded"
-        }
-    }
-
-
-    func timeText(
-        minute: Int,
-        timeZoneID: String
-    ) -> String {
-        var calendar =
-            Calendar(identifier: .gregorian)
-
-        calendar.timeZone =
-            TimeZone(identifier: timeZoneID)
-            ?? .current
-
-        let date =
-            calendar.date(
-                bySettingHour:
-                    minute / 60,
-                minute:
-                    minute % 60,
-                second: 0,
-                of: .now
-            )
-            ?? .now
-
-        return date.formatted(
-            date: .omitted,
-            time: .shortened
-        )
-    }
-
-
-    func weekdayName(
-        _ value: Int
-    ) -> String {
-        let names =
-            Calendar.current.weekdaySymbols
-
-        guard (1...7).contains(value) else {
-            return "Weekly"
-        }
-
-        return names[value - 1]
-    }
-
-
-    func weekdayShort(
-        _ value: Int
-    ) -> String {
-        let names =
-            Calendar.current
-                .shortWeekdaySymbols
-
-        guard (1...7).contains(value) else {
-            return "—"
-        }
-
-        return names[value - 1]
-    }
-}
-
-
-// MARK: - Inventory
-
-private extension ProtocolsView {
-
     var inventorySummary: String {
         let active =
             store.vials.filter {
@@ -512,49 +542,23 @@ private extension ProtocolsView {
                 )
             }.count
 
-        let expiring =
-            active.filter { vial in
-                guard let expiry =
-                    vial.expiry
-                else {
-                    return false
-                }
-
-                let limit =
-                    Calendar.current.date(
-                        byAdding: .day,
-                        value: 14,
-                        to: .now
-                    ) ?? .now
-
-                return
-                    expiry >= .now
-                    && expiry <= limit
-            }.count
-
-        var parts: [String] = [
-            "\(active.count) "
+        if low > 0 {
+            return
+                "\(active.count) "
                 + (
                     active.count == 1
                     ? "vial"
                     : "vials"
                 )
-        ]
-
-        if low > 0 {
-            parts.append(
-                "\(low) low balance"
-            )
+                + " · \(low) need attention"
         }
 
-        if expiring > 0 {
-            parts.append(
-                "\(expiring) expiring soon"
+        return
+            "\(active.count) "
+            + (
+                active.count == 1
+                ? "active vial"
+                : "active vials"
             )
-        }
-
-        return parts.joined(
-            separator: " · "
-        )
     }
 }
