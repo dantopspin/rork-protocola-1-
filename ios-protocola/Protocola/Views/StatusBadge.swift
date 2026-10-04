@@ -28,7 +28,7 @@ struct StatusBadge: View {
                 .horizontal,
                 Theme.spaceXS
             )
-            .frame(minHeight: 20)
+            .frame(minHeight: Theme.badgeHeight)
             .foregroundStyle(tint)
             .background(
                 tint.opacity(0.09),
