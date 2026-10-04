@@ -248,6 +248,8 @@ private extension ProtocolsView {
                             + primary.amountText
                             + " "
                             + primary.unitText
+                            + " · "
+                            + primary.routeText
                         )
                         .font(Theme.body)
                         .foregroundStyle(
@@ -292,6 +294,19 @@ private extension ProtocolsView {
                 .foregroundStyle(
                     Theme.muted
                 )
+
+                if let config =
+                    primary.config,
+                   let cycle =
+                    CycleDisplay.status(
+                        config
+                    ) {
+                    Text(cycle)
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                }
             }
 
             if emphasized {
