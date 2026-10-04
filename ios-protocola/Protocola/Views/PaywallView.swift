@@ -99,6 +99,12 @@ struct PaywallView: View {
         ) { wasActive, active in
             active && !wasActive
         }
+        .sensoryFeedback(
+            .impact(weight: .light),
+            trigger: purchases.isPurchasing
+        ) { wasActive, isActive in
+            isActive && !wasActive
+        }
     }
 
 

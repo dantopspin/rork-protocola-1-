@@ -1108,6 +1108,7 @@ private extension TodayView {
         active: Bool
     ) {
         if active {
+            Haptics.selection()
             dropTarget = id
             dropAfter = isBottom
         } else if dropTarget == id {
