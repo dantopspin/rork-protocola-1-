@@ -443,6 +443,9 @@ private extension OnboardingView {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(
+            "onboarding.intent.\(item.rawValue)"
+        )
         .accessibilityAddTraits(
             selected
                 ? [.isSelected]
@@ -986,6 +989,9 @@ private extension OnboardingView {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(
+            "onboarding.acknowledgement"
+        )
         .accessibilityLabel(
             accepted
                 ? "Record-keeping acknowledgement, confirmed"
