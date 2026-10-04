@@ -13,7 +13,6 @@ struct ProtocolEditorView: View {
     @State private var draft: ProtocolDraft
     @State private var addVial = false
     @State private var saving = false
-    @State private var paywall = false
     @State private var effectiveDate: Date
 
     init(
@@ -156,13 +155,6 @@ struct ProtocolEditorView: View {
             }
             .sheet(isPresented: $addVial) {
                 VialEditorView()
-            }
-            .fullScreenCover(
-                isPresented: $paywall
-            ) {
-                PaywallView(
-                    reason: .secondProtocol
-                )
             }
             .trackingErrors()
         }
@@ -640,7 +632,7 @@ private extension ProtocolEditorView {
             })
             ?? store.canCreateProtocol
         else {
-            paywall = true
+            store.requestPaywall(.secondProtocol)
             return
         }
 

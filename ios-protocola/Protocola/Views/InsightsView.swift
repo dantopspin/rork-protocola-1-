@@ -8,7 +8,6 @@ struct InsightsView: View {
     @State private var window = 7
     @State private var changeID: UUID?
     @State private var assistant = false
-    @State private var paywall: PaywallReason?
     @State private var comparing = false
     @State private var shareCard = false
 
@@ -89,9 +88,6 @@ struct InsightsView: View {
         .navigationTitle("Insights")
         .sheet(isPresented: $assistant) {
             AssistantView()
-        }
-        .fullScreenCover(item: $paywall) {
-            PaywallView(reason: $0)
         }
         .sheet(isPresented: $shareCard) {
             ShareCardPreviewView(
@@ -581,7 +577,7 @@ private extension InsightsView {
                 comparing = true
                 changeID = change.id
             } else {
-                paywall = .compare
+                store.requestPaywall(.compare)
             }
         } label: {
             HStack(
@@ -714,7 +710,7 @@ private extension InsightsView {
 
             } else {
                 Button {
-                    paywall = .levels
+                    store.requestPaywall(.levels)
                 } label: {
                     estimatedLevelsLabel
                 }
@@ -1054,7 +1050,7 @@ private extension InsightsView {
                   let protocolName =
                     selected?.name {
             Button {
-                paywall = .ask
+                store.requestPaywall(.ask)
             } label: {
                 Label(
                     "Ask about \(protocolName)",
