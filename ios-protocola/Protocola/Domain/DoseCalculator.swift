@@ -36,3 +36,134 @@ nonisolated enum DoseCalculator {
     }
     static func text(_ number: Decimal) -> String { NSDecimalNumber(decimal: number).stringValue }
 }
+
+
+
+// MARK: - Estimated remaining amount
+
+nonisolated
+enum EstimatedLevelEngine {
+
+    struct DoseInput:
+        Equatable,
+        Sendable {
+        let at: Date
+        let massMg: Double
+    }
+
+
+    struct Sample:
+        Identifiable,
+        Equatable,
+        Sendable {
+        let at: Date
+        let estimatedMg: Double
+
+        var id: Date {
+            at
+        }
+    }
+
+
+    static func estimatedRemaining(
+        at date: Date,
+        doses: [DoseInput],
+        halfLifeHours: Double
+    ) -> Double {
+        guard halfLifeHours > 0 else {
+            return 0
+        }
+
+        return doses.reduce(0) {
+            total,
+            dose in
+
+            guard
+                dose.massMg > 0,
+                dose.at <= date
+            else {
+                return total
+            }
+
+            let elapsedHours =
+                date
+                    .timeIntervalSince(
+                        dose.at
+                    )
+                / 3_600
+
+            let remainingFraction =
+                pow(
+                    0.5,
+                    elapsedHours
+                    / halfLifeHours
+                )
+
+            return
+                total
+                + dose.massMg
+                * remainingFraction
+        }
+    }
+
+
+    static func samples(
+        doses: [DoseInput],
+        halfLifeHours: Double,
+        start: Date,
+        end: Date,
+        stepHours: Double
+    ) -> [Sample] {
+        guard
+            end > start,
+            halfLifeHours > 0,
+            stepHours > 0
+        else {
+            return []
+        }
+
+        let step =
+            stepHours * 3_600
+        var date = start
+        var output:
+            [Sample] = []
+        var safety = 0
+
+        while date < end
+            && safety < 2_000 {
+            output.append(
+                Sample(
+                    at: date,
+                    estimatedMg:
+                        estimatedRemaining(
+                            at: date,
+                            doses: doses,
+                            halfLifeHours:
+                                halfLifeHours
+                        )
+                )
+            )
+
+            date =
+                date.addingTimeInterval(
+                    step
+                )
+            safety += 1
+        }
+
+        output.append(
+            Sample(
+                at: end,
+                estimatedMg:
+                    estimatedRemaining(
+                        at: end,
+                        doses: doses,
+                        halfLifeHours:
+                            halfLifeHours
+                    )
+            )
+        )
+
+        return output
+    }
+}

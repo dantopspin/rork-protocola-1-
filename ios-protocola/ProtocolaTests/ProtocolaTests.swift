@@ -1327,3 +1327,203 @@ struct ProtocolEvolutionTests {
         )
     }
 }
+
+
+
+struct EstimatedLevelEngineTests {
+
+    @Test
+    func oneHalfLifeLeavesHalfTheRecordedMass() {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let dose =
+            EstimatedLevelEngine
+                .DoseInput(
+                    at: start,
+                    massMg: 2
+                )
+
+        let value =
+            EstimatedLevelEngine
+                .estimatedRemaining(
+                    at:
+                        start
+                            .addingTimeInterval(
+                                24 * 3_600
+                            ),
+                    doses: [dose],
+                    halfLifeHours: 24
+                )
+
+        #expect(
+            abs(value - 1)
+                < 0.000_001
+        )
+    }
+
+
+    @Test
+    func repeatedRecordedDosesAccumulateDeterministically() {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let second =
+            start.addingTimeInterval(
+                24 * 3_600
+            )
+
+        let value =
+            EstimatedLevelEngine
+                .estimatedRemaining(
+                    at: second,
+                    doses: [
+                        .init(
+                            at: start,
+                            massMg: 1
+                        ),
+                        .init(
+                            at: second,
+                            massMg: 1
+                        )
+                    ],
+                    halfLifeHours: 24
+                )
+
+        #expect(
+            abs(value - 1.5)
+                < 0.000_001
+        )
+    }
+}
+
+
+@MainActor
+struct EstimatedLevelOverviewTests {
+
+    @Test
+    func overviewUsesActualRecordedDoseAndUserReference() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+        let now = Date.now
+
+        var protocolDraft =
+            ProtocolDraft()
+        protocolDraft.name = "Levels"
+        protocolDraft.compound =
+            "Compound"
+        protocolDraft.amount = "2"
+        protocolDraft.unit = .mg
+        protocolDraft.start =
+            now.addingTimeInterval(
+                -2 * 86_400
+            )
+        protocolDraft.kind = .daily
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil,
+            now:
+                protocolDraft.start
+        )
+
+        let compound =
+            try #require(
+                repository
+                    .all(
+                        CompoundRecord.self
+                    )
+                    .first
+            )
+        let revision =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        try repository
+            .saveCompoundHalfLife(
+                compoundID:
+                    compound.id,
+                hoursText: "24",
+                source:
+                    "Recorded reference"
+            )
+
+        var dose =
+            DoseDraft(
+                revision: revision
+            )
+        dose.amount = "2"
+        dose.unit = .mg
+        dose.loggedAt =
+            now.addingTimeInterval(
+                -24 * 3_600
+            )
+
+        try repository.saveDose(
+            dose,
+            revision: revision,
+            occurrence: nil,
+            correcting: nil,
+            now: now
+        )
+
+        let store =
+            TrackingStore(
+                container: container
+            )
+        let overview =
+            EstimatedLevelOverview(
+                store: store,
+                protocolID:
+                    revision.protocolID,
+                period:
+                    AnalysisPeriod(
+                        start:
+                            now.addingTimeInterval(
+                                -48
+                                * 3_600
+                            ),
+                        end: now
+                    ),
+                now: now
+            )
+
+        let series =
+            try #require(
+                overview.series.first
+            )
+
+        #expect(
+            series.compoundName
+                == "Compound"
+        )
+        #expect(
+            abs(
+                series
+                    .currentEstimatedMg
+                - 1
+            ) < 0.000_001
+        )
+        #expect(
+            series.source
+                == "Recorded reference"
+        )
+    }
+}

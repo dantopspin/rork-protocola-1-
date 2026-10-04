@@ -293,6 +293,15 @@ Shadow is reserved for transient/floating surfaces:
 - comparisons remain descriptive; never infer efficacy, causation, or treatment quality
 - planned-change audit events are not treated as already-effective change anchors
 
+### EstimatedLevelChart
+- driven only by actual recorded, non-skipped doses
+- half-life is an explicit user-recorded reference; the app supplies no hidden default
+- model is simple exponential decay with multiple-dose accumulation
+- output is estimated remaining amount, never measured blood concentration or clinical effect
+- protocol-revision dates use quiet vertical markers
+- multiple compounds are summarized separately rather than implying cross-compound equivalence
+- unsupported volume/unit logs are disclosed rather than silently guessed
+
 ---
 
 ## Screen hierarchy

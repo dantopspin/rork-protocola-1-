@@ -439,6 +439,34 @@ import Observation
         }
     }
 
+    func saveCompoundHalfLife(
+        _ compound: CompoundRecord,
+        hoursText: String,
+        source: String
+    ) -> Bool {
+        guard
+            canEdit(
+                compound.protocolID
+            )
+        else {
+            error =
+                "Choose this protocol for tracking or restore Pro before editing it."
+            return false
+        }
+
+        return perform {
+            try repository
+                .saveCompoundHalfLife(
+                    compoundID:
+                        compound.id,
+                    hoursText:
+                        hoursText,
+                    source: source
+                )
+        }
+    }
+
+
     func saveVial(
         _ draft: VialDraft,
         id: UUID?

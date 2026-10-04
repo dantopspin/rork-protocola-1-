@@ -177,6 +177,8 @@ private extension InsightsView {
                         changeContext(latest)
                     }
 
+                    estimatedLevelsEntry
+
                     if !summary.sites.isEmpty {
                         sitesCard(summary)
                     }
@@ -691,6 +693,100 @@ private extension InsightsView {
 }
 
 
+// MARK: - Estimated levels entry
+
+private extension InsightsView {
+
+    @ViewBuilder
+    var estimatedLevelsEntry:
+        some View {
+        if let selected {
+            if store.isPremium {
+                NavigationLink {
+                    EstimatedLevelsView(
+                        protocolID:
+                            selected.id
+                    )
+                } label: {
+                    estimatedLevelsLabel
+                }
+                .buttonStyle(.plain)
+
+            } else {
+                Button {
+                    paywall = .levels
+                } label: {
+                    estimatedLevelsLabel
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+
+    var estimatedLevelsLabel:
+        some View {
+        HStack(
+            spacing: Theme.spaceM
+        ) {
+            Image(
+                systemName:
+                    "waveform.path.ecg"
+            )
+            .font(Theme.sectionTitle)
+            .foregroundStyle(
+                Theme.teal
+            )
+
+            VStack(
+                alignment: .leading,
+                spacing:
+                    Theme.spaceXXS
+            ) {
+                Text("Estimated levels")
+                    .font(
+                        Theme.sectionTitle
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+
+                Text(
+                    "Half-life model from actual recorded doses"
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
+            }
+
+            Spacer()
+
+            Image(
+                systemName:
+                    "chevron.right"
+            )
+            .font(Theme.micro)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+        .padding(Theme.spaceM)
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
+        )
+    }
+}
+
+
 // MARK: - Secondary insight cards
 
 private extension InsightsView {
@@ -1160,6 +1256,554 @@ private struct ComparisonCard: View {
                             )
                     }
             )
+        }
+    }
+}
+
+
+
+// MARK: - Estimated level detail
+
+struct EstimatedLevelsView: View {
+    let protocolID: UUID
+
+    @Environment(TrackingStore.self)
+    private var store
+
+    @State
+    private var window = 30
+
+    @State
+    private var editingCompound:
+        CompoundRecord?
+
+    private var period:
+        AnalysisPeriod {
+        let now = Date.now
+        let start =
+            Calendar.current.date(
+                byAdding: .day,
+                value:
+                    -(window - 1),
+                to:
+                    Calendar.current
+                        .startOfDay(
+                            for: now
+                        )
+            ) ?? now
+
+        return AnalysisPeriod(
+            start: start,
+            end: now
+        )
+    }
+
+    private var overview:
+        EstimatedLevelOverview {
+        EstimatedLevelOverview(
+            store: store,
+            protocolID: protocolID,
+            period: period
+        )
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXL
+            ) {
+                Picker(
+                    "Period",
+                    selection: $window
+                ) {
+                    Text("7D").tag(7)
+                    Text("30D").tag(30)
+                    Text("90D").tag(90)
+                }
+                .pickerStyle(.segmented)
+                .tint(Theme.ink)
+
+                modelExplanation
+
+                if overview.series.count
+                    > 1 {
+                    multiCompoundOverview
+                }
+
+                ForEach(
+                    overview.series
+                ) { series in
+                    compoundCard(series)
+                }
+
+                if !overview
+                    .missingReference
+                    .isEmpty {
+                    missingReferenceCard
+                }
+
+                if overview.series.isEmpty,
+                   overview
+                    .missingReference
+                    .isEmpty {
+                    TrackingEmptyState(
+                        icon:
+                            "waveform.path.ecg",
+                        title:
+                            "No compounds to model",
+                        message:
+                            "Add a compound to this protocol first."
+                    )
+                }
+            }
+            .screenPadding()
+            .padding(
+                .bottom,
+                Theme.spaceXL
+                + Theme.spaceL
+            )
+        }
+        .scrollIndicators(.hidden)
+        .background(Theme.paper)
+        .navigationTitle(
+            "Estimated levels"
+        )
+        .navigationBarTitleDisplayMode(
+            .inline
+        )
+        .sheet(
+            item: $editingCompound
+        ) { compound in
+            CompoundHalfLifeEditorView(
+                compound: compound
+            )
+        }
+    }
+}
+
+
+private extension EstimatedLevelsView {
+
+    var modelExplanation:
+        some View {
+        TrackingCard {
+            Text("Model assumptions")
+                .font(
+                    Theme.sectionTitle
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            Text(
+                "Each curve uses simple exponential decay from actual recorded doses and the reference half-life you enter. It is not a measured blood concentration, exposure, efficacy, or safety estimate."
+            )
+            .font(Theme.body)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+
+    var multiCompoundOverview:
+        some View {
+        TrackingCard {
+            Text("Current estimates")
+                .font(
+                    Theme.sectionTitle
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            ForEach(
+                overview.series
+            ) { series in
+                RecordRow(
+                    label:
+                        series
+                            .compoundName,
+                    value:
+                        series.currentText
+                )
+            }
+
+            Text(
+                "Values are compound-specific remaining-amount estimates and should not be compared as equivalent biological effect."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+
+    func compoundCard(
+        _ series:
+            EstimatedLevelOverview.Series
+    ) -> some View {
+        TrackingCard {
+            HStack(
+                alignment:
+                    .firstTextBaseline,
+                spacing: Theme.spaceS
+            ) {
+                VStack(
+                    alignment: .leading,
+                    spacing:
+                        Theme.spaceXXS
+                ) {
+                    Text(
+                        series.compoundName
+                    )
+                    .font(
+                        Theme.sectionTitle
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+
+                    Text(
+                        "Half-life input · "
+                        + series
+                            .halfLifeText
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                }
+
+                Spacer()
+
+                Button("Edit reference") {
+                    editingCompound =
+                        store.compounds
+                            .first {
+                                $0.id
+                                    == series
+                                        .compoundID
+                            }
+                }
+                .font(Theme.label)
+            }
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text("Estimated remaining")
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+
+                Text(series.currentText)
+                    .font(
+                        Theme.metricLarge
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .monospacedDigit()
+            }
+
+            Chart {
+                ForEach(
+                    series.samples
+                ) { sample in
+                    LineMark(
+                        x: .value(
+                            "Time",
+                            sample.at
+                        ),
+                        y: .value(
+                            "Estimated remaining",
+                            sample
+                                .estimatedMg
+                        )
+                    )
+                    .foregroundStyle(
+                        Theme.teal
+                    )
+                }
+
+                ForEach(
+                    series.revisionDates,
+                    id: \.self
+                ) { date in
+                    RuleMark(
+                        x: .value(
+                            "Protocol change",
+                            date
+                        )
+                    )
+                    .foregroundStyle(
+                        Theme.hairline
+                    )
+                }
+            }
+            .frame(
+                height:
+                    Theme.chartHeight
+            )
+            .chartYAxis(.hidden)
+            .chartXAxis {
+                AxisMarks(
+                    values:
+                        .automatic(
+                            desiredCount: 4
+                        )
+                ) { value in
+                    AxisGridLine()
+                        .foregroundStyle(
+                            Theme.line
+                        )
+
+                    AxisValueLabel(
+                        format:
+                            .dateTime
+                                .month(
+                                    .abbreviated
+                                )
+                                .day()
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                }
+            }
+
+            if let source =
+                series.source,
+               !source.isEmpty {
+                RecordRow(
+                    label:
+                        "Reference source",
+                    value: source
+                )
+            }
+
+            if series
+                .unsupportedLogCount > 0 {
+                Text(
+                    String(
+                        series
+                            .unsupportedLogCount
+                    )
+                    + " recorded "
+                    + (
+                        series
+                            .unsupportedLogCount
+                            == 1
+                        ? "entry could"
+                        : "entries could"
+                    )
+                    + " not be converted to mass because no concentration snapshot was available."
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.amber
+                )
+            }
+
+            Text(
+                "Vertical markers show effective protocol-revision dates. The curve itself uses recorded doses, so corrected or changed doses alter the model automatically."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+
+    var missingReferenceCard:
+        some View {
+        TrackingCard {
+            Text("Add half-life reference")
+                .font(
+                    Theme.sectionTitle
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            Text(
+                "Protocola does not guess a pharmacokinetic half-life. Record a reference value and optional source for each compound you want to model."
+            )
+            .font(Theme.body)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+
+            ForEach(
+                overview
+                    .missingReference
+            ) { compound in
+                Button {
+                    editingCompound =
+                        compound
+                } label: {
+                    HStack(
+                        spacing:
+                            Theme.spaceS
+                    ) {
+                        Text(
+                            compound.name
+                        )
+                        .font(
+                            Theme.body
+                        )
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                        Spacer()
+
+                        Text("Set reference")
+                            .font(
+                                Theme.label
+                            )
+                            .foregroundStyle(
+                                Theme.teal
+                            )
+                    }
+                    .contentShape(
+                        Rectangle()
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+
+struct CompoundHalfLifeEditorView:
+    View {
+    let compound: CompoundRecord
+
+    @Environment(TrackingStore.self)
+    private var store
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State
+    private var hoursText: String
+
+    @State
+    private var source: String
+
+    init(
+        compound: CompoundRecord
+    ) {
+        self.compound = compound
+        _hoursText =
+            State(
+                initialValue:
+                    compound
+                        .referenceHalfLifeHoursText
+                    ?? ""
+            )
+        _source =
+            State(
+                initialValue:
+                    compound
+                        .referenceHalfLifeSource
+                    ?? ""
+            )
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(
+                        "Half-life (hours)",
+                        text: $hoursText
+                    )
+                    .keyboardType(
+                        .decimalPad
+                    )
+
+                    TextField(
+                        "Reference source (optional)",
+                        text: $source,
+                        axis: .vertical
+                    )
+
+                } header: {
+                    Text(
+                        compound.name
+                    )
+
+                } footer: {
+                    Text(
+                        "Enter a half-life from a source you trust. This value powers a mathematical decay model only; Protocola does not infer a clinical half-life or recommend treatment."
+                    )
+                }
+
+                if compound
+                    .referenceHalfLifeHours
+                    != nil {
+                    Section {
+                        Button(
+                            "Clear reference",
+                            role: .destructive
+                        ) {
+                            hoursText = ""
+                            source = ""
+                            save()
+                        }
+                    }
+                }
+            }
+            .paperList()
+            .doneKeyboard()
+            .navigationTitle(
+                "Level reference"
+            )
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+            .toolbar {
+                ToolbarItem(
+                    placement:
+                        .cancellationAction
+                ) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(
+                    placement:
+                        .confirmationAction
+                ) {
+                    Button("Save") {
+                        save()
+                    }
+                }
+            }
+            .trackingErrors()
+        }
+    }
+
+
+    private func save() {
+        if store
+            .saveCompoundHalfLife(
+                compound,
+                hoursText:
+                    hoursText,
+                source: source
+            ) {
+            dismiss()
         }
     }
 }

@@ -533,3 +533,327 @@ struct ProtocolEvolutionSummary {
         )
     }
 }
+
+
+
+// MARK: - Estimated level overview
+
+struct EstimatedLevelOverview {
+
+    struct Series:
+        Identifiable {
+        let compoundID: UUID
+        let compoundName: String
+        let halfLifeHours: Double
+        let source: String?
+        let samples:
+            [EstimatedLevelEngine.Sample]
+        let currentEstimatedMg:
+            Double
+        let revisionDates: [Date]
+        let unsupportedLogCount: Int
+
+        var id: UUID {
+            compoundID
+        }
+
+        var currentText: String {
+            EstimatedLevelOverview
+                .massText(
+                    currentEstimatedMg
+                )
+        }
+
+        var halfLifeText: String {
+            NumberFormatter
+                .estimatedLevel
+                .string(
+                    from:
+                        NSNumber(
+                            value:
+                                halfLifeHours
+                        )
+                )
+                .map {
+                    $0 + " h"
+                }
+            ?? String(halfLifeHours)
+                + " h"
+        }
+    }
+
+
+    let series: [Series]
+    let missingReference:
+        [CompoundRecord]
+
+
+    @MainActor
+    init(
+        store: TrackingStore,
+        protocolID: UUID,
+        period: AnalysisPeriod,
+        now: Date = .now
+    ) {
+        let compounds =
+            store.compounds
+                .filter {
+                    $0.protocolID
+                        == protocolID
+                }
+                .sorted {
+                    $0.name < $1.name
+                }
+
+        var built:
+            [Series] = []
+        var missing:
+            [CompoundRecord] = []
+
+        for compound in compounds {
+            guard
+                let decimal =
+                    compound
+                        .referenceHalfLifeHours,
+                decimal > 0
+            else {
+                missing.append(
+                    compound
+                )
+                continue
+            }
+
+            let halfLifeHours =
+                NSDecimalNumber(
+                    decimal: decimal
+                )
+                .doubleValue
+
+            let lookback =
+                halfLifeHours
+                * 10
+                * 3_600
+            let inputStart =
+                period.start
+                    .addingTimeInterval(
+                        -lookback
+                    )
+
+            let relevantLogs =
+                store.logs.filter {
+                    $0.compoundID
+                        == compound.id
+                    && $0.status
+                        != "Skipped"
+                    && $0.loggedAt
+                        >= inputStart
+                    && $0.loggedAt
+                        <= period.end
+                }
+
+            var unsupported = 0
+
+            let doses =
+                relevantLogs
+                    .compactMap {
+                        log
+                            -> EstimatedLevelEngine
+                                .DoseInput?
+                        in
+
+                        guard
+                            let mass =
+                                Self.massMg(
+                                    log
+                                ),
+                            mass > 0
+                        else {
+                            unsupported += 1
+                            return nil
+                        }
+
+                        return
+                            EstimatedLevelEngine
+                                .DoseInput(
+                                    at:
+                                        log.loggedAt,
+                                    massMg:
+                                        mass
+                                )
+                    }
+
+            let durationHours =
+                max(
+                    1,
+                    period.end
+                        .timeIntervalSince(
+                            period.start
+                        )
+                    / 3_600
+                )
+            let stepHours =
+                max(
+                    1,
+                    durationHours / 120
+                )
+
+            let samples =
+                EstimatedLevelEngine
+                    .samples(
+                        doses: doses,
+                        halfLifeHours:
+                            halfLifeHours,
+                        start: period.start,
+                        end: period.end,
+                        stepHours:
+                            stepHours
+                    )
+
+            let currentDate =
+                min(now, period.end)
+
+            let current =
+                EstimatedLevelEngine
+                    .estimatedRemaining(
+                        at: currentDate,
+                        doses: doses,
+                        halfLifeHours:
+                            halfLifeHours
+                    )
+
+            let revisionDates =
+                store.revisions
+                    .filter {
+                        $0.compoundID
+                            == compound.id
+                        && $0.effectiveFrom
+                            >= period.start
+                        && $0.effectiveFrom
+                            < period.end
+                        && !$0.isPlanned(
+                            after: now
+                        )
+                    }
+                    .map(
+                        \.effectiveFrom
+                    )
+                    .sorted()
+
+            built.append(
+                Series(
+                    compoundID:
+                        compound.id,
+                    compoundName:
+                        compound.name,
+                    halfLifeHours:
+                        halfLifeHours,
+                    source:
+                        compound
+                            .referenceHalfLifeSource,
+                    samples: samples,
+                    currentEstimatedMg:
+                        current,
+                    revisionDates:
+                        revisionDates,
+                    unsupportedLogCount:
+                        unsupported
+                )
+            )
+        }
+
+        series = built
+        missingReference = missing
+    }
+
+
+    @MainActor
+    private static func massMg(
+        _ log: DoseLog
+    ) -> Double? {
+        let decimal: Decimal?
+
+        switch log.unit {
+        case .mg:
+            decimal =
+                log.actualAmount
+
+        case .mcg:
+            decimal =
+                log.actualAmount
+                / 1_000
+
+        case .mL, .units:
+            decimal =
+                log.consumptionMg > 0
+                ? log.consumptionMg
+                : nil
+        }
+
+        guard
+            let decimal,
+            decimal > 0
+        else {
+            return nil
+        }
+
+        return NSDecimalNumber(
+            decimal: decimal
+        )
+        .doubleValue
+    }
+
+
+    static func massText(
+        _ massMg: Double
+    ) -> String {
+        let positive =
+            max(0, massMg)
+
+        if positive < 1 {
+            let micrograms =
+                positive * 1_000
+            let text =
+                NumberFormatter
+                    .estimatedLevel
+                    .string(
+                        from:
+                            NSNumber(
+                                value:
+                                    micrograms
+                            )
+                    )
+                ?? String(micrograms)
+
+            return text + " mcg"
+        }
+
+        let text =
+            NumberFormatter
+                .estimatedLevel
+                .string(
+                    from:
+                        NSNumber(
+                            value:
+                                positive
+                        )
+                )
+            ?? String(positive)
+
+        return text + " mg"
+    }
+}
+
+
+private extension NumberFormatter {
+
+    static let estimatedLevel:
+        NumberFormatter = {
+        let formatter =
+            NumberFormatter()
+        formatter.numberStyle =
+            .decimal
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 0
+        return formatter
+    }()
+}

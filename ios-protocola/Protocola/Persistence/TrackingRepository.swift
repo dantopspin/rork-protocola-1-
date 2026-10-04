@@ -861,6 +861,125 @@ import SwiftData
             context.delete(target)
         }
     }
+    func saveCompoundHalfLife(
+        compoundID: UUID,
+        hoursText: String,
+        source: String
+    ) throws {
+        let compounds =
+            try all(CompoundRecord.self)
+
+        guard
+            let compound =
+                compounds.first(
+                    where: {
+                        $0.id == compoundID
+                    }
+                )
+        else {
+            throw TrackingError
+                .missingRecord
+        }
+
+        let cleanHours =
+            hoursText
+                .trimmingCharacters(
+                    in:
+                        .whitespacesAndNewlines
+                )
+        let cleanSource =
+            source
+                .trimmingCharacters(
+                    in:
+                        .whitespacesAndNewlines
+                )
+
+        let hours: Decimal?
+
+        if cleanHours.isEmpty {
+            hours = nil
+        } else {
+            let parsed =
+                try DoseCalculator.parse(
+                    cleanHours,
+                    label:
+                        "Reference half-life"
+                )
+
+            guard parsed <= 100_000 else {
+                throw TrackingError
+                    .invalidInput(
+                        "Enter a reference half-life of 100,000 hours or less."
+                    )
+            }
+
+            hours = parsed
+        }
+
+        let before = [
+            "Reference half-life":
+                compound
+                    .referenceHalfLifeHoursText
+                ?? "",
+            "Reference source":
+                compound
+                    .referenceHalfLifeSource
+                ?? ""
+        ]
+
+        let after = [
+            "Reference half-life":
+                hours.map(
+                    DoseCalculator.text
+                ) ?? "",
+            "Reference source":
+                hours == nil
+                ? ""
+                : cleanSource
+        ]
+
+        let changes =
+            RecordChange.between(
+                before,
+                after
+            )
+
+        guard !changes.isEmpty else {
+            return
+        }
+
+        try transaction {
+            compound
+                .referenceHalfLifeHoursText =
+                hours.map(
+                    DoseCalculator.text
+                )
+            compound
+                .referenceHalfLifeSource =
+                hours == nil
+                || cleanSource.isEmpty
+                ? nil
+                : cleanSource
+
+            let event =
+                ProtocolEvent(
+                    protocolID:
+                        compound.protocolID,
+                    title:
+                        "Estimated-level reference updated",
+                    detail: ""
+                )
+
+            try event.recordChanges(
+                changes,
+                category: "Metadata"
+            )
+
+            context.insert(event)
+        }
+    }
+
+
     func saveVial(
         _ draft: VialDraft,
         id: UUID?,

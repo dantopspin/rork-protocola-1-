@@ -71,9 +71,9 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 - [x] Doses-per-vial calculation surfaced in inventory
 - [x] U-40 and U-100 syringe presets
 - [x] Interactive syringe visualization
-- [ ] Estimated compound-level / half-life curve
-- [ ] Multi-compound estimated-level overview
-- [ ] Change-aware level curve after dose revisions
+- [x] Estimated compound-level / half-life curve
+- [x] Multi-compound estimated-level overview
+- [x] Change-aware level curve after dose revisions
 - [x] Weekly stack calendar
 - [ ] Lock Screen / Live Activity for a due entry
 - [ ] Home Screen widgets
