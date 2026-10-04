@@ -849,7 +849,7 @@ private struct TimelineRow: View {
                     .lineLimit(2)
 
                 Text(detail)
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -864,7 +864,7 @@ private struct TimelineRow: View {
                     time: .shortened
                 )
             )
-            .font(.caption)
+            .font(Theme.caption)
             .foregroundStyle(.secondary)
             .monospacedDigit()
         }
@@ -885,7 +885,7 @@ private struct TrailingIconLabelStyle: LabelStyle {
                 .lineLimit(1)
 
             configuration.icon
-                .font(.caption2)
+                .font(Theme.micro)
         }
     }
 }
