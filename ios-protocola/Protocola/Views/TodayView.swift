@@ -287,11 +287,7 @@ private extension TodayView {
             alignment: .leading,
             spacing: Theme.spaceS
         ) {
-            Text("As needed")
-                .font(Theme.sectionTitle)
-                .foregroundStyle(
-                    Theme.ink
-                )
+            Eyebrow(text: "As needed")
 
             VStack(spacing: 0) {
                 ForEach(
@@ -353,21 +349,20 @@ private extension TodayView {
                     }
                 }
             }
-            .padding(
-                .horizontal,
-                Theme.spaceM
-            )
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius:
-                        Theme.radiusCard
-                )
-            )
-            .inkBorder(
-                cornerRadius:
-                    Theme.radiusCard
-            )
+            .overlay(
+                alignment: .top
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: 1)
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: 1)
+            }
         }
     }
 
@@ -377,11 +372,7 @@ private extension TodayView {
             alignment: .leading,
             spacing: Theme.spaceS
         ) {
-            Label(
-                "Sample records",
-                systemImage: "eye"
-            )
-            .font(Theme.sectionTitle)
+            Eyebrow(text: "Sample records")
 
             Text(
                 "Sample records stay isolated and are never saved "
@@ -397,17 +388,28 @@ private extension TodayView {
             .buttonStyle(TrackingCompactButtonStyle(prominent: true))
             .tint(Theme.ink)
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius: Theme.radiusCard
-            )
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 
 
@@ -442,16 +444,27 @@ private extension TodayView {
                     .font(Theme.micro)
                     .foregroundStyle(Theme.textTertiary)
             }
-            .padding(Theme.spaceM)
+            .padding(
+                .vertical,
+                Theme.spaceM
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius: Theme.radiusCard
-            )
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 
 
@@ -461,8 +474,7 @@ private extension TodayView {
             spacing: Theme.spaceS
         ) {
             HStack {
-                Text("Today")
-                    .font(Theme.sectionTitle)
+                Eyebrow(text: "Today")
 
                 Spacer()
 
@@ -553,18 +565,26 @@ private extension TodayView {
                         }
 
                     if index < remainingTodayEntries.count - 1 {
-                        Divider()
-                            .padding(.leading, 48)
+                        Rectangle()
+                            .fill(Theme.hairline)
+                            .frame(height: 1)
                     }
                 }
             }
-            .padding(.horizontal, Theme.spaceM)
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius: Theme.radiusCard
-                )
-            )
+            .overlay(
+                alignment: .top
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: 1)
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: 1)
+            }
             .animation(
                 reduceMotion
                     ? nil
@@ -642,21 +662,18 @@ private extension TodayView {
             alignment: .leading,
             spacing: Theme.spaceXXS
         ) {
-            Text(title)
-                .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.muted
-                )
+            Eyebrow(text: title)
 
             HStack(
                 alignment: .firstTextBaseline
             ) {
                 Text(value)
-                    .font(Theme.sectionTitle)
+                    .font(Theme.metricCompact)
                     .foregroundStyle(
                         Theme.ink
                     )
                     .lineLimit(1)
+                    .monospacedDigit()
 
                 Spacer(
                     minLength:
@@ -680,22 +697,21 @@ private extension TodayView {
                 )
                 .lineLimit(1)
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusRow
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusRow
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 
 
@@ -846,12 +862,13 @@ private extension TodayView {
     ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.spaceM
         ) {
-            HStack {
+            HStack(
+                alignment: .firstTextBaseline
+            ) {
                 Eyebrow(
-                    text: "Next entry",
-                    onDark: true
+                    text: "Next entry"
                 )
 
                 Spacer()
@@ -860,8 +877,8 @@ private extension TodayView {
             }
 
             Text(next.revision.compoundName)
-                .font(Theme.sectionTitle)
-                .foregroundStyle(Theme.onDarkPrimary)
+                .font(Theme.modalTitle)
+                .foregroundStyle(Theme.ink)
 
             if usesStackedHero {
                 VStack(
@@ -874,7 +891,7 @@ private extension TodayView {
             } else {
                 HStack(
                     alignment: .firstTextBaseline,
-                    spacing: Theme.spaceXS
+                    spacing: Theme.spaceM
                 ) {
                     heroDose(next)
 
@@ -884,105 +901,182 @@ private extension TodayView {
                 }
             }
 
-            Label(
-                next.revision.protocolName,
-                systemImage: "list.bullet.rectangle"
-            )
-            .font(Theme.body)
-            .foregroundStyle(
-                Theme.onDarkPrimary.opacity(0.72)
-            )
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
 
-            Divider()
-                .overlay(
-                    Theme.onDarkPrimary.opacity(0.14)
-                )
+            RecordRow(
+                label: "Protocol",
+                value:
+                    next.revision
+                        .protocolName
+            )
 
             if next.revision.route
                 .usesInjectionSite {
-                vialAction(next)
+                vialActionLight(next)
             } else {
-                HStack(
-                    spacing: Theme.spaceS
-                ) {
-                    Image(
-                        systemName:
-                            "arrow.triangle.branch"
-                    )
-
-                    Text(
+                RecordRow(
+                    label: "Route",
+                    value:
                         next.revision
                             .routeText
-                    )
-
-                    Spacer()
-                }
-                .font(Theme.body)
-                .foregroundStyle(
-                    Theme.onDarkPrimary.opacity(0.72)
                 )
             }
 
             Button {
                 logAsScheduled(next)
             } label: {
-                Label(
-                    "Log entry",
-                    systemImage: "checkmark"
-                )
+                Text("Log entry")
             }
             .buttonStyle(
-                TrackingPrimaryButtonStyle(
-                    inverted: true
-                )
+                TrackingPrimaryButtonStyle()
             )
 
-            Button {
-                open(
-                    next,
-                    prefill:
-                        repeatDraft(for: next)
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                Button {
+                    open(
+                        next,
+                        prefill:
+                            repeatDraft(
+                                for: next
+                            )
+                    )
+                } label: {
+                    Text("Adjust details")
+                }
+                .buttonStyle(
+                    TrackingSecondaryButtonStyle()
                 )
-            } label: {
-                Label(
-                    "Adjust details",
-                    systemImage:
-                        "slider.horizontal.3"
-                )
-            }
-            .buttonStyle(
-                TrackingSecondaryButtonStyle(
-                    onDark: true
-                )
-            )
 
-            Button("Skip this entry") {
-                skipEntry(next)
+                Button(
+                    "Skip",
+                    role: .destructive
+                ) {
+                    skipEntry(next)
+                }
+                .font(Theme.label)
+                .frame(
+                    minHeight:
+                        Theme.minimumTapTarget
+                )
             }
-            .font(Theme.caption)
-            .foregroundStyle(
-                Theme.onDarkPrimary.opacity(0.62)
-            )
-            .frame(
-                maxWidth: .infinity,
-                minHeight:
-                    Theme.minimumTapTarget
-            )
-            .buttonStyle(.plain)
         }
-        .padding(Theme.spaceL)
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
+        .padding(
+            .vertical,
+            Theme.spaceL
         )
-        .background(
-            Theme.ink,
-            in: .rect(
-                cornerRadius: Theme.radiusCard
-            )
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.teal)
+                .frame(
+                    height:
+                        Theme.insertionLineHeight
+                )
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 
+
+    @ViewBuilder
+    func vialActionLight(
+        _ next: ScheduledEntry
+    ) -> some View {
+        if let vial =
+            store.vial(
+                next.revision.vialID
+            ) {
+            Button {
+                open(next)
+            } label: {
+                HStack(
+                    alignment:
+                        .firstTextBaseline,
+                    spacing: Theme.spaceM
+                ) {
+                    Text("Vial")
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+
+                    Spacer()
+
+                    Text(vial.name)
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+                        .lineLimit(1)
+
+                    Image(
+                        systemName:
+                            "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+        } else {
+            Button {
+                if store.vials.isEmpty {
+                    addVial = true
+                } else {
+                    open(next)
+                }
+            } label: {
+                HStack(
+                    alignment:
+                        .firstTextBaseline,
+                    spacing: Theme.spaceM
+                ) {
+                    Text("Vial")
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+
+                    Spacer()
+
+                    Text(
+                        store.vials.isEmpty
+                        ? "Add vial"
+                        : "Choose vial"
+                    )
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.teal
+                    )
+
+                    Image(
+                        systemName:
+                            "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
 
     func offCycleCard(
         _ context: CycleOffContext

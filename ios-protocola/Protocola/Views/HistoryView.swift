@@ -174,16 +174,16 @@ struct HistoryView: View {
                             recordLink(record)
                         }
                     } header: {
-                        Text(dayTitle(day.date))
-                            .font(Theme.sectionTitle)
-                            .foregroundStyle(Theme.ink)
-                            .textCase(nil)
+                        Eyebrow(
+                            text: dayTitle(day.date)
+                        )
                     }
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .paperList()
+        .scrollContentBackground(.hidden)
         .navigationTitle("History")
         .searchable(
             text: $search,
@@ -337,17 +337,23 @@ private extension HistoryView {
         )
         .background(
             selected
-                ? Theme.ink
+                ? Theme.teal
                 : Theme.surface,
-            in: .capsule
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusBadge
+            )
         )
         .overlay {
             if !selected {
-                Capsule()
-                    .stroke(
-                        Theme.border,
-                        lineWidth: 1
-                    )
+                RoundedRectangle(
+                    cornerRadius:
+                        Theme.radiusBadge
+                )
+                .stroke(
+                    Theme.border,
+                    lineWidth: 1
+                )
             }
         }
         .buttonStyle(.plain)
@@ -931,7 +937,7 @@ private struct TimelineRow: View {
         }
         .padding(
             .vertical,
-            Theme.spaceXXS
+            Theme.spaceS
         )
     }
 }

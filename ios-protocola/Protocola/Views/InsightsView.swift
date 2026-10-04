@@ -248,18 +248,24 @@ private extension InsightsView {
                     Theme.muted
                 )
             }
-            .padding(Theme.spaceM)
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius:
-                        Theme.radiusRow
-                )
+            .padding(
+                .vertical,
+                Theme.spaceS
             )
-            .inkBorder(
-                cornerRadius:
-                    Theme.radiusRow
-            )
+            .overlay(
+                alignment: .top
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: 1)
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: 1)
+            }
         }
         .buttonStyle(.plain)
     }
@@ -336,9 +342,7 @@ private extension InsightsView {
                     alignment: .leading,
                     spacing: Theme.spaceXXS
                 ) {
-                    Text("Consistency")
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.ink)
+                    Eyebrow(text: "Consistency")
 
                     Text(summary.percentage)
                         .font(Theme.metric)
@@ -423,18 +427,24 @@ private extension InsightsView {
                 }
             }
         }
-        .padding(Theme.spaceM)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
+        .padding(
+            .vertical,
+            Theme.spaceM
         )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 
 
@@ -445,9 +455,7 @@ private extension InsightsView {
             alignment: .leading,
             spacing: Theme.spaceXS
         ) {
-            Text("Recorded entries")
-                .font(Theme.label)
-                .foregroundStyle(Theme.ink)
+            Eyebrow(text: "Recorded entries")
 
             Text(String(periodLogs.count))
                 .font(Theme.metric)
@@ -460,22 +468,28 @@ private extension InsightsView {
             .font(Theme.caption)
             .foregroundStyle(Theme.muted)
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 
 
@@ -488,7 +502,8 @@ private extension InsightsView {
             }.count
 
         return HStack(
-            spacing: Theme.spaceXS
+            alignment: .top,
+            spacing: Theme.spaceM
         ) {
             statTile(
                 value:
@@ -497,11 +512,27 @@ private extension InsightsView {
                 dot: Theme.teal
             )
 
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    width: 1,
+                    height:
+                        Theme.compactMetricTileHeight
+                )
+
             statTile(
                 value: String(skipped),
                 label: "Skipped",
                 dot: Theme.muted
             )
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    width: 1,
+                    height:
+                        Theme.compactMetricTileHeight
+                )
 
             statTile(
                 value:
@@ -511,6 +542,20 @@ private extension InsightsView {
                 label: "Sites",
                 dot: Theme.line
             )
+        }
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
         }
     }
 
@@ -544,22 +589,15 @@ private extension InsightsView {
                     )
             }
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
         .frame(
             maxWidth: .infinity,
-            minHeight: Theme.compactMetricTileHeight,
+            minHeight:
+                Theme.compactMetricTileHeight,
             alignment: .leading
-        )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusRow
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusRow
         )
     }
 }
@@ -767,18 +805,24 @@ private extension InsightsView {
                 Theme.textSecondary
             )
         }
-        .padding(Theme.spaceM)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
+        .padding(
+            .vertical,
+            Theme.spaceM
         )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 }
 
