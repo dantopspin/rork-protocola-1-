@@ -15,7 +15,7 @@ import SwiftData
     var scheduledUnitText: String
 
     /// Route is preserved with the log so future protocol edits cannot rewrite it.
-    var routeText: String = AdministrationRoute.injection.rawValue
+    var routeRawValue: String?
 
     var actualAmountText: String
     var unitText: String
@@ -133,9 +133,14 @@ import SwiftData
         ) ?? 100
     }
 
+    var routeText: String {
+        route.rawValue
+    }
+
     var route: AdministrationRoute {
         AdministrationRoute(
-            rawValue: routeText
+            rawValue: routeRawValue
+                ?? ""
         ) ?? .injection
     }
 }
