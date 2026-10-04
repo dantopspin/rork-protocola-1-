@@ -37,6 +37,7 @@ struct CalculatorView: View {
                 }
             }
             .paperList()
+            .scrollContentBackground(.hidden)
             .doneKeyboard()
             .navigationTitle("Calculator")
             .navigationBarTitleDisplayMode(.inline)

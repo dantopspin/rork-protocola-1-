@@ -29,6 +29,7 @@ struct SettingsView: View {
                 dangerZoneSection
             }
             .paperList()
+            .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

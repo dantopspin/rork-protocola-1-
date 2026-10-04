@@ -198,8 +198,9 @@ private extension ProtocolDetailView {
                 !store.canEdit(record.id)
             )
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .paperList()
+            .scrollContentBackground(.hidden)
         .navigationTitle(record.name)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editing) {
@@ -595,8 +596,9 @@ struct ProtocolEvolutionView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .paperList()
+            .scrollContentBackground(.hidden)
         .navigationTitle(
             "Protocol evolution"
         )

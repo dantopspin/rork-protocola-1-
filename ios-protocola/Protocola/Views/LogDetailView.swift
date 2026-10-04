@@ -23,8 +23,9 @@ struct LogDetailView: View {
                     observationsSection(log)
                     actionsSection(log)
                 }
-                .listStyle(.insetGrouped)
+                .listStyle(.plain)
                 .paperList()
+            .scrollContentBackground(.hidden)
                 .navigationTitle("Entry details")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

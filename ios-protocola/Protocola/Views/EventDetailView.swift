@@ -12,6 +12,7 @@ struct EventDetailView: View {
                     Section(change.field) { RecordRow(label: "Previous", value: change.before.isEmpty ? "Not recorded" : change.before); RecordRow(label: "New", value: change.after.isEmpty ? "Not recorded" : change.after) }
                 }
             }
-        }.paperList().navigationTitle(event.title).navigationBarTitleDisplayMode(.inline)
+        }.paperList()
+            .scrollContentBackground(.hidden).navigationTitle(event.title).navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -63,6 +63,7 @@ struct DoseEditorView: View {
                 }
             }
             .paperList()
+            .scrollContentBackground(.hidden)
             .doneKeyboard()
             .navigationTitle(
                 correcting == nil

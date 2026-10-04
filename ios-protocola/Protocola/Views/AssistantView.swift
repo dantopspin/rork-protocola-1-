@@ -63,7 +63,8 @@ struct AssistantView: View {
                         }
                     }
                 }
-            }.paperList().doneKeyboard().navigationTitle("Ask Protocola").navigationBarTitleDisplayMode(.inline)
+            }.paperList()
+            .scrollContentBackground(.hidden).doneKeyboard().navigationTitle("Ask Protocola").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { model.cancel(); dismiss() } } }
                 .onAppear { protocolID = selected?.id }
                 .sheet(isPresented: $viewData) {

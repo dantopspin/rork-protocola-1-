@@ -124,6 +124,7 @@ struct ProtocolEditorView: View {
                 }
             }
             .paperList()
+            .scrollContentBackground(.hidden)
             .doneKeyboard()
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(

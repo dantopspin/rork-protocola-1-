@@ -23,8 +23,9 @@ struct VialDetailView: View {
                     actionsSection(vial)
                     recordedEntriesSection(vial)
                 }
-                .listStyle(.insetGrouped)
+                .listStyle(.plain)
                 .paperList()
+            .scrollContentBackground(.hidden)
                 .trackingRoutes()
                 .navigationTitle(vial.name)
                 .navigationBarTitleDisplayMode(.inline)

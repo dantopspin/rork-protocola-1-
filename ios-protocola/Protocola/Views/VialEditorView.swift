@@ -65,6 +65,7 @@ struct VialEditorView: View {
                 }
             }
             .paperList()
+            .scrollContentBackground(.hidden)
             .doneKeyboard()
             .navigationTitle(
                 vial == nil
