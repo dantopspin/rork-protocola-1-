@@ -350,7 +350,7 @@ private extension HistoryView {
                     }
                 }
 
-                Section("Date range") {
+                Section {
                     Toggle(
                         "Use date range",
                         isOn: $dates
@@ -372,6 +372,8 @@ private extension HistoryView {
                                 .date
                         )
                     }
+                } header: {
+                    Text("Date range")
                 } footer: {
                     Text(
                         "Date filters change what appears in History only. "
