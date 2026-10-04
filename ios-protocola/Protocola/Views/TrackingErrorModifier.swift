@@ -44,6 +44,7 @@ extension View {
         scrollContentBackground(.hidden)
             .background(Theme.paper)
             .font(Theme.body)
+            .textCase(nil)
             .listSectionSpacing(
                 Theme.spaceL
             )
