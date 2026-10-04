@@ -11,7 +11,7 @@ struct ContentView: View {
     @State private var tab = 0
     @State private var choosingProtocol = false
 
-    @State private var unlocked = true
+    @State private var unlocked = false
     @State private var authenticating = false
     @State private var authenticationError: String?
 
