@@ -11,8 +11,9 @@ struct RecordRow: View {
                 alignment: .firstTextBaseline
             ) {
                 Text(label)
+                    .font(Theme.body)
                     .foregroundStyle(
-                        Color.white.opacity(0.64)
+                        Color.white.opacity(0.58)
                     )
 
                 Spacer(
@@ -20,28 +21,29 @@ struct RecordRow: View {
                 )
 
                 Text(value)
+                    .font(Theme.body)
                     .multilineTextAlignment(
                         .trailing
                     )
                     .monospacedDigit()
                     .foregroundStyle(.white)
             }
-            .font(.subheadline)
 
         } else {
             LabeledContent {
                 Text(value)
+                    .font(Theme.body)
                     .multilineTextAlignment(
                         .trailing
                     )
                     .monospacedDigit()
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Theme.ink)
 
             } label: {
                 Text(label)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.muted)
             }
-            .font(.subheadline)
         }
     }
 }
