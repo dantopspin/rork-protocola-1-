@@ -115,10 +115,6 @@ struct ProtocolaApp: App {
                 "-ui-testing-reset"
             ) {
                 opened.clearData()
-                UserDefaults.standard.set(
-                    false,
-                    forKey: "protocola.appLockEnabled"
-                )
             }
             #endif
 
