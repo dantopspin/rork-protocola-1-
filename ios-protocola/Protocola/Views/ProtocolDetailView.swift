@@ -54,7 +54,7 @@ private extension ProtocolDetailView {
                         "Read-only on Free",
                         systemImage: "lock"
                     )
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
 
                     Button(
                         "Choose protocol for Free tracking"
