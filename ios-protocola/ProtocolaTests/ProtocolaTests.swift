@@ -650,3 +650,143 @@ struct InjectionSiteTests {
         )
     }
 }
+
+
+
+@MainActor
+struct VialIntelligenceTests {
+
+    @Test
+    func lifecycleDatesPhotoAndRunwayPersist() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        var vialDraft = VialDraft()
+        vialDraft.name = "Reserve vial"
+        vialDraft.compound = "Compound"
+        vialDraft.amount = "10"
+        vialDraft.diluent = "2"
+        vialDraft.state = .reserve
+        vialDraft.hasReconstitutedDate = true
+        vialDraft.reconstitutedAt =
+            now.addingTimeInterval(
+                -86_400
+            )
+        vialDraft.hasOpenedDate = true
+        vialDraft.openedAt =
+            now.addingTimeInterval(
+                -43_200
+            )
+        vialDraft.photoData =
+            Data([1, 2, 3])
+
+        try repository.saveVial(
+            vialDraft,
+            id: nil,
+            now: now
+        )
+
+        let vial =
+            try #require(
+                repository
+                    .all(
+                        VialRecord.self
+                    )
+                    .first
+            )
+
+        #expect(
+            vial.lifecycleState == .reserve
+        )
+        #expect(vial.reconstitutedAt != nil)
+        #expect(vial.openedAt != nil)
+        #expect(
+            vial.photoData == Data([1, 2, 3])
+        )
+
+        var protocolDraft =
+            ProtocolDraft()
+        protocolDraft.name = "Protocol"
+        protocolDraft.compound = "Compound"
+        protocolDraft.amount = "2"
+        protocolDraft.unit = .mg
+        protocolDraft.vialID = vial.id
+        protocolDraft.start = now
+        protocolDraft.kind = .daily
+        protocolDraft.timeZoneID = "UTC"
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil,
+            now: now
+        )
+
+        let store =
+            TrackingStore(
+                container: container
+            )
+
+        #expect(
+            store.dosesPerVial(vial) == 5
+        )
+        #expect(
+            store
+                .scheduledEntriesRemaining(
+                    in: vial
+                ) == 5
+        )
+        #expect(
+            store
+                .estimatedDepletionDate(
+                    in: vial,
+                    now: now
+                ) != nil
+        )
+    }
+
+    @Test
+    func futureLifecycleDatesAreRejected() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+        let now = Date.now
+        var draft = VialDraft()
+        draft.name = "V"
+        draft.compound = "C"
+        draft.amount = "5"
+        draft.diluent = "1"
+        draft.hasOpenedDate = true
+        draft.openedAt =
+            now.addingTimeInterval(
+                3_600
+            )
+
+        #expect(
+            throws: TrackingError.self
+        ) {
+            try repository.saveVial(
+                draft,
+                id: nil,
+                now: now
+            )
+        }
+    }
+}

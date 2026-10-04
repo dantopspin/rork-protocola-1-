@@ -1,27 +1,41 @@
 import SwiftUI
 
 struct InventoryView: View {
-    @Environment(TrackingStore.self) private var store
+    @Environment(TrackingStore.self)
+    private var store
 
     @State private var add = false
     @State private var showArchived = false
 
     private var activeVials: [VialRecord] {
-        store.vials.filter {
-            !$0.isArchived
-        }
+        vials(in: .active)
+    }
+
+    private var reserveVials: [VialRecord] {
+        vials(in: .reserve)
+    }
+
+    private var sealedVials: [VialRecord] {
+        vials(in: .sealed)
     }
 
     private var archivedVials: [VialRecord] {
-        store.vials.filter {
-            $0.isArchived
-        }
+        vials(in: .archived)
+    }
+
+    private var availableVials: [VialRecord] {
+        activeVials
+        + reserveVials
+        + sealedVials
     }
 
     var body: some View {
         List {
-            if activeVials.isEmpty,
-               (!showArchived || archivedVials.isEmpty) {
+            if availableVials.isEmpty,
+               (
+                    !showArchived
+                    || archivedVials.isEmpty
+               ) {
                 Section {
                     TrackingEmptyState(
                         icon: "shippingbox",
@@ -35,32 +49,34 @@ struct InventoryView: View {
                 }
             }
 
-            if !activeVials.isEmpty {
-                Section("Active") {
-                    ForEach(activeVials) {
-                        vial in
-                        vialLink(vial)
-                    }
-                }
-            }
+            vialSection(
+                "Active",
+                vials: activeVials
+            )
+            vialSection(
+                "Reserve",
+                vials: reserveVials
+            )
+            vialSection(
+                "Sealed",
+                vials: sealedVials
+            )
 
-            if showArchived,
-               !archivedVials.isEmpty {
-                Section("Archived") {
-                    ForEach(archivedVials) {
-                        vial in
-                        vialLink(vial)
-                    }
-                }
+            if showArchived {
+                vialSection(
+                    "Archived",
+                    vials: archivedVials
+                )
             }
 
             Section {
                 Text(
-                    "Balances are estimates from your recorded entries and manual corrections. "
-                    + "Scheduled-entry estimates appear only when the vial is linked to a compatible fixed-mass schedule."
+                    "Balances are estimates from your recorded entries and manual corrections. Runway appears only when linked schedules can be represented as fixed mass."
                 )
                 .font(Theme.caption)
-                .foregroundStyle(Theme.textSecondary)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
             }
         }
         .listStyle(.insetGrouped)
@@ -101,10 +117,29 @@ struct InventoryView: View {
     }
 }
 
-
-// MARK: - Rows
-
 private extension InventoryView {
+
+    func vials(
+        in state: VialLifecycleState
+    ) -> [VialRecord] {
+        store.vials.filter {
+            $0.lifecycleState == state
+        }
+    }
+
+    @ViewBuilder
+    func vialSection(
+        _ title: String,
+        vials: [VialRecord]
+    ) -> some View {
+        if !vials.isEmpty {
+            Section(title) {
+                ForEach(vials) { vial in
+                    vialLink(vial)
+                }
+            }
+        }
+    }
 
     func vialLink(
         _ vial: VialRecord
@@ -119,7 +154,8 @@ private extension InventoryView {
                 spacing: Theme.spaceXS
             ) {
                 HStack(
-                    alignment: .firstTextBaseline
+                    alignment:
+                        .firstTextBaseline
                 ) {
                     Text(vial.name)
                         .font(Theme.sectionTitle)
@@ -145,7 +181,9 @@ private extension InventoryView {
 
                 Text(vial.compoundName)
                     .font(Theme.body)
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
 
                 HStack(
                     spacing: Theme.spaceS
@@ -157,14 +195,29 @@ private extension InventoryView {
                             ),
                        entries > 0 {
                         Label(
-                            "~\(entries) "
+                            "~"
+                            + String(entries)
+                            + " "
                             + (
                                 entries == 1
                                 ? "entry"
                                 : "entries"
                             ),
-                            systemImage:
-                                "calendar"
+                            systemImage: "calendar"
+                        )
+                    }
+
+                    if let depletion =
+                        store
+                            .estimatedDepletionDate(
+                                in: vial
+                            ) {
+                        Label(
+                            depletion.formatted(
+                                date: .abbreviated,
+                                time: .omitted
+                            ),
+                            systemImage: "hourglass"
                         )
                     }
 
@@ -178,7 +231,9 @@ private extension InventoryView {
                     }
                 }
                 .font(Theme.caption)
-                .foregroundStyle(Theme.textSecondary)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
 
                 let status =
                     store.vialStatus(vial)
@@ -186,15 +241,16 @@ private extension InventoryView {
                 if [
                     "Low recorded balance",
                     "Depleted"
-                ]
-                .contains(status) {
+                ].contains(status) {
                     Label(
                         status,
                         systemImage:
                             "exclamationmark.circle"
                     )
                     .font(Theme.micro)
-                    .foregroundStyle(Theme.amber)
+                    .foregroundStyle(
+                        Theme.amber
+                    )
                 }
             }
             .padding(
@@ -203,7 +259,6 @@ private extension InventoryView {
             )
         }
     }
-
 
     func expiryText(
         _ vial: VialRecord
@@ -215,12 +270,10 @@ private extension InventoryView {
         let calendar = Calendar.current
         let today =
             calendar.startOfDay(for: .now)
-
         let expiryDay =
             calendar.startOfDay(
                 for: expiry
             )
-
         let days =
             calendar.dateComponents(
                 [.day],

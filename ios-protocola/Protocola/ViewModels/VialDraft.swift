@@ -11,7 +11,36 @@ struct VialDraft {
     var notes: String = ""
     var hasExpiry: Bool = false
     var expiry: Date = .now
+    var hasReconstitutedDate: Bool = false
+    var reconstitutedAt: Date = .now
+    var hasOpenedDate: Bool = false
+    var openedAt: Date = .now
+    var state:
+        VialLifecycleState = .active
+    var photoData: Data?
     var correctedBalance: String = ""
+
     init() {}
-    init(vial: VialRecord) { name = vial.name; compound = vial.compoundName; amount = vial.originalMgText; diluent = vial.diluentMlText; batch = vial.batch; supplier = vial.supplier; notes = vial.storageNotes; hasExpiry = vial.expiry != nil; expiry = vial.expiry ?? .now }
+
+    init(vial: VialRecord) {
+        name = vial.name
+        compound = vial.compoundName
+        amount = vial.originalMgText
+        diluent = vial.diluentMlText
+        batch = vial.batch
+        supplier = vial.supplier
+        notes = vial.storageNotes
+        hasExpiry = vial.expiry != nil
+        expiry = vial.expiry ?? .now
+        hasReconstitutedDate =
+            vial.reconstitutedAt != nil
+        reconstitutedAt =
+            vial.reconstitutedAt ?? .now
+        hasOpenedDate =
+            vial.openedAt != nil
+        openedAt =
+            vial.openedAt ?? .now
+        state = vial.lifecycleState
+        photoData = vial.photoData
+    }
 }

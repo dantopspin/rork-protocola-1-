@@ -145,29 +145,252 @@ import SwiftData
             context.insert(event)
         }
     }
-    func saveVial(_ draft: VialDraft, id: UUID?) throws {
-        guard !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !draft.compound.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw TrackingError.invalidInput("Enter a vial name and compound.") }
-        let amount = try DoseCalculator.massMg(DoseCalculator.parse(draft.amount, label: "Vial amount"), unit: draft.unit)
-        let diluent = try DoseCalculator.parse(draft.diluent, label: "Diluent")
-        let existing = try all(VialRecord.self).first { $0.id == id }
+    func saveVial(
+        _ draft: VialDraft,
+        id: UUID?,
+        now: Date = .now
+    ) throws {
+        guard !draft.name
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty,
+              !draft.compound
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty
+        else {
+            throw TrackingError.invalidInput(
+                "Enter a vial name and compound."
+            )
+        }
+
+        let amount =
+            try DoseCalculator.massMg(
+                DoseCalculator.parse(
+                    draft.amount,
+                    label: "Vial amount"
+                ),
+                unit: draft.unit
+            )
+        let diluent =
+            try DoseCalculator.parse(
+                draft.diluent,
+                label: "Diluent"
+            )
+
+        let reconstitutedAt =
+            draft.hasReconstitutedDate
+            ? draft.reconstitutedAt
+            : nil
+        let openedAt =
+            draft.hasOpenedDate
+            ? draft.openedAt
+            : nil
+
+        if let reconstitutedAt,
+           reconstitutedAt > now {
+            throw TrackingError.invalidInput(
+                "Reconstitution date cannot be in the future."
+            )
+        }
+
+        if let openedAt,
+           openedAt > now {
+            throw TrackingError.invalidInput(
+                "Opened date cannot be in the future."
+            )
+        }
+
+        let existing =
+            try all(VialRecord.self)
+                .first {
+                    $0.id == id
+                }
         let logs = try all(DoseLog.self)
-        if id != nil && existing == nil { throw TrackingError.missingRecord }
-        if let existing, logs.contains(where: { $0.vialID == existing.id }), (existing.originalMg != amount || existing.diluentMl != diluent || existing.compoundName != draft.compound) { throw TrackingError.invalidInput("Vial strength and compound are locked after a dose is recorded. Adjust the remaining balance instead.") }
-        let prior = try existing.map { try balance($0) }
-        let updatedBase = (prior ?? amount) + (existing.map { amount - $0.originalMg } ?? 0)
-        let correction = draft.correctedBalance.isEmpty ? nil : try DoseCalculator.parse(draft.correctedBalance, label: "Remaining mg", allowZero: true)
-        let before = existing.map { ["Name": $0.name, "Compound": $0.compoundName, "Amount": $0.originalMgText, "Diluent": $0.diluentMlText, "Batch": $0.batch, "Supplier": $0.supplier, "Storage notes": $0.storageNotes, "Expiry": $0.expiry?.ISO8601Format() ?? "", "Balance": prior.map(DoseCalculator.text) ?? ""] } ?? [:]
-        let after = ["Name": draft.name, "Compound": draft.compound, "Amount": DoseCalculator.text(amount), "Diluent": DoseCalculator.text(diluent), "Batch": draft.batch, "Supplier": draft.supplier, "Storage notes": draft.notes, "Expiry": draft.hasExpiry ? draft.expiry.ISO8601Format() : "", "Balance": DoseCalculator.text(correction ?? updatedBase)]
-        let changes = RecordChange.between(before, after)
-        if existing != nil && changes.isEmpty { return }
+
+        if id != nil && existing == nil {
+            throw TrackingError.missingRecord
+        }
+
+        if let existing,
+           logs.contains(
+                where: {
+                    $0.vialID == existing.id
+                }
+           ),
+           (
+                existing.originalMg != amount
+                || existing.diluentMl != diluent
+                || existing.compoundName
+                    != draft.compound
+           ) {
+            throw TrackingError.invalidInput(
+                "Vial strength and compound are locked after a dose is recorded. Adjust the remaining balance instead."
+            )
+        }
+
+        let prior =
+            try existing.map {
+                try balance($0)
+            }
+        let updatedBase =
+            (prior ?? amount)
+            + (
+                existing.map {
+                    amount - $0.originalMg
+                } ?? 0
+            )
+        let correction =
+            draft.correctedBalance.isEmpty
+            ? nil
+            : try DoseCalculator.parse(
+                draft.correctedBalance,
+                label: "Remaining mg",
+                allowZero: true
+            )
+
+        let before =
+            existing.map {
+                [
+                    "Name": $0.name,
+                    "Compound": $0.compoundName,
+                    "Amount": $0.originalMgText,
+                    "Diluent": $0.diluentMlText,
+                    "Batch": $0.batch,
+                    "Supplier": $0.supplier,
+                    "Storage notes":
+                        $0.storageNotes,
+                    "Expiry":
+                        $0.expiry?
+                            .ISO8601Format()
+                        ?? "",
+                    "Reconstituted":
+                        $0.reconstitutedAt?
+                            .ISO8601Format()
+                        ?? "",
+                    "Opened":
+                        $0.openedAt?
+                            .ISO8601Format()
+                        ?? "",
+                    "State":
+                        $0.lifecycleState
+                            .rawValue,
+                    "Photo":
+                        $0.photoData == nil
+                        ? "None"
+                        : "Attached",
+                    "Balance":
+                        prior.map(
+                            DoseCalculator.text
+                        ) ?? ""
+                ]
+            } ?? [:]
+
+        let after = [
+            "Name": draft.name,
+            "Compound": draft.compound,
+            "Amount":
+                DoseCalculator.text(amount),
+            "Diluent":
+                DoseCalculator.text(diluent),
+            "Batch": draft.batch,
+            "Supplier": draft.supplier,
+            "Storage notes": draft.notes,
+            "Expiry":
+                draft.hasExpiry
+                ? draft.expiry.ISO8601Format()
+                : "",
+            "Reconstituted":
+                reconstitutedAt?
+                    .ISO8601Format()
+                ?? "",
+            "Opened":
+                openedAt?
+                    .ISO8601Format()
+                ?? "",
+            "State": draft.state.rawValue,
+            "Photo":
+                draft.photoData == nil
+                ? "None"
+                : "Attached",
+            "Balance":
+                DoseCalculator.text(
+                    correction ?? updatedBase
+                )
+        ]
+
+        let changes =
+            RecordChange.between(
+                before,
+                after
+            )
+
+        if existing != nil
+            && changes.isEmpty {
+            return
+        }
+
         try transaction {
-            let vial = existing ?? VialRecord(name: draft.name, compoundName: draft.compound, originalMg: amount, diluentMl: diluent)
-            if existing == nil { context.insert(vial) }
-            vial.name = draft.name; vial.compoundName = draft.compound; vial.originalMgText = DoseCalculator.text(amount); vial.diluentMlText = DoseCalculator.text(diluent)
-            vial.batch = draft.batch; vial.supplier = draft.supplier; vial.storageNotes = draft.notes; vial.expiry = draft.hasExpiry ? draft.expiry : nil
-            if let correction { context.insert(InventoryAdjustment(vialID: vial.id, deltaMg: correction - updatedBase)) }
-            let event = ProtocolEvent(protocolID: nil, title: existing == nil ? "Vial added" : "Vial updated", detail: "")
-            try event.recordChanges(changes, category: "Vial"); context.insert(event)
+            let vial =
+                existing
+                ?? VialRecord(
+                    name: draft.name,
+                    compoundName:
+                        draft.compound,
+                    originalMg: amount,
+                    diluentMl: diluent
+                )
+
+            if existing == nil {
+                context.insert(vial)
+            }
+
+            vial.name = draft.name
+            vial.compoundName = draft.compound
+            vial.originalMgText =
+                DoseCalculator.text(amount)
+            vial.diluentMlText =
+                DoseCalculator.text(diluent)
+            vial.batch = draft.batch
+            vial.supplier = draft.supplier
+            vial.storageNotes = draft.notes
+            vial.expiry =
+                draft.hasExpiry
+                ? draft.expiry
+                : nil
+            vial.reconstitutedAt =
+                reconstitutedAt
+            vial.openedAt = openedAt
+            vial.lifecycleState = draft.state
+            vial.photoData = draft.photoData
+
+            if let correction {
+                context.insert(
+                    InventoryAdjustment(
+                        vialID: vial.id,
+                        deltaMg:
+                            correction
+                            - updatedBase
+                    )
+                )
+            }
+
+            let event =
+                ProtocolEvent(
+                    protocolID: nil,
+                    title:
+                        existing == nil
+                        ? "Vial added"
+                        : "Vial updated",
+                    detail: ""
+                )
+            try event.recordChanges(
+                changes,
+                category: "Vial"
+            )
+            context.insert(event)
         }
     }
     func saveDose(_ draft: DoseDraft, revision: ScheduleRevision?, occurrence: ScheduledEntry?, correcting: DoseLog?, now: Date = .now) throws {

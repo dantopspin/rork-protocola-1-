@@ -63,12 +63,12 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 
 - [x] Injection-site rotation history across the entire stack
 - [x] Visual body map for site logging/history
-- [ ] Vial reconstitution/opened date
-- [ ] Active / reserve / sealed vial state
-- [ ] Vial photo/reference attachment
-- [ ] Estimated depletion date
-- [ ] Reserve inventory / supply vault
-- [ ] Doses-per-vial calculation surfaced in inventory
+- [x] Vial reconstitution/opened date
+- [x] Active / reserve / sealed vial state
+- [x] Vial photo/reference attachment
+- [x] Estimated depletion date
+- [x] Reserve inventory / supply vault
+- [x] Doses-per-vial calculation surfaced in inventory
 - [ ] U-40 and U-100 syringe presets
 - [ ] Interactive syringe visualization
 - [ ] Estimated compound-level / half-life curve

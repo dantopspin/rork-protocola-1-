@@ -247,6 +247,7 @@ enum Theme {
 
     static let chartHeight: CGFloat = 145
     static let bodyMapHeight: CGFloat = 360
+    static let vialPhotoHeight: CGFloat = 220
     static let shareCardWidth: CGFloat = 520
     static let shareBarHeight: CGFloat = 64
 

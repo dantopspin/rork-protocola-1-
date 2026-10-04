@@ -246,6 +246,13 @@ Shadow is reserved for transient/floating surfaces:
 - recency copy is descriptive history only
 - free-text historical/custom site labels remain supported
 
+### VialReferencePhoto
+- maximum displayed height: 220
+- radius 10
+- no decorative shadow
+- always secondary to recorded vial values
+- photo is reference material, never interpreted as dosing guidance
+
 ---
 
 ## Screen hierarchy

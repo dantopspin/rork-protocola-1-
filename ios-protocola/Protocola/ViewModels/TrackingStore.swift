@@ -97,21 +97,198 @@ import Observation
         today = ids.compactMap { id in today.first { $0.id == id } }
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.todayOrder = ids } }
     }
-    func vialStatus(_ vial: VialRecord) -> String {
-        let balance = balances[vial.id] ?? 0
-        if vial.isArchived { return "Archived" }
-        if balance == 0 { return "Depleted" }
-        return balance < vial.originalMg / 5 ? "Low recorded balance" : "Active"
+    func vialStatus(
+        _ vial: VialRecord
+    ) -> String {
+        let balance =
+            balances[vial.id] ?? 0
+
+        if vial.lifecycleState == .archived {
+            return "Archived"
+        }
+
+        if balance == 0 {
+            return "Depleted"
+        }
+
+        if vial.lifecycleState == .sealed {
+            return "Sealed"
+        }
+
+        if vial.lifecycleState == .reserve {
+            return "Reserve"
+        }
+
+        return balance
+            < vial.originalMg / 5
+            ? "Low recorded balance"
+            : "Active"
     }
-    /// Deterministic supply runway: whole scheduled entries this vial can still serve.
-    /// Computed only when a single active, un-ended schedule with a fixed mg amount is
-    /// recorded against the vial; frequency-based depletion estimates stay out until validated.
-    func scheduledEntriesRemaining(in vial: VialRecord) -> Int? {
-        guard !vial.isArchived,
-              let revision = revisions.first(where: { $0.enabled && $0.effectiveUntil == nil && $0.vialID == vial.id }),
-              revision.unit == .mg, revision.amount > 0 else { return nil }
-        let entries = NSDecimalNumber(decimal: (balances[vial.id] ?? 0) / revision.amount).intValue
+
+    func scheduledEntriesRemaining(
+        in vial: VialRecord
+    ) -> Int? {
+        guard let mass =
+            singleScheduledMassMg(
+                for: vial
+            ),
+              mass > 0
+        else {
+            return nil
+        }
+
+        let entries =
+            NSDecimalNumber(
+                decimal:
+                    (balances[vial.id] ?? 0)
+                    / mass
+            ).intValue
+
         return max(0, entries)
+    }
+
+    func dosesPerVial(
+        _ vial: VialRecord
+    ) -> Int? {
+        guard let mass =
+            singleScheduledMassMg(
+                for: vial
+            ),
+              mass > 0
+        else {
+            return nil
+        }
+
+        let entries =
+            NSDecimalNumber(
+                decimal:
+                    vial.originalMg / mass
+            ).intValue
+
+        return max(0, entries)
+    }
+
+    func estimatedDepletionDate(
+        in vial: VialRecord,
+        now: Date = .now
+    ) -> Date? {
+        guard vial.lifecycleState
+                != .archived,
+              (balances[vial.id] ?? 0) > 0
+        else {
+            return nil
+        }
+
+        let linked =
+            revisions.filter {
+                $0.enabled
+                && $0.effectiveUntil == nil
+                && $0.vialID == vial.id
+            }
+
+        guard !linked.isEmpty else {
+            return nil
+        }
+
+        let calendar = Calendar.current
+        guard let horizon =
+            calendar.date(
+                byAdding: .year,
+                value: 2,
+                to: now
+            )
+        else {
+            return nil
+        }
+
+        var future:
+            [(at: Date, massMg: Decimal)] = []
+
+        for revision in linked {
+            guard let config =
+                    revision.config,
+                  let mass =
+                    scheduledMassMg(
+                        revision
+                    ),
+                  mass > 0
+            else {
+                return nil
+            }
+
+            let occurrences =
+                SchedulingEngine
+                    .occurrences(
+                        config: config,
+                        effectiveFrom:
+                            revision
+                                .effectiveFrom,
+                        effectiveUntil:
+                            revision
+                                .effectiveUntil,
+                        start: now,
+                        end: horizon
+                    )
+
+            future.append(
+                contentsOf:
+                    occurrences.map {
+                        (
+                            at: $0,
+                            massMg: mass
+                        )
+                    }
+            )
+        }
+
+        future.sort {
+            $0.at < $1.at
+        }
+
+        var remaining =
+            balances[vial.id] ?? 0
+
+        for entry in future {
+            remaining -= entry.massMg
+
+            if remaining <= 0 {
+                return entry.at
+            }
+        }
+
+        return nil
+    }
+
+    private func singleScheduledMassMg(
+        for vial: VialRecord
+    ) -> Decimal? {
+        let linked =
+            revisions.filter {
+                $0.enabled
+                && $0.effectiveUntil == nil
+                && $0.vialID == vial.id
+            }
+
+        guard linked.count == 1,
+              let revision = linked.first
+        else {
+            return nil
+        }
+
+        return scheduledMassMg(revision)
+    }
+
+    private func scheduledMassMg(
+        _ revision: ScheduleRevision
+    ) -> Decimal? {
+        switch revision.unit {
+        case .mg:
+            return revision.amount
+        case .mcg:
+            return revision.amount / 1_000
+        case .mL, .units:
+            return nil
+        }
     }
     func entries(start: Date, end: Date) -> [ScheduledEntry] {
         revisions.filter(\.enabled).flatMap { revision -> [ScheduledEntry] in
@@ -146,14 +323,44 @@ import Observation
         guard canEdit(record.id) else { error = "Choose this protocol for tracking or restore Pro before editing it."; return }
         _ = perform { try repository.changeStatus(record, to: status) }
     }
-    func archiveVial(_ vial: VialRecord) {
-        _ = perform { try repository.transaction {
-            let before = vial.isArchived ? "Archived" : "Active"
-            vial.isArchived.toggle()
-            let event = ProtocolEvent(protocolID: nil, title: "Vial status changed", detail: "")
-            try event.recordChanges([RecordChange(field: "Status", before: before, after: vial.isArchived ? "Archived" : "Active")], category: "Vial")
-            repository.context.insert(event)
-        } }
+    func archiveVial(
+        _ vial: VialRecord
+    ) {
+        _ = perform {
+            try repository.transaction {
+                let before =
+                    vial.lifecycleState
+                        .rawValue
+
+                vial.lifecycleState =
+                    vial.lifecycleState
+                        == .archived
+                    ? .active
+                    : .archived
+
+                let event =
+                    ProtocolEvent(
+                        protocolID: nil,
+                        title:
+                            "Vial status changed",
+                        detail: ""
+                    )
+
+                try event.recordChanges(
+                    [
+                        RecordChange(
+                            field: "State",
+                            before: before,
+                            after:
+                                vial.lifecycleState
+                                    .rawValue
+                        )
+                    ],
+                    category: "Vial"
+                )
+                repository.context.insert(event)
+            }
+        }
     }
     func completeOnboarding() {
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.disclaimerAccepted = true; prefs.onboarded = true } }
