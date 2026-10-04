@@ -36,7 +36,7 @@ struct InventoryView: View {
                         Button("Add vial") {
                             add = true
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(TrackingCompactButtonStyle(prominent: true))
                         .tint(Theme.ink)
                     }
                 }
@@ -66,8 +66,8 @@ struct InventoryView: View {
                     "Balances are estimates from your recorded entries and manual corrections. "
                     + "Scheduled-entry estimates appear only when the vial is linked to a compatible fixed-mass schedule."
                 )
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(Theme.caption)
+                .foregroundStyle(Theme.textSecondary)
             }
         }
         .listStyle(.insetGrouped)
@@ -156,7 +156,7 @@ private extension InventoryView {
 
                 Text(vial.compoundName)
                     .font(Theme.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
 
                 HStack(
                     spacing: Theme.spaceS
@@ -189,7 +189,7 @@ private extension InventoryView {
                     }
                 }
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
                 let status =
                     store.vialStatus(vial)
