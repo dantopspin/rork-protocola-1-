@@ -68,7 +68,7 @@ import SwiftData
             revision.amountText
         scheduledUnitText =
             revision.unitText
-        routeText =
+        routeRawValue =
             revision.routeText
         actualAmountText =
             DoseCalculator.text(
