@@ -84,15 +84,15 @@ These should be stronger than competitors rather than direct copies.
 
 - [ ] Photo import of vial label / existing instructions into a reviewable draft
 - [x] Planned titration rendered as future immutable revisions
-- [ ] Before/after protocol-change comparisons
-- [ ] “Since last change” analysis
+- [x] Before/after protocol-change comparisons
+- [x] “Since last change” analysis
 - [ ] Ask Protocola with tappable source records
 - [ ] Ask: “What changed last month?”
 - [ ] Ask: “Which vial was I using?”
 - [ ] Ask: “Summarize the period after my last change.”
 - [ ] Provider-facing longitudinal summary with revision timeline
 - [x] Combined stack history with cross-compound site rotation
-- [ ] Descriptive cycle adherence and restart history
+- [x] Descriptive cycle adherence and restart history
 - [ ] Import existing history from CSV / supported trackers
 
 ### Later ecosystem

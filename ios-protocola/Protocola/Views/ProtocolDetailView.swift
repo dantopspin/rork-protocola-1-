@@ -118,7 +118,7 @@ private extension ProtocolDetailView {
 
             Section("Tools") {
                 NavigationLink {
-                    HistoryView(
+                    ProtocolEvolutionView(
                         protocolID: record.id
                     )
                 } label: {
@@ -505,5 +505,543 @@ private extension ProtocolDetailView {
                 !store.canTrack(record.id)
             )
         }
+    }
+}
+
+
+
+// MARK: - Protocol evolution
+
+struct ProtocolEvolutionView: View {
+    let protocolID: UUID
+
+    @Environment(TrackingStore.self)
+    private var store
+
+    @State
+    private var paywall = false
+
+    private var summary:
+        ProtocolEvolutionSummary {
+        ProtocolEvolutionSummary(
+            store: store,
+            protocolID: protocolID
+        )
+    }
+
+    private var timeline:
+        [ScheduleRevision] {
+        store.revisions
+            .filter {
+                $0.protocolID
+                    == protocolID
+            }
+            .sorted {
+                $0.effectiveFrom
+                    > $1.effectiveFrom
+            }
+    }
+
+    var body: some View {
+        List {
+            if store.isPremium {
+                sinceLastChangeSection
+
+                if summary.comparison != nil {
+                    comparisonSection
+                }
+
+                if !summary.cycleRuns.isEmpty {
+                    cycleHistorySection
+                }
+
+            } else if summary.latestChange
+                != nil
+                || !summary.cycleRuns
+                    .isEmpty {
+                Section("Evolution analysis") {
+                    Button {
+                        paywall = true
+                    } label: {
+                        Label(
+                            "Unlock change analysis",
+                            systemImage:
+                                "arrow.left.arrow.right"
+                        )
+                    }
+
+                } footer: {
+                    Text(
+                        "Pro adds deterministic before/after, since-change, and cycle-history analysis."
+                    )
+                }
+            }
+
+            revisionTimelineSection
+
+            Section("History") {
+                NavigationLink {
+                    HistoryView(
+                        protocolID:
+                            protocolID
+                    )
+                } label: {
+                    Label(
+                        "Open full timeline",
+                        systemImage:
+                            "clock.arrow.circlepath"
+                    )
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .paperList()
+        .navigationTitle(
+            "Protocol evolution"
+        )
+        .navigationBarTitleDisplayMode(
+            .inline
+        )
+        .fullScreenCover(
+            isPresented: $paywall
+        ) {
+            PaywallView(
+                reason: .compare
+            )
+        }
+    }
+}
+
+
+private extension ProtocolEvolutionView {
+
+    @ViewBuilder
+    var sinceLastChangeSection:
+        some View {
+        if let since =
+            summary.sinceLastChange {
+            Section("Since last change") {
+                Text(
+                    since.change.detail
+                )
+                .font(Theme.body)
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+                RecordRow(
+                    label: "Changed",
+                    value:
+                        since.change.at
+                            .formatted(
+                                date:
+                                    .abbreviated,
+                                time:
+                                    .omitted
+                            )
+                )
+
+                RecordRow(
+                    label: "Days since",
+                    value:
+                        String(
+                            since.days
+                        )
+                )
+
+                RecordRow(
+                    label: "Consistency",
+                    value:
+                        since.metrics
+                            .percentage
+                        + " · "
+                        + String(
+                            since.metrics
+                                .recordedScheduled
+                        )
+                        + "/"
+                        + String(
+                            since.metrics
+                                .scheduled
+                        )
+                )
+
+                RecordRow(
+                    label: "Logged entries",
+                    value:
+                        String(
+                            since.metrics
+                                .loggedEntries
+                        )
+                )
+
+                if since.metrics
+                    .skippedEntries > 0 {
+                    RecordRow(
+                        label: "Skipped",
+                        value:
+                            String(
+                                since.metrics
+                                    .skippedEntries
+                            )
+                    )
+                }
+
+                if since.metrics
+                    .observations > 0 {
+                    RecordRow(
+                        label:
+                            "Recorded observations",
+                        value:
+                            String(
+                                since.metrics
+                                    .observations
+                            )
+                    )
+                }
+
+            } footer: {
+                Text(
+                    "Descriptive record summary only. Changes in consistency or observations do not establish medical effect or causation."
+                )
+            }
+        }
+    }
+
+
+    @ViewBuilder
+    var comparisonSection:
+        some View {
+        if let comparison =
+            summary.comparison {
+            Section("Before / after") {
+                Text(
+                    comparison
+                        .change
+                        .detail
+                )
+                .font(Theme.body)
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+                RecordRow(
+                    label: "Consistency",
+                    value:
+                        comparison.before
+                            .percentage
+                        + " → "
+                        + comparison.after
+                            .percentage
+                )
+
+                if let delta =
+                    comparison
+                        .consistencyDelta {
+                    RecordRow(
+                        label:
+                            "Consistency change",
+                        value:
+                            (
+                                delta > 0
+                                ? "+"
+                                : ""
+                            )
+                            + String(delta)
+                            + " percentage points"
+                    )
+                }
+
+                RecordRow(
+                    label: "Logged entries",
+                    value:
+                        String(
+                            comparison
+                                .before
+                                .loggedEntries
+                        )
+                        + " → "
+                        + String(
+                            comparison
+                                .after
+                                .loggedEntries
+                        )
+                )
+
+                RecordRow(
+                    label: "Skipped",
+                    value:
+                        String(
+                            comparison
+                                .before
+                                .skippedEntries
+                        )
+                        + " → "
+                        + String(
+                            comparison
+                                .after
+                                .skippedEntries
+                        )
+                )
+
+                RecordRow(
+                    label: "Observations",
+                    value:
+                        String(
+                            comparison
+                                .before
+                                .observations
+                        )
+                        + " → "
+                        + String(
+                            comparison
+                                .after
+                                .observations
+                        )
+                )
+
+                Text(
+                    comparison
+                        .beforePeriod
+                        .start
+                        .formatted(
+                            date:
+                                .abbreviated,
+                            time:
+                                .omitted
+                        )
+                    + " – "
+                    + comparison
+                        .afterPeriod
+                        .end
+                        .formatted(
+                            date:
+                                .abbreviated,
+                            time:
+                                .omitted
+                        )
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
+                .monospacedDigit()
+
+            } footer: {
+                Text(
+                    "Equal-duration windows, up to 30 days each. Differences are descriptive and do not establish causation."
+                )
+            }
+        }
+    }
+
+
+    var cycleHistorySection:
+        some View {
+        Section("Cycle history") {
+            ForEach(
+                summary.cycleRuns
+            ) { run in
+                VStack(
+                    alignment: .leading,
+                    spacing:
+                        Theme.spaceXS
+                ) {
+                    HStack(
+                        alignment:
+                            .firstTextBaseline,
+                        spacing:
+                            Theme.spaceS
+                    ) {
+                        Text(
+                            run.compoundName
+                        )
+                        .font(
+                            Theme.sectionTitle
+                        )
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                        Spacer()
+
+                        StatusBadge(
+                            text:
+                                run.isCurrent
+                                ? "Active"
+                                : (
+                                    run.isRestart
+                                    ? "Restarted"
+                                    : "Recorded"
+                                )
+                        )
+                    }
+
+                    Text(
+                        run.startedAt
+                            .formatted(
+                                date:
+                                    .abbreviated,
+                                time:
+                                    .omitted
+                            )
+                        + " – "
+                        + run.endedAt
+                            .formatted(
+                                date:
+                                    .abbreviated,
+                                time:
+                                    .omitted
+                            )
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+
+                    RecordRow(
+                        label:
+                            "Scheduled consistency",
+                        value:
+                            run.percentage
+                            + " · "
+                            + String(
+                                run.recorded
+                            )
+                            + "/"
+                            + String(
+                                run.scheduled
+                            )
+                    )
+                }
+                .padding(
+                    .vertical,
+                    Theme.spaceXXS
+                )
+            }
+
+        } footer: {
+            Text(
+                "Cycle history reflects the ON/OFF schedule you recorded and entries logged against it. It does not recommend a cycle."
+            )
+        }
+    }
+
+
+    var revisionTimelineSection:
+        some View {
+        Section("Revision timeline") {
+            ForEach(timeline) {
+                revision in
+
+                VStack(
+                    alignment: .leading,
+                    spacing:
+                        Theme.spaceXS
+                ) {
+                    HStack(
+                        alignment:
+                            .firstTextBaseline,
+                        spacing:
+                            Theme.spaceS
+                    ) {
+                        Text(
+                            revision
+                                .compoundName
+                        )
+                        .font(
+                            Theme.sectionTitle
+                        )
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                        Spacer()
+
+                        StatusBadge(
+                            text:
+                                stateLabel(
+                                    revision
+                                )
+                        )
+                    }
+
+                    RecordRow(
+                        label: "Amount",
+                        value:
+                            revision
+                                .amountText
+                            + " "
+                            + revision
+                                .unitText
+                    )
+
+                    RecordRow(
+                        label: "Effective",
+                        value:
+                            effectiveLabel(
+                                revision
+                            )
+                    )
+
+                    RecordRow(
+                        label: "Schedule",
+                        value:
+                            revision.config
+                                .map(
+                                    ScheduleDisplay
+                                        .summary
+                                )
+                            ?? "Not available"
+                    )
+                }
+                .padding(
+                    .vertical,
+                    Theme.spaceXXS
+                )
+            }
+        }
+    }
+
+
+    func stateLabel(
+        _ revision: ScheduleRevision
+    ) -> String {
+        switch revision.temporalState() {
+        case .historical:
+            return "Historical"
+        case .current:
+            return "Current"
+        case .planned:
+            return "Planned"
+        }
+    }
+
+
+    func effectiveLabel(
+        _ revision: ScheduleRevision
+    ) -> String {
+        let start =
+            revision.effectiveFrom
+                .formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                )
+
+        if let end =
+            revision.effectiveUntil {
+            return
+                start
+                + " – "
+                + end.formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                )
+        }
+
+        return
+            revision.isPlanned()
+            ? "From " + start
+            : start + " – present"
     }
 }

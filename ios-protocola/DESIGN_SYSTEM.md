@@ -285,6 +285,14 @@ Shadow is reserved for transient/floating surfaces:
 - historical and already-effective revisions remain immutable
 - planning UI records user-supplied instructions and never recommends a titration
 
+### ProtocolEvolution
+- revision timeline is chronological and labels historical/current/planned state
+- since-change metrics are deterministic summaries of recorded schedules and logs
+- before/after uses equal-duration windows, capped at 30 days each
+- cycle history reports recorded ON phases and restart dates only
+- comparisons remain descriptive; never infer efficacy, causation, or treatment quality
+- planned-change audit events are not treated as already-effective change anchors
+
 ---
 
 ## Screen hierarchy

@@ -1191,3 +1191,139 @@ struct PlannedRevisionTests {
         )
     }
 }
+
+
+
+@MainActor
+struct ProtocolEvolutionTests {
+
+    @Test
+    func plannedAuditEventsAreNotEffectiveChangeAnchors() throws {
+        let event =
+            ProtocolEvent(
+                protocolID: UUID(),
+                title:
+                    "Future change planned",
+                detail: ""
+            )
+
+        try event.recordChanges(
+            [
+                RecordChange(
+                    field: "Amount",
+                    before: "1",
+                    after: "2"
+                )
+            ],
+            category: "Protocol"
+        )
+
+        #expect(
+            !event.isChangeAnchor
+        )
+    }
+
+
+    @Test
+    func evolutionBuildsChangeComparisonAndCycleHistory() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+
+        let now = Date.now
+        let start =
+            now.addingTimeInterval(
+                -12 * 86_400
+            )
+        let changeDate =
+            now.addingTimeInterval(
+                -4 * 86_400
+            )
+
+        var draft = ProtocolDraft()
+        draft.name = "Evolution"
+        draft.compound = "Compound"
+        draft.amount = "1"
+        draft.unit = .mg
+        draft.start = start
+        draft.kind = .daily
+        draft.timeZoneID = "UTC"
+        draft.cycleEnabled = true
+        draft.cycleOnDays = 2
+        draft.cycleOffDays = 2
+
+        try repository.saveProtocol(
+            draft,
+            protocolID: nil,
+            compoundID: nil,
+            now: start
+        )
+
+        let record =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+        let firstRevision =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        var edited =
+            ProtocolDraft(
+                protocolRecord: record,
+                revision: firstRevision
+            )
+        edited.amount = "2"
+
+        try repository.saveProtocol(
+            edited,
+            protocolID: record.id,
+            compoundID:
+                firstRevision
+                    .compoundID,
+            now: changeDate
+        )
+
+        let store =
+            TrackingStore(
+                container: container
+            )
+        let summary =
+            ProtocolEvolutionSummary(
+                store: store,
+                protocolID: record.id,
+                now: now
+            )
+
+        #expect(
+            summary.latestChange
+                != nil
+        )
+        #expect(
+            summary.sinceLastChange
+                != nil
+        )
+        #expect(
+            summary.comparison
+                != nil
+        )
+        #expect(
+            !summary.cycleRuns
+                .isEmpty
+        )
+    }
+}
