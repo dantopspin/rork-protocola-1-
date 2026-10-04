@@ -491,6 +491,7 @@ private extension ProtocolEditorView {
                     store.completeOnboarding()
                 }
 
+                Haptics.success()
                 dismiss()
             }
 

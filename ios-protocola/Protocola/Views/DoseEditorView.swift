@@ -464,12 +464,20 @@ private extension DoseEditorView {
 private extension DoseEditorView {
 
     func save() {
+        let corrects = correcting != nil
+
         if store.saveDose(
             draft,
             revision: revision,
             occurrence: occurrence,
             correcting: correcting
         ) {
+            // Creating a log is already covered by Today's recorded-count
+            // feedback; only a correction needs its own cue.
+            if corrects {
+                Haptics.success()
+            }
+
             dismiss()
         }
     }

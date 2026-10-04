@@ -145,6 +145,10 @@ private extension SettingsView {
             Button {
                 Task {
                     await purchases.restore()
+
+                    if store.isPremium {
+                        Haptics.success()
+                    }
                 }
             } label: {
                 HStack {
@@ -332,6 +336,7 @@ private extension SettingsView {
         do {
             exportURL = try ExportService.historyCSV(store.logs)
             shareCSV = true
+            Haptics.success()
         } catch {
             store.error =
                 "Your export could not be prepared. Please try again."

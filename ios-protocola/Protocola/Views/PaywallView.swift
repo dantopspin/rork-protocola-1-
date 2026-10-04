@@ -91,6 +91,12 @@ struct PaywallView: View {
                 dismiss()
             }
         }
+        .sensoryFeedback(
+            .success,
+            trigger: store.isPremium
+        ) { wasActive, active in
+            active && !wasActive
+        }
     }
 
 

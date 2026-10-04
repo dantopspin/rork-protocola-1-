@@ -254,6 +254,7 @@ private extension VialEditorView {
             draft,
             id: vial?.id
         ) {
+            Haptics.success()
             dismiss()
         }
 

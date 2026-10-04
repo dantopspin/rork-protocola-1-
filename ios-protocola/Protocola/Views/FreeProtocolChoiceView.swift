@@ -28,6 +28,7 @@ struct FreeProtocolChoiceView: View {
                             store.chooseFreeProtocol(
                                 record.id
                             )
+                            Haptics.selection()
                             dismiss()
                         } label: {
                             HStack(
