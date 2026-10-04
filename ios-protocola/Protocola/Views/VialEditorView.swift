@@ -24,15 +24,15 @@ struct VialEditorView: View {
                 labelValuesSection
 
                 if let concentration {
-                    Section(
-                        "Calculated from recorded values"
-                    ) {
+                    Section {
                         RecordRow(
                             label: "Concentration",
                             value:
                                 concentration
                                 + " mg/mL"
                         )
+                    } header: {
+                        Text("Calculated from recorded values")
                     } footer: {
                         Text(
                             "Arithmetic only. This is calculated from the vial amount and diluent you entered."
