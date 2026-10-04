@@ -26,7 +26,7 @@ struct RecordRow: View {
                         .trailing
                     )
                     .monospacedDigit()
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onDarkPrimary)
             }
 
         } else {
