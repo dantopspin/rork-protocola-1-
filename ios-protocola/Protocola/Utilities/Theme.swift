@@ -4,113 +4,140 @@ enum Theme {
 
     // MARK: - Core palette
 
-    /// Warm paper background used across Protocola.
+    /// Warm, quiet canvas. Slightly cooler and more neutral than the old paper.
     static let paper = Color(
-        red: 0.9686,
-        green: 0.9608,
-        blue: 0.9412
+        red: 0.961,
+        green: 0.953,
+        blue: 0.933
     )
 
-    /// Main light content surface.
-    static let surface = Color.white
+    /// Main content surface. Not pure optical white.
+    static let surface = Color(
+        red: 0.992,
+        green: 0.988,
+        blue: 0.976
+    )
 
-    /// Primary brand/action color.
-    /// Use for primary actions, selected states, links,
-    /// recorded/success semantics, and intentional brand moments.
+    /// Secondary structural surface for quiet controls and grouped rows.
+    static let surfaceMuted = Color(
+        red: 0.935,
+        green: 0.928,
+        blue: 0.908
+    )
+
+    /// Muted mineral green. Used sparingly for state and data emphasis.
     static let teal = Color(
-        red: 0.0588,
-        green: 0.4627,
-        blue: 0.4314
+        red: 0.235,
+        green: 0.396,
+        blue: 0.369
     )
 
-    /// Attention state only:
-    /// partial, delayed, low supply, depleted, warnings.
+    /// Attention only. Intentionally subdued.
     static let amber = Color(
-        red: 0.7059,
-        green: 0.3255,
-        blue: 0.0353
+        red: 0.620,
+        green: 0.385,
+        blue: 0.145
     )
 
-    /// Strong editorial ink.
-    /// Use for custom hero surfaces, key typography,
-    /// and deliberate branded content — not every system label.
+    /// Editorial near-black.
     static let ink = Color(
-        red: 0.0538,
-        green: 0.0519,
-        blue: 0.0445
+        red: 0.060,
+        green: 0.058,
+        blue: 0.052
     )
 
-    /// Supporting custom text and metadata.
-    /// Prefer `.secondary` on standard native iOS controls where appropriate.
+    /// Secondary editorial text.
     static let muted = Color(
-        red: 0.3816,
-        green: 0.3779,
-        blue: 0.3632
+        red: 0.430,
+        green: 0.416,
+        blue: 0.385
     )
 
 
     // MARK: - Structural tones
 
-    /// Editorial border for custom information/data cards.
-    ///
-    /// Deliberately softer than full ink:
-    /// crisp enough to define structure without becoming
-    /// neo-brutalist or visually overpowering.
-    static let border = ink.opacity(0.30)
-
-    /// Light separators, internal dividers,
-    /// and inactive custom outlines.
-    static let line = Color(
-        red: 0.8362,
-        green: 0.8319,
-        blue: 0.8150
+    static let border = Color(
+        red: 0.835,
+        green: 0.820,
+        blue: 0.785
     )
 
-    /// Light selected/custom emphasis surface.
+    static let line = Color(
+        red: 0.865,
+        green: 0.852,
+        blue: 0.823
+    )
+
     static let tealTint = teal.opacity(0.08)
-
-    /// Very subtle neutral content tint.
-    static let neutralTint = ink.opacity(0.045)
-
-    /// Background tint for warning/attention surfaces.
-    static let amberTint = amber.opacity(0.10)
+    static let neutralTint = ink.opacity(0.035)
+    static let amberTint = amber.opacity(0.09)
 
 
     // MARK: - Spacing
 
-    /// Micro spacing inside tightly related content.
     static let spaceXXS: CGFloat = 4
-
-    /// Compact spacing.
     static let spaceXS: CGFloat = 8
-
-    /// Small component spacing.
     static let spaceS: CGFloat = 12
-
-    /// Standard internal card/row spacing.
     static let spaceM: CGFloat = 16
 
-    /// Standard screen/content horizontal inset.
+    /// Card-to-card / row-group spacing.
     static let spaceL: CGFloat = 20
 
+    /// Screen horizontal padding and major content breathing room.
+    static let spaceXL: CGFloat = 24
+
     /// Major section separation.
-    static let spaceXL: CGFloat = 28
+    static let spaceXXL: CGFloat = 32
 
 
     // MARK: - Corner geometry
 
-    /// Primary custom content cards.
-    static let radiusCard: CGFloat = 16
+    /// Sharper than the previous visual system, while still feeling iOS-native.
+    static let radiusCard: CGFloat = 12
+    static let radiusRow: CGFloat = 9
+    static let radiusButton: CGFloat = 10
 
-    /// Nested rows, tags, chips, and custom controls.
-    static let radiusRow: CGFloat = 12
 
-    /// Custom buttons.
-    static let radiusButton: CGFloat = 12
+    // MARK: - Editorial typography
+
+    static let pageTitle = Font.system(
+        size: 34,
+        weight: .regular,
+        design: .serif
+    )
+
+    static let heroTitle = Font.system(
+        size: 25,
+        weight: .regular,
+        design: .serif
+    )
+
+    static let metric = Font.system(
+        size: 34,
+        weight: .regular,
+        design: .serif
+    )
+
+    static let sectionTitle = Font.system(
+        size: 18,
+        weight: .medium,
+        design: .serif
+    )
+
+    static let itemTitle = Font.system(
+        size: 17,
+        weight: .medium,
+        design: .serif
+    )
+
+    static let editorialBody = Font.system(
+        size: 16,
+        weight: .regular,
+        design: .serif
+    )
 
 
     // MARK: - Layout
 
-    /// Maximum readable width on larger devices.
     static let maxContent: CGFloat = 680
 }
