@@ -231,7 +231,7 @@ private extension LogDetailView {
 
             if !log.notes.isEmpty {
                 Text(log.notes)
-                    .font(.subheadline)
+                    .font(Theme.body)
             }
 
             if log.symptoms.isEmpty,
@@ -240,7 +240,7 @@ private extension LogDetailView {
                 Text(
                     "No site, symptoms, or notes were recorded."
                 )
-                .font(.subheadline)
+                .font(Theme.body)
                 .foregroundStyle(.secondary)
             }
         }
