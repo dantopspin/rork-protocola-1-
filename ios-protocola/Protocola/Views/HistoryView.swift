@@ -144,19 +144,15 @@ struct HistoryView: View {
 
             if groupedDays.isEmpty {
                 Section {
-                    ContentUnavailableView {
-                        Label(
-                            "No records to show",
-                            systemImage:
-                                "clock.arrow.circlepath"
-                        )
-                    } description: {
-                        Text(
+                    TrackingEmptyState(
+                        icon:
+                            "clock.arrow.circlepath",
+                        title: "No records to show",
+                        message:
                             hasActiveFilters
-                                ? "Try changing your filters or search."
-                                : "Recorded entries and protocol changes appear here."
-                        )
-                    }
+                            ? "Try changing your filters or search."
+                            : "Recorded entries and protocol changes appear here."
+                    )
                 }
             } else {
                 ForEach(groupedDays) { day in
