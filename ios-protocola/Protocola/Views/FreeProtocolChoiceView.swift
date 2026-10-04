@@ -18,7 +18,7 @@ struct FreeProtocolChoiceView: View {
                         "Free includes one actively tracked protocol. Choose which one stays editable and available for logging. All other protocols and their history remain on this iPhone as read-only records."
                     )
                     .font(Theme.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 }
 
                 Section("Track on Free") {
