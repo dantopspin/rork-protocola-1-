@@ -232,10 +232,10 @@ private extension InsightsView {
             if store.protocols.count > 1 {
                 Menu {
                     ForEach(store.protocols) {
-                        protocol in
-                        Button(protocol.name) {
+                        record in
+                        Button(record.name) {
                             protocolID =
-                                protocol.id
+                                record.id
                             comparing = false
                             changeID = nil
                         }
