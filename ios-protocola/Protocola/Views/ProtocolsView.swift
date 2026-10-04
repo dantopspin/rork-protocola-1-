@@ -2,38 +2,550 @@ import SwiftUI
 
 struct ProtocolsView: View {
     @Environment(TrackingStore.self) private var store
-    @State private var create: Bool = false
-    @State private var inventory: Bool = false
-    @State private var choice: Bool = false
-    @State private var paywall: Bool = false
+
+    @State private var create = false
+    @State private var inventory = false
+    @State private var choice = false
+    @State private var paywall = false
+
+    private var activeProtocols: [ProtocolRecord] {
+        store.protocols.filter {
+            $0.status == "Active"
+        }
+    }
+
+    private var otherProtocols: [ProtocolRecord] {
+        store.protocols.filter {
+            $0.status != "Active"
+        }
+    }
+
     var body: some View {
         List {
-            if !store.isPremium && store.activeProtocolIDs.count > 1 {
-                Section { Button("Choose the protocol to track on Free") { choice = true } }
-            }
-            Section {
-                ForEach(store.protocols) { record in
-                    NavigationLink(value: TrackingRoute.protocolDetail(record.id)) {
-                        VStack(alignment: .leading, spacing: Theme.spaceS) {
-                            HStack { Text(record.name).font(.headline); Spacer(); StatusBadge(text: record.status == "Active" && !store.canTrack(record.id) ? "Read-only · Free" : record.status) }
-                            ForEach(store.currentRevisions(record.id)) { revision in
-                                Text("\(revision.compoundName) · \(revision.amountText) \(revision.unitText)").font(.subheadline).foregroundStyle(Theme.muted)
-                            }
-                            Text(record.instructionSource).font(.caption).foregroundStyle(Theme.muted)
-                        }.padding(.vertical, Theme.spaceXS)
+            if !store.isPremium,
+               store.activeProtocolIDs.count > 1 {
+                Section {
+                    Button {
+                        choice = true
+                    } label: {
+                        Label(
+                            "Choose protocol to track on Free",
+                            systemImage: "checkmark.circle"
+                        )
                     }
                 }
-                if store.protocols.isEmpty {
-                    TrackingEmptyState(icon: "list.bullet.rectangle", title: "No protocols yet", message: "Record existing instructions, not a generated plan.", actionTitle: "Add your protocol", action: { create = true })
+            }
+
+            if !activeProtocols.isEmpty {
+                Section("Active") {
+                    ForEach(activeProtocols) { record in
+                        protocolLink(record)
+                    }
                 }
-            } header: { Text("Your recorded protocols") }
-            Section { Button { inventory = true } label: { Label("Vial inventory", systemImage: "shippingbox") } }
-        }.paperList().navigationTitle("Protocols")
-            .toolbar { Button("Add protocol", systemImage: "plus") { if store.canCreateProtocol { create = true } else { paywall = true } } }
-            .sheet(isPresented: $create) { ProtocolEditorView() }
-            .sheet(isPresented: $choice) { FreeProtocolChoiceView() }
-            .fullScreenCover(isPresented: $paywall) { PaywallView(reason: .secondProtocol) }
-            .trackingRoutes()
-            .navigationDestination(isPresented: $inventory) { InventoryView() }.trackingErrors()
+            }
+
+            if !otherProtocols.isEmpty {
+                Section("Other") {
+                    ForEach(otherProtocols) { record in
+                        protocolLink(record)
+                    }
+                }
+            }
+
+            if store.protocols.isEmpty {
+                Section {
+                    ContentUnavailableView {
+                        Label(
+                            "No protocols yet",
+                            systemImage:
+                                "list.bullet.rectangle"
+                        )
+                    } description: {
+                        Text(
+                            "Add an existing protocol to start "
+                            + "building your recorded history."
+                        )
+                    } actions: {
+                        Button("Add protocol") {
+                            create = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Theme.teal)
+                    }
+                }
+            }
+
+            Section("Tools") {
+                Button {
+                    inventory = true
+                } label: {
+                    HStack(spacing: Theme.spaceM) {
+                        Image(
+                            systemName: "shippingbox"
+                        )
+                        .font(.title3)
+                        .foregroundStyle(Theme.teal)
+                        .frame(width: 28)
+
+                        VStack(
+                            alignment: .leading,
+                            spacing: Theme.spaceXXS
+                        ) {
+                            Text("Vial inventory")
+                                .foregroundStyle(
+                                    Theme.ink
+                                )
+
+                            Text(inventorySummary)
+                                .font(.subheadline)
+                                .foregroundStyle(
+                                    .secondary
+                                )
+                        }
+
+                        Spacer()
+                    }
+                    .padding(
+                        .vertical,
+                        Theme.spaceXXS
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .listStyle(.insetGrouped)
+        .paperList()
+        .navigationTitle("Protocols")
+        .toolbar {
+            ToolbarItem(
+                placement: .topBarTrailing
+            ) {
+                Button(
+                    "Add protocol",
+                    systemImage: "plus"
+                ) {
+                    if store.canCreateProtocol {
+                        create = true
+                    } else {
+                        paywall = true
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $create) {
+            ProtocolEditorView()
+        }
+        .sheet(isPresented: $choice) {
+            FreeProtocolChoiceView()
+        }
+        .fullScreenCover(
+            isPresented: $paywall
+        ) {
+            PaywallView(
+                reason: .secondProtocol
+            )
+        }
+        .trackingRoutes()
+        .navigationDestination(
+            isPresented: $inventory
+        ) {
+            InventoryView()
+        }
+        .trackingErrors()
+    }
+}
+
+
+// MARK: - Protocol rows
+
+private extension ProtocolsView {
+
+    func protocolLink(
+        _ record: ProtocolRecord
+    ) -> some View {
+        NavigationLink(
+            value:
+                TrackingRoute
+                    .protocolDetail(record.id)
+        ) {
+            protocolRow(record)
+        }
+    }
+
+
+    func protocolRow(
+        _ record: ProtocolRecord
+    ) -> some View {
+        let revisions =
+            store.currentRevisions(
+                record.id
+            )
+
+        let primary =
+            revisions.first
+
+        return VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXS
+        ) {
+            HStack(
+                alignment: .firstTextBaseline
+            ) {
+                Text(record.name)
+                    .font(.headline)
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(2)
+
+                Spacer(
+                    minLength: Theme.spaceS
+                )
+
+                statusLabel(record)
+            }
+
+            if let primary {
+                Text(
+                    primary.compoundName
+                    + " · "
+                    + primary.amountText
+                    + " "
+                    + primary.unitText
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+                Text(
+                    scheduleSummary(primary)
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                if let next =
+                    nextEntry(
+                        for: record.id
+                    ) {
+                    Text(
+                        "Next: "
+                        + next.at.formatted(
+                            .dateTime
+                                .day()
+                                .month(
+                                    .abbreviated
+                                )
+                                .hour()
+                                .minute()
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                }
+
+                if revisions.count > 1 {
+                    Text(
+                        "+\(revisions.count - 1) more "
+                        + (
+                            revisions.count - 1 == 1
+                            ? "compound"
+                            : "compounds"
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("No active schedule")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(
+            .vertical,
+            Theme.spaceXS
+        )
+    }
+
+
+    @ViewBuilder
+    func statusLabel(
+        _ record: ProtocolRecord
+    ) -> some View {
+        if record.status == "Active" {
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(
+                        store.canTrack(record.id)
+                            ? Theme.teal
+                            : Theme.muted
+                    )
+                    .frame(
+                        width: 7,
+                        height: 7
+                    )
+
+                Text(
+                    store.canTrack(record.id)
+                        ? "Active"
+                        : "Read-only"
+                )
+            }
+            .font(.caption.weight(.medium))
+            .foregroundStyle(
+                store.canTrack(record.id)
+                    ? Theme.teal
+                    : Theme.muted
+            )
+
+        } else {
+            Text(record.status)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+
+    func nextEntry(
+        for protocolID: UUID
+    ) -> ScheduledEntry? {
+        let now = Date.now
+
+        let end =
+            Calendar.current.date(
+                byAdding: .day,
+                value: 90,
+                to: now
+            ) ?? now
+
+        return store.entries(
+            start: now,
+            end: end
+        )
+        .first {
+            $0.revision.protocolID
+                == protocolID
+        }
+    }
+
+
+    func scheduleSummary(
+        _ revision: ScheduleRevision
+    ) -> String {
+        guard let config = revision.config else {
+            return "Schedule unavailable"
+        }
+
+        if config.kind == .asRecorded {
+            return "As recorded"
+        }
+
+        let times =
+            config.minutes
+                .sorted()
+                .map {
+                    timeText(
+                        minute: $0,
+                        timeZoneID:
+                            config.timeZoneID
+                    )
+                }
+                .joined(separator: ", ")
+
+        switch config.kind {
+        case .daily:
+            return
+                times.isEmpty
+                ? "Daily"
+                : "Daily at " + times
+
+        case .weekly:
+            let day =
+                config.weekdays.first
+                    .map(weekdayName)
+                ?? "Weekly"
+
+            return
+                times.isEmpty
+                ? day
+                : day + " at " + times
+
+        case .weekdays:
+            let days =
+                config.weekdays
+                    .sorted()
+                    .map(weekdayShort)
+                    .joined(separator: ", ")
+
+            return
+                days
+                + (
+                    times.isEmpty
+                    ? ""
+                    : " · " + times
+                )
+
+        case .everyNDays:
+            return
+                "Every "
+                + String(config.interval)
+                + (
+                    config.interval == 1
+                    ? " day"
+                    : " days"
+                )
+                + (
+                    times.isEmpty
+                    ? ""
+                    : " · " + times
+                )
+
+        case .timesPerWeek:
+            let days =
+                config.weekdays
+                    .sorted()
+                    .map(weekdayShort)
+                    .joined(separator: ", ")
+
+            return
+                days
+                + (
+                    times.isEmpty
+                    ? ""
+                    : " · " + times
+                )
+
+        case .asRecorded:
+            return "As recorded"
+        }
+    }
+
+
+    func timeText(
+        minute: Int,
+        timeZoneID: String
+    ) -> String {
+        var calendar =
+            Calendar(identifier: .gregorian)
+
+        calendar.timeZone =
+            TimeZone(identifier: timeZoneID)
+            ?? .current
+
+        let date =
+            calendar.date(
+                bySettingHour:
+                    minute / 60,
+                minute:
+                    minute % 60,
+                second: 0,
+                of: .now
+            )
+            ?? .now
+
+        return date.formatted(
+            date: .omitted,
+            time: .shortened
+        )
+    }
+
+
+    func weekdayName(
+        _ value: Int
+    ) -> String {
+        let names =
+            Calendar.current.weekdaySymbols
+
+        guard (1...7).contains(value) else {
+            return "Weekly"
+        }
+
+        return names[value - 1]
+    }
+
+
+    func weekdayShort(
+        _ value: Int
+    ) -> String {
+        let names =
+            Calendar.current
+                .shortWeekdaySymbols
+
+        guard (1...7).contains(value) else {
+            return "—"
+        }
+
+        return names[value - 1]
+    }
+}
+
+
+// MARK: - Inventory
+
+private extension ProtocolsView {
+
+    var inventorySummary: String {
+        let active =
+            store.vials.filter {
+                !$0.isArchived
+            }
+
+        guard !active.isEmpty else {
+            return "No vials recorded"
+        }
+
+        let low =
+            active.filter {
+                [
+                    "Low recorded balance",
+                    "Depleted"
+                ]
+                .contains(
+                    store.vialStatus($0)
+                )
+            }.count
+
+        let expiring =
+            active.filter { vial in
+                guard let expiry =
+                    vial.expiry
+                else {
+                    return false
+                }
+
+                let limit =
+                    Calendar.current.date(
+                        byAdding: .day,
+                        value: 14,
+                        to: .now
+                    ) ?? .now
+
+                return
+                    expiry >= .now
+                    && expiry <= limit
+            }.count
+
+        var parts: [String] = [
+            "\(active.count) "
+                + (
+                    active.count == 1
+                    ? "vial"
+                    : "vials"
+                )
+        ]
+
+        if low > 0 {
+            parts.append(
+                "\(low) low balance"
+            )
+        }
+
+        if expiring > 0 {
+            parts.append(
+                "\(expiring) expiring soon"
+            )
+        }
+
+        return parts.joined(
+            separator: " · "
+        )
     }
 }
