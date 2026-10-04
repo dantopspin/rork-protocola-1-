@@ -26,13 +26,7 @@ struct ShareCardView: View {
                 spacing: Theme.spaceXS
             ) {
                 Text(data.percentage)
-                    .font(
-                        .system(
-                            size: Theme.shareMetricSize,
-                            weight: .medium,
-                            design: .serif
-                        )
-                    )
+                    .font(Theme.shareMetric)
                     .monospacedDigit()
                     .foregroundStyle(Theme.ink)
 
