@@ -2,3 +2,7 @@
 	path = protocol-pulse-19
 	url = https://github.com/dantopspin/protocol-pulse-19.git
 	branch = main
+[submodule "rork-protocola-1-"]
+	path = rork-protocola-1-
+	url = https://github.com/dantopspin/rork-protocola-1-.git
+	branch = codex/ios26-hardening-pass

@@ -2,89 +2,227 @@ import Foundation
 import Observation
 import RevenueCat
 
-/// Bridges RevenueCat to TrackingStore access. Only the single `pro` entitlement grants Pro.
-/// A failed refresh retains the last verified state, so an offline launch never fakes expiry.
-@MainActor @Observable final class StoreService {
+/// Bridges RevenueCat to TrackingStore access. Only the single `pro`
+/// entitlement grants Pro.
+///
+/// A failed refresh retains the last verified state, so an offline launch never
+/// fakes expiry. All RevenueCat entry points are guarded so an unconfigured
+/// development build cannot accidentally access Purchases.shared.
+@MainActor
+@Observable
+final class StoreService {
     static let entitlementName = "pro"
+
     private(set) var offerings: [Package] = []
     private(set) var isLoading: Bool = false
     private(set) var isPurchasing: Bool = false
     private(set) var isRestoring: Bool = false
     private(set) var lastNotice: String?
     private(set) var managementURL: URL?
+
     var error: String?
+
     private weak var store: TrackingStore?
     private var started = false
 
-    /// Called once the local store exists; all RevenueCat access stays guarded.
+    var isConfigured: Bool {
+        Purchases.isConfigured
+    }
+
+
+    /// Called once the local store exists.
     func bind(to store: TrackingStore) {
         self.store = store
         start()
     }
 
+
     private func start() {
-        guard Purchases.isConfigured, !started else { return }
+        guard Purchases.isConfigured else {
+            offerings = []
+            lastNotice =
+                "Subscriptions are not configured in this build. "
+                + "Core tracking is unaffected."
+            return
+        }
+
+        guard !started else {
+            return
+        }
+
         started = true
+        lastNotice = nil
+
         Task { [weak self] in
-            for await info in Purchases.shared.customerInfoStream {
+            for await info in
+                Purchases.shared.customerInfoStream {
                 self?.apply(info)
             }
         }
-        Task { await loadOfferings() }
-        Task { await syncEntitlements() }
+
+        Task {
+            await loadOfferings()
+        }
+
+        Task {
+            await syncEntitlements()
+        }
     }
+
 
     func apply(_ info: CustomerInfo) {
-        if let url = info.managementURL { managementURL = url }
-        store?.receiveEntitlements(Set(info.entitlements.active.keys))
+        if let url = info.managementURL {
+            managementURL = url
+        }
+
+        store?.receiveEntitlements(
+            Set(
+                info.entitlements.active.keys
+            )
+        )
     }
+
 
     func loadOfferings() async {
-        guard Purchases.isConfigured else { return }
+        guard Purchases.isConfigured else {
+            offerings = []
+            lastNotice =
+                "Subscriptions are not configured in this build. "
+                + "Core tracking is unaffected."
+            return
+        }
+
         isLoading = true
-        defer { isLoading = false }
+
+        defer {
+            isLoading = false
+        }
+
         do {
-            let offerings = try await Purchases.shared.offerings()
-            self.offerings = offerings.current?.availablePackages ?? []
-            if self.offerings.isEmpty { lastNotice = "Plans are not published yet. Core tracking is unaffected." }
+            let offerings =
+                try await Purchases.shared.offerings()
+
+            self.offerings =
+                offerings.current?
+                    .availablePackages
+                ?? []
+
+            if self.offerings.isEmpty {
+                lastNotice =
+                    "Plans are not published yet. "
+                    + "Core tracking is unaffected."
+            } else {
+                lastNotice = nil
+            }
+
         } catch {
-            lastNotice = "Plans could not be loaded. Check your connection and try again."
+            lastNotice =
+                "Plans could not be loaded. "
+                + "Check your connection and try again."
         }
     }
 
-    /// Explicit foreground refresh; a network failure keeps the previous verified state.
+
+    /// Explicit foreground refresh. A network failure keeps the previous
+    /// verified entitlement state.
     func syncEntitlements() async {
-        guard Purchases.isConfigured else { return }
-        do { apply(try await Purchases.shared.customerInfo()) } catch { /* retain last verified state */ }
+        guard Purchases.isConfigured else {
+            return
+        }
+
+        do {
+            apply(
+                try await
+                    Purchases.shared.customerInfo()
+            )
+        } catch {
+            // Retain last verified state.
+        }
     }
+
 
     func purchase(_ package: Package) async {
-        guard !isPurchasing else { return }
+        guard Purchases.isConfigured else {
+            error =
+                "Subscriptions are not configured "
+                + "in this build."
+            return
+        }
+
+        guard !isPurchasing else {
+            return
+        }
+
         isPurchasing = true
-        defer { isPurchasing = false }
+
+        defer {
+            isPurchasing = false
+        }
+
         do {
-            let result = try await Purchases.shared.purchase(package: package)
-            guard !result.userCancelled else { return }
+            let result =
+                try await Purchases.shared.purchase(
+                    package: package
+                )
+
+            guard !result.userCancelled else {
+                return
+            }
+
             apply(result.customerInfo)
+
         } catch ErrorCode.paymentPendingError {
-            lastNotice = "Your purchase is awaiting approval. Pro unlocks when it completes."
+            lastNotice =
+                "Your purchase is awaiting approval. "
+                + "Pro unlocks when it completes."
+
         } catch ErrorCode.purchaseCancelledError {
             // StoreKit cancellation is not an error.
+
         } catch {
-            self.error = "The purchase could not be completed. Please try again."
+            self.error =
+                "The purchase could not be completed. "
+                + "Please try again."
         }
     }
 
+
     func restore() async {
-        guard !isRestoring else { return }
+        guard Purchases.isConfigured else {
+            lastNotice =
+                "Subscriptions are not configured "
+                + "in this build."
+            return
+        }
+
+        guard !isRestoring else {
+            return
+        }
+
         isRestoring = true
-        defer { isRestoring = false }
+
+        defer {
+            isRestoring = false
+        }
+
         do {
-            let info = try await Purchases.shared.restorePurchases()
+            let info =
+                try await
+                    Purchases.shared.restorePurchases()
+
             apply(info)
-            lastNotice = info.entitlements[Self.entitlementName]?.isActive == true ? "Pro restored." : "No active Pro purchase found for this Apple ID."
+
+            lastNotice =
+                info.entitlements[
+                    Self.entitlementName
+                ]?.isActive == true
+                ? "Pro restored."
+                : "No active Pro purchase found for this Apple ID."
+
         } catch {
-            self.error = "Purchases could not be restored. Please try again."
+            self.error =
+                "Purchases could not be restored. "
+                + "Please try again."
         }
     }
 }
