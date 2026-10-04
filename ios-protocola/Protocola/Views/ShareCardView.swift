@@ -28,7 +28,7 @@ struct ShareCardView: View {
                 Text(data.percentage)
                     .font(
                         .system(
-                            size: 64,
+                            size: Theme.shareMetricSize,
                             weight: .medium,
                             design: .serif
                         )
@@ -52,19 +52,19 @@ struct ShareCardView: View {
                     bar in
 
                     RoundedRectangle(
-                        cornerRadius: 2
+                        cornerRadius: Theme.shareBarRadius
                     )
                     .fill(Theme.line)
                     .frame(
                         width: data.barWidth,
-                        height: 64
+                        height: Theme.shareBarHeight
                     )
                     .overlay(
                         alignment: .bottom
                     ) {
                         if bar.scheduled > 0 {
                             RoundedRectangle(
-                                cornerRadius: 2
+                                cornerRadius: Theme.shareBarRadius
                             )
                             .fill(Theme.teal)
                             .frame(
@@ -89,9 +89,9 @@ struct ShareCardView: View {
                 .font(Theme.caption)
                 .foregroundStyle(Theme.muted)
         }
-        .padding(32)
+        .padding(Theme.spaceXL)
         .frame(
-            width: 520,
+            width: Theme.shareCardWidth,
             alignment: .leading
         )
         .background(Theme.paper)
