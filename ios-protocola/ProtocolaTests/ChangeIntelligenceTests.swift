@@ -99,7 +99,7 @@ import PDFKit
         #expect(store.pendingPaywall == nil)
         let firstRevision = try #require(store.revisions.first)
         #expect(store.saveDose(DoseDraft(revision: firstRevision), revision: firstRevision, occurrence: nil, correcting: nil))
-        #expect(!store.pendingPaywall)
+        #expect(store.pendingPaywall == nil)
         draft.name = "Second"
         #expect(!store.saveProtocol(draft, protocolID: nil, compoundID: nil))
         #expect(store.pendingPaywall == .secondProtocol)
@@ -150,7 +150,7 @@ import PDFKit
         #expect(store.saveProtocol(draft, protocolID: nil, compoundID: nil))
         store.changeStatus(first, status: "Active")
         #expect(first.status == "Paused")
-        #expect(store.pendingPaywall)
+        #expect(store.pendingPaywall == .secondProtocol)
     }
     @Test func entitlementAccessUsesOnlyProAndRetainsVerifiedAccessOnFailure() {
         var access = EntitlementAccess()
