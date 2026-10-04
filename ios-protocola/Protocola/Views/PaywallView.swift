@@ -146,14 +146,20 @@ struct PaywallView: View {
                 )
             }
         }
-        .background(
-            Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusCard,
-                style: .continuous
-            )
-        )
-        .inkBorder(cornerRadius: Theme.radiusCard)
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 
 
@@ -305,15 +311,17 @@ struct PaywallView: View {
             .controlSize(.regular)
             .disabled(purchases.isPurchasing)
         }
-        .padding(Theme.spaceM)
-        .background(
-            Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusRow,
-                style: .continuous
-            )
+        .padding(
+            .vertical,
+            Theme.spaceM
         )
-        .inkBorder(cornerRadius: Theme.radiusRow)
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 1)
+        }
     }
 
 
