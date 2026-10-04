@@ -113,9 +113,14 @@ enum ProtocolSnapshot {
             "Route": draft.route.rawValue,
             "Schedule": schedule(config),
             "Vial":
-                draft.vialID?
-                    .uuidString
-                ?? "",
+                draft.route
+                    .usesInjectionSite
+                ? (
+                    draft.vialID?
+                        .uuidString
+                    ?? ""
+                )
+                : "",
             "Site":
                 draft.route
                     .usesInjectionSite
