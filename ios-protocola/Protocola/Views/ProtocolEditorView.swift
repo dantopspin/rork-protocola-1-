@@ -4,6 +4,8 @@ struct ProtocolEditorView: View {
     let record: ProtocolRecord?
     let revision: ScheduleRevision?
     let onboarding: Bool
+    let planningFuture: Bool
+    let editingPlanned: Bool
 
     @Environment(TrackingStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -12,16 +14,49 @@ struct ProtocolEditorView: View {
     @State private var addVial = false
     @State private var saving = false
     @State private var paywall = false
+    @State private var effectiveDate: Date
 
     init(
         record: ProtocolRecord? = nil,
         revision: ScheduleRevision? = nil,
         onboarding: Bool = false,
-        prefersReminders: Bool = false
+        prefersReminders: Bool = false,
+        planningFuture: Bool = false,
+        editingPlanned: Bool = false
     ) {
         self.record = record
         self.revision = revision
         self.onboarding = onboarding
+        self.planningFuture =
+            planningFuture
+        self.editingPlanned =
+            editingPlanned
+
+        let tomorrow =
+            Calendar.current.date(
+                byAdding: .day,
+                value: 1,
+                to:
+                    Calendar.current
+                        .startOfDay(
+                            for: .now
+                        )
+            ) ?? Date.now
+                .addingTimeInterval(
+                    86_400
+                )
+
+        _effectiveDate =
+            State(
+                initialValue:
+                    editingPlanned
+                    ? (
+                        revision?
+                            .effectiveFrom
+                        ?? tomorrow
+                    )
+                    : tomorrow
+            )
 
         if let record,
            let revision {
@@ -54,6 +89,10 @@ struct ProtocolEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if planningFuture {
+                    futureChangeSection
+                }
+
                 instructionsSection
                 scheduleSection
 
@@ -62,7 +101,18 @@ struct ProtocolEditorView: View {
                     vialAndSiteSection
                 }
 
-                if revision != nil {
+                if planningFuture {
+                    Section {
+                        Text(
+                            "This planned revision takes effect on the selected date. Existing history remains unchanged, and you can edit or cancel the plan before it becomes effective."
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                    }
+
+                } else if revision != nil {
                     Section {
                         Text(
                             "Changes apply from now onward. Past schedules and recorded entries remain unchanged."
@@ -124,6 +174,30 @@ struct ProtocolEditorView: View {
 
 private extension ProtocolEditorView {
 
+    var futureChangeSection:
+        some View {
+        Section {
+            DatePicker(
+                "Effective date",
+                selection:
+                    $effectiveDate,
+                in:
+                    minimumFutureDate...,
+                displayedComponents:
+                    .date
+            )
+
+        } header: {
+            Text("Future change")
+
+        } footer: {
+            Text(
+                "Choose when these recorded instructions should become effective. This is scheduling of your own record, not a recommendation."
+            )
+        }
+    }
+
+
     var instructionsSection: some View {
         Section {
             TextField(
@@ -133,6 +207,7 @@ private extension ProtocolEditorView {
             .accessibilityIdentifier(
                 "protocolName"
             )
+            .disabled(planningFuture)
 
             TextField(
                 "Compound name",
@@ -141,6 +216,7 @@ private extension ProtocolEditorView {
             .accessibilityIdentifier(
                 "compoundName"
             )
+            .disabled(planningFuture)
 
             HStack {
                 TextField(
@@ -188,12 +264,14 @@ private extension ProtocolEditorView {
                         .tag($0)
                 }
             }
+            .disabled(planningFuture)
 
             TextField(
                 "Notes (optional)",
                 text: $draft.notes,
                 axis: .vertical
             )
+            .disabled(planningFuture)
 
         } header: {
             Text("Recorded instructions")
@@ -209,7 +287,9 @@ private extension ProtocolEditorView {
     var scheduleSection: some View {
         Section {
             DatePicker(
-                "Start date",
+                planningFuture
+                    ? "Schedule anchor"
+                    : "Start date",
                 selection: $draft.start,
                 displayedComponents: .date
             )
@@ -459,6 +539,13 @@ private extension ProtocolEditorView {
 private extension ProtocolEditorView {
 
     var title: String {
+        if planningFuture {
+            return
+                editingPlanned
+                ? "Edit planned change"
+                : "Plan future change"
+        }
+
         if revision != nil {
             return "Edit protocol"
         }
@@ -467,6 +554,22 @@ private extension ProtocolEditorView {
             onboarding
             ? "Set up your protocol"
             : "Record protocol"
+    }
+
+
+    var minimumFutureDate: Date {
+        Calendar.current.date(
+            byAdding: .day,
+            value: 1,
+            to:
+                Calendar.current
+                    .startOfDay(
+                        for: .now
+                    )
+        ) ?? Date.now
+            .addingTimeInterval(
+                86_400
+            )
     }
 
 
@@ -553,15 +656,44 @@ private extension ProtocolEditorView {
                         .requestPermission()
             }
 
-            if store.saveProtocol(
-                draft,
-                protocolID:
-                    record?.id,
-                compoundID:
-                    revision?.compoundID
-            ) {
+            let saved: Bool
+
+            if planningFuture,
+               let record,
+               let revision {
+                saved =
+                    store
+                        .savePlannedProtocolChange(
+                            draft,
+                            protocolID:
+                                record.id,
+                            compoundID:
+                                revision
+                                    .compoundID,
+                            plannedRevisionID:
+                                editingPlanned
+                                ? revision.id
+                                : nil,
+                            effectiveFrom:
+                                effectiveDate
+                        )
+
+            } else {
+                saved =
+                    store.saveProtocol(
+                        draft,
+                        protocolID:
+                            record?.id,
+                        compoundID:
+                            revision?
+                                .compoundID
+                    )
+            }
+
+            if saved {
                 if onboarding {
-                    store.completeOnboarding()
+                    store
+                        .completeOnboarding()
                 }
 
                 dismiss()

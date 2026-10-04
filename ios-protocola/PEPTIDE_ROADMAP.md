@@ -57,7 +57,7 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 - [x] One-tap Skip / Undo Skip from Today
 - [x] Cycle restart reminder
 - [x] Combined stack/calendar view
-- [ ] Planned future titration revisions
+- [x] Planned future titration revisions
 
 ### P1 — features that make Protocola materially better than a notes app
 
@@ -83,7 +83,7 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 These should be stronger than competitors rather than direct copies.
 
 - [ ] Photo import of vial label / existing instructions into a reviewable draft
-- [ ] Planned titration rendered as future immutable revisions
+- [x] Planned titration rendered as future immutable revisions
 - [ ] Before/after protocol-change comparisons
 - [ ] “Since last change” analysis
 - [ ] Ask Protocola with tappable source records

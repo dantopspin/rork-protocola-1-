@@ -276,6 +276,15 @@ Shadow is reserved for transient/floating surfaces:
 - never instructs the user to administer, restart treatment, or change a dose
 - uses the same owned notification namespace and capacity policy as entry reminders
 
+### PlannedRevision
+- temporal states are historical, current, and planned
+- a planned revision never replaces the current revision before its effective date
+- current revision ends exactly when the next planned revision begins
+- multiple future revisions may be chained for the same compound
+- future revisions may be edited or cancelled only before becoming effective
+- historical and already-effective revisions remain immutable
+- planning UI records user-supplied instructions and never recommends a titration
+
 ---
 
 ## Screen hierarchy

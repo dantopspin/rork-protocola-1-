@@ -914,3 +914,280 @@ struct CycleRestartReminderTests {
         )
     }
 }
+
+
+
+@MainActor
+struct PlannedRevisionTests {
+
+    @Test
+    func futureRevisionDoesNotReplaceCurrentUntilEffectiveDate() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        var draft = ProtocolDraft()
+        draft.name = "Plan"
+        draft.compound = "Compound"
+        draft.amount = "1"
+        draft.unit = .mg
+        draft.start = now
+        draft.kind = .daily
+        draft.timeZoneID = "UTC"
+
+        try repository.saveProtocol(
+            draft,
+            protocolID: nil,
+            compoundID: nil,
+            now: now
+        )
+
+        let record =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+        let compound =
+            try #require(
+                repository
+                    .all(
+                        CompoundRecord.self
+                    )
+                    .first
+            )
+        let current =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        let futureDate =
+            now.addingTimeInterval(
+                7 * 86_400
+            )
+
+        var futureDraft =
+            ProtocolDraft(
+                protocolRecord: record,
+                revision: current
+            )
+        futureDraft.amount = "2"
+
+        try repository
+            .savePlannedProtocolChange(
+                futureDraft,
+                protocolID: record.id,
+                compoundID: compound.id,
+                plannedRevisionID: nil,
+                effectiveFrom:
+                    futureDate,
+                now: now
+            )
+
+        let store =
+            TrackingStore(
+                container: container
+            )
+
+        #expect(
+            store.currentRevisions(
+                record.id,
+                at: now
+            )
+            .first?
+            .amount == 1
+        )
+
+        let planned =
+            store.plannedRevisions(
+                record.id,
+                after: now
+            )
+
+        #expect(planned.count == 1)
+        #expect(
+            planned.first?.amount == 2
+        )
+
+        let shortlyAfter =
+            futureDate
+                .addingTimeInterval(
+                    60
+                )
+
+        #expect(
+            store.currentRevisions(
+                record.id,
+                at: shortlyAfter
+            )
+            .first?
+            .amount == 2
+        )
+
+        #expect(
+            current.effectiveUntil
+                == futureDate
+        )
+    }
+
+
+    @Test
+    func plannedRevisionCanBeUpdatedAndCancelledWithoutChangingHistory() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        var draft = ProtocolDraft()
+        draft.name = "Plan"
+        draft.compound = "Compound"
+        draft.amount = "1"
+        draft.unit = .mg
+        draft.start = now
+        draft.kind = .daily
+        draft.timeZoneID = "UTC"
+
+        try repository.saveProtocol(
+            draft,
+            protocolID: nil,
+            compoundID: nil,
+            now: now
+        )
+
+        let record =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+        let compound =
+            try #require(
+                repository
+                    .all(
+                        CompoundRecord.self
+                    )
+                    .first
+            )
+        let current =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+        let futureDate =
+            now.addingTimeInterval(
+                5 * 86_400
+            )
+
+        var futureDraft =
+            ProtocolDraft(
+                protocolRecord: record,
+                revision: current
+            )
+        futureDraft.amount = "2"
+
+        try repository
+            .savePlannedProtocolChange(
+                futureDraft,
+                protocolID: record.id,
+                compoundID: compound.id,
+                plannedRevisionID: nil,
+                effectiveFrom:
+                    futureDate,
+                now: now
+            )
+
+        var planned =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first {
+                        $0.effectiveFrom
+                            == futureDate
+                    }
+            )
+
+        futureDraft.amount = "3"
+
+        try repository
+            .savePlannedProtocolChange(
+                futureDraft,
+                protocolID: record.id,
+                compoundID: compound.id,
+                plannedRevisionID:
+                    planned.id,
+                effectiveFrom:
+                    futureDate,
+                now: now
+            )
+
+        planned =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first {
+                        $0.id == planned.id
+                    }
+            )
+
+        #expect(planned.amount == 3)
+        #expect(current.amount == 1)
+
+        try repository
+            .cancelPlannedRevision(
+                planned.id,
+                now: now
+            )
+
+        let remaining =
+            try repository
+                .all(
+                    ScheduleRevision.self
+                )
+
+        #expect(remaining.count == 1)
+        #expect(
+            remaining.first?
+                .effectiveUntil == nil
+        )
+        #expect(
+            remaining.first?.amount == 1
+        )
+    }
+}

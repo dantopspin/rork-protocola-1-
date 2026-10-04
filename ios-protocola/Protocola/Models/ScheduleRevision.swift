@@ -86,3 +86,58 @@ import SwiftData
         ) ?? .injection
     }
 }
+
+
+
+enum RevisionTemporalState {
+    case historical
+    case current
+    case planned
+}
+
+
+extension ScheduleRevision {
+
+    func temporalState(
+        at date: Date = .now
+    ) -> RevisionTemporalState {
+        if effectiveFrom > date {
+            return .planned
+        }
+
+        if let effectiveUntil,
+           effectiveUntil <= date {
+            return .historical
+        }
+
+        return .current
+    }
+
+
+    func isEffective(
+        at date: Date = .now
+    ) -> Bool {
+        temporalState(at: date)
+            == .current
+    }
+
+
+    func isPlanned(
+        after date: Date = .now
+    ) -> Bool {
+        temporalState(at: date)
+            == .planned
+    }
+
+
+    func intersects(
+        start: Date,
+        end: Date
+    ) -> Bool {
+        effectiveFrom < end
+        && (
+            effectiveUntil == nil
+            || effectiveUntil! > start
+        )
+    }
+}

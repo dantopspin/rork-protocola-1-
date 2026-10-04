@@ -182,8 +182,11 @@ import Observation
         let linked =
             revisions.filter {
                 $0.enabled
-                && $0.effectiveUntil == nil
                 && $0.vialID == vial.id
+                && $0.intersects(
+                    start: now,
+                    end: horizon
+                )
             }
 
         guard !linked.isEmpty else {
@@ -265,8 +268,8 @@ import Observation
         let linked =
             revisions.filter {
                 $0.enabled
-                && $0.effectiveUntil == nil
                 && $0.vialID == vial.id
+                && $0.isEffective()
             }
 
         guard linked.count == 1,
@@ -299,17 +302,154 @@ import Observation
             }
         }.sorted { $0.at < $1.at }
     }
-    func currentRevisions(_ protocolID: UUID) -> [ScheduleRevision] { revisions.filter { $0.protocolID == protocolID && $0.effectiveUntil == nil } }
-    func vial(_ id: UUID?) -> VialRecord? { vials.first { $0.id == id } }
+    func currentRevisions(
+        _ protocolID: UUID,
+        at date: Date = .now
+    ) -> [ScheduleRevision] {
+        revisions
+            .filter {
+                $0.protocolID
+                    == protocolID
+                && $0.isEffective(
+                    at: date
+                )
+            }
+            .sorted {
+                $0.compoundName
+                    < $1.compoundName
+            }
+    }
+
+    func plannedRevisions(
+        _ protocolID: UUID,
+        after date: Date = .now
+    ) -> [ScheduleRevision] {
+        revisions
+            .filter {
+                $0.protocolID
+                    == protocolID
+                && $0.isPlanned(
+                    after: date
+                )
+            }
+            .sorted {
+                $0.effectiveFrom
+                    < $1.effectiveFrom
+            }
+    }
+
+    func plannedRevisions(
+        compoundID: UUID,
+        after date: Date = .now
+    ) -> [ScheduleRevision] {
+        revisions
+            .filter {
+                $0.compoundID
+                    == compoundID
+                && $0.isPlanned(
+                    after: date
+                )
+            }
+            .sorted {
+                $0.effectiveFrom
+                    < $1.effectiveFrom
+            }
+    }
+
+    func vial(
+        _ id: UUID?
+    ) -> VialRecord? {
+        vials.first {
+            $0.id == id
+        }
+    }
     func perform(_ operation: () throws -> Void) -> Bool {
         do { try operation(); refresh(); resyncReminders(); return true }
         catch { self.error = (error as? TrackingError)?.errorDescription ?? "Changes could not be saved. Please try again."; refresh(); return false }
     }
-    func saveProtocol(_ draft: ProtocolDraft, protocolID: UUID?, compoundID: UUID?) -> Bool {
-        guard protocolID.map(canEdit) ?? canCreateProtocol else { pendingPaywall = true; return false }
-        return perform { try repository.saveProtocol(draft, protocolID: protocolID, compoundID: compoundID) }
+    func saveProtocol(
+        _ draft: ProtocolDraft,
+        protocolID: UUID?,
+        compoundID: UUID?
+    ) -> Bool {
+        guard
+            protocolID.map(canEdit)
+                ?? canCreateProtocol
+        else {
+            pendingPaywall = true
+            return false
+        }
+
+        return perform {
+            try repository.saveProtocol(
+                draft,
+                protocolID:
+                    protocolID,
+                compoundID:
+                    compoundID
+            )
+        }
     }
-    func saveVial(_ draft: VialDraft, id: UUID?) -> Bool { perform { try repository.saveVial(draft, id: id) } }
+
+    func savePlannedProtocolChange(
+        _ draft: ProtocolDraft,
+        protocolID: UUID,
+        compoundID: UUID,
+        plannedRevisionID: UUID?,
+        effectiveFrom: Date
+    ) -> Bool {
+        guard canEdit(protocolID) else {
+            error =
+                "Choose this protocol for tracking or restore Pro before editing it."
+            return false
+        }
+
+        return perform {
+            try repository
+                .savePlannedProtocolChange(
+                    draft,
+                    protocolID:
+                        protocolID,
+                    compoundID:
+                        compoundID,
+                    plannedRevisionID:
+                        plannedRevisionID,
+                    effectiveFrom:
+                        effectiveFrom
+                )
+        }
+    }
+
+    func cancelPlannedRevision(
+        _ revision: ScheduleRevision
+    ) -> Bool {
+        guard
+            canEdit(revision.protocolID)
+        else {
+            error =
+                "Choose this protocol for tracking or restore Pro before editing it."
+            return false
+        }
+
+        return perform {
+            try repository
+                .cancelPlannedRevision(
+                    revision.id
+                )
+        }
+    }
+
+    func saveVial(
+        _ draft: VialDraft,
+        id: UUID?
+    ) -> Bool {
+        perform {
+            try repository.saveVial(
+                draft,
+                id: id
+            )
+        }
+    }
     func saveDose(_ draft: DoseDraft, revision: ScheduleRevision?, occurrence: ScheduledEntry?, correcting: DoseLog?) -> Bool {
         guard let id = correcting?.protocolID ?? revision?.protocolID, correcting == nil ? canTrack(id) : canEdit(id) else { error = "This protocol is read-only on Free. Choose it for tracking or restore Pro."; return false }
         return perform { try repository.saveDose(draft, revision: revision, occurrence: occurrence, correcting: correcting) }
@@ -417,8 +557,10 @@ import Observation
                 guard
                     revision.enabled,
                     revision.reminders,
-                    revision.effectiveUntil
-                        == nil,
+                    revision.intersects(
+                        start: now,
+                        end: end
+                    ),
                     canTrack(
                         revision.protocolID
                     ),

@@ -6,6 +6,9 @@ struct ProtocolDetailView: View {
     @Environment(TrackingStore.self) private var store
 
     @State private var editing: ScheduleRevision?
+    @State private var planning: ScheduleRevision?
+    @State private var editingPlanned: ScheduleRevision?
+    @State private var cancellingPlanned: ScheduleRevision?
     @State private var logging: ScheduleRevision?
     @State private var addCompound = false
     @State private var calculator = false
@@ -97,6 +100,18 @@ private extension ProtocolDetailView {
             ) { revision in
                 scheduleSection(
                     revision,
+                    record: record
+                )
+            }
+
+            let planned =
+                store.plannedRevisions(
+                    record.id
+                )
+
+            if !planned.isEmpty {
+                plannedChangesSection(
+                    planned,
                     record: record
                 )
             }
@@ -194,6 +209,67 @@ private extension ProtocolDetailView {
                 revision: revision
             )
         }
+        .sheet(item: $planning) {
+            revision in
+            ProtocolEditorView(
+                record: record,
+                revision: revision,
+                planningFuture: true
+            )
+        }
+        .sheet(
+            item: $editingPlanned
+        ) { revision in
+            ProtocolEditorView(
+                record: record,
+                revision: revision,
+                planningFuture: true,
+                editingPlanned: true
+            )
+        }
+        .alert(
+            "Cancel planned change?",
+            isPresented:
+                Binding(
+                    get: {
+                        cancellingPlanned
+                            != nil
+                    },
+                    set: { shown in
+                        if !shown {
+                            cancellingPlanned =
+                                nil
+                        }
+                    }
+                )
+        ) {
+            Button(
+                "Keep plan",
+                role: .cancel
+            ) {
+                cancellingPlanned = nil
+            }
+
+            Button(
+                "Cancel planned change",
+                role: .destructive
+            ) {
+                if let revision =
+                    cancellingPlanned {
+                    _ =
+                        store
+                            .cancelPlannedRevision(
+                                revision
+                            )
+                }
+
+                cancellingPlanned = nil
+            }
+        } message: {
+            Text(
+                "This removes only the future revision. Past and current records stay unchanged."
+            )
+        }
         .sheet(item: $logging) {
             revision in
             DoseEditorView(
@@ -207,6 +283,120 @@ private extension ProtocolDetailView {
                 record: record
             )
         }
+    }
+
+
+    func plannedChangesSection(
+        _ revisions: [ScheduleRevision],
+        record: ProtocolRecord
+    ) -> some View {
+        Section("Planned changes") {
+            ForEach(revisions) {
+                revision in
+
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXS
+                ) {
+                    HStack(
+                        alignment:
+                            .firstTextBaseline,
+                        spacing: Theme.spaceS
+                    ) {
+                        VStack(
+                            alignment: .leading,
+                            spacing:
+                                Theme.spaceXXS
+                        ) {
+                            Text(
+                                revision
+                                    .compoundName
+                            )
+                            .font(
+                                Theme.sectionTitle
+                            )
+                            .foregroundStyle(
+                                Theme.ink
+                            )
+
+                            Text(
+                                "Effective "
+                                + revision
+                                    .effectiveFrom
+                                    .formatted(
+                                        date:
+                                            .abbreviated,
+                                        time:
+                                            .omitted
+                                    )
+                            )
+                            .font(
+                                Theme.caption
+                            )
+                            .foregroundStyle(
+                                Theme.textSecondary
+                            )
+                        }
+
+                        Spacer()
+
+                        StatusBadge(
+                            text: "Planned"
+                        )
+                    }
+
+                    RecordRow(
+                        label: "Amount",
+                        value:
+                            revision.amountText
+                            + " "
+                            + revision.unitText
+                    )
+
+                    RecordRow(
+                        label: "Schedule",
+                        value:
+                            revision.config.map(
+                                ScheduleDisplay
+                                    .summary
+                            )
+                            ?? "Not available"
+                    )
+
+                    HStack(
+                        spacing: Theme.spaceS
+                    ) {
+                        Button(
+                            "Edit plan"
+                        ) {
+                            editingPlanned =
+                                revision
+                        }
+
+                        Button(
+                            "Cancel plan",
+                            role: .destructive
+                        ) {
+                            cancellingPlanned =
+                                revision
+                        }
+                    }
+                    .font(Theme.label)
+                }
+                .padding(
+                    .vertical,
+                    Theme.spaceXXS
+                )
+            }
+
+        } footer: {
+            Text(
+                "Planned revisions do not change past records and take effect only on their recorded date."
+            )
+        }
+        .disabled(
+            !store.canEdit(record.id)
+        )
     }
 
 
@@ -280,6 +470,19 @@ private extension ProtocolDetailView {
                 Label(
                     "Edit recorded schedule",
                     systemImage: "pencil"
+                )
+            }
+            .disabled(
+                !store.canEdit(record.id)
+            )
+
+            Button {
+                planning = revision
+            } label: {
+                Label(
+                    "Plan future change",
+                    systemImage:
+                        "calendar.badge.plus"
                 )
             }
             .disabled(
