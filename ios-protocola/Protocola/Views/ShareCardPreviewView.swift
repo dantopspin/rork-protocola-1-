@@ -17,7 +17,7 @@ struct ShareCardPreviewView: View {
                         Button { sharing = true } label: { Label("Share", systemImage: "square.and.arrow.up") }
                             .buttonStyle(TrackingPrimaryButtonStyle())
                     } else if data != nil {
-                        ProgressView("Preparing card…").frame(maxWidth: .infinity, minHeight: 240)
+                        ProgressView("Preparing card…").frame(maxWidth: .infinity, minHeight: Theme.sharePreviewMinHeight)
                     } else {
                         TrackingEmptyState(icon: "calendar", title: "Nothing to share yet", message: "No scheduled entries in this period.")
                     }
