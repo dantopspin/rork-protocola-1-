@@ -105,7 +105,6 @@ struct PaywallView: View {
 
             Text(reason.headline)
                 .font(Theme.pageTitle)
-                .tracking(-1)
                 .lineLimit(3)
                 .minimumScaleFactor(0.75)
         }
@@ -278,7 +277,7 @@ struct PaywallView: View {
                 )
             }
             .buttonStyle(.borderedProminent)
-            .tint(Theme.teal)
+            .tint(Theme.ink)
             .controlSize(.regular)
             .disabled(purchases.isPurchasing)
         }
