@@ -69,6 +69,21 @@ struct HistoryView: View {
                     )
                     .isEmpty
                 )
+                || (
+                    category == "Notes"
+                    && (
+                        !(
+                            record.log?
+                                .notes
+                            ?? ""
+                        )
+                        .isEmpty
+                        || record.title
+                            .localizedCaseInsensitiveContains(
+                                "note"
+                            )
+                    )
+                )
             )
             && (
                 !dates
@@ -145,13 +160,16 @@ struct HistoryView: View {
                 }
             } else {
                 ForEach(groupedDays) { day in
-                    Section(
-                        dayTitle(day.date)
-                    ) {
+                    Section {
                         ForEach(day.records) {
                             record in
                             recordLink(record)
                         }
+                    } header: {
+                        Text(dayTitle(day.date))
+                            .font(Theme.sectionTitle)
+                            .foregroundStyle(Theme.ink)
+                            .textCase(nil)
                     }
                 }
             }
@@ -164,9 +182,19 @@ struct HistoryView: View {
             prompt: "Search your timeline"
         )
         .toolbar {
-            ToolbarItem(
+            ToolbarItemGroup(
                 placement: .topBarTrailing
             ) {
+                Button {
+                    filtersPresented = true
+                } label: {
+                    Label(
+                        "Filter history",
+                        systemImage:
+                            "line.3.horizontal.decrease"
+                    )
+                }
+
                 Button {
                     if store.isPremium {
                         summary = true
@@ -221,71 +249,25 @@ private extension HistoryView {
             showsIndicators: false
         ) {
             HStack(spacing: Theme.spaceXS) {
-                Button {
-                    filtersPresented = true
-                } label: {
-                    Label(
-                        dates
-                            ? "Dates"
-                            : "Filter",
-                        systemImage:
-                            "line.3.horizontal.decrease"
-                    )
-                }
-                .buttonStyle(.bordered)
-                .tint(
-                    dates
-                        ? Theme.teal
-                        : Theme.ink
+                historyChip(
+                    title: "All",
+                    value: "Timeline"
                 )
 
-                Menu {
-                    Button("All protocols") {
-                        protocolID = nil
-                    }
+                historyChip(
+                    title: "Entries",
+                    value: "Dose"
+                )
 
-                    Divider()
+                historyChip(
+                    title: "Changes",
+                    value: "Protocol"
+                )
 
-                    ForEach(store.protocols) {
-                        record in
-                        Button(record.name) {
-                            protocolID =
-                                record.id
-                        }
-                    }
-                } label: {
-                    Label(
-                        selectedProtocolLabel,
-                        systemImage:
-                            "chevron.down"
-                    )
-                    .labelStyle(
-                        TrailingIconLabelStyle()
-                    )
-                }
-                .buttonStyle(.bordered)
-                .tint(Theme.ink)
-
-                Menu {
-                    ForEach(eventFilters) {
-                        filter in
-                        Button(filter.label) {
-                            category =
-                                filter.value
-                        }
-                    }
-                } label: {
-                    Label(
-                        selectedEventLabel,
-                        systemImage:
-                            "chevron.down"
-                    )
-                    .labelStyle(
-                        TrailingIconLabelStyle()
-                    )
-                }
-                .buttonStyle(.bordered)
-                .tint(Theme.ink)
+                historyChip(
+                    title: "Notes",
+                    value: "Notes"
+                )
             }
         }
         .listRowBackground(Color.clear)
@@ -300,10 +282,75 @@ private extension HistoryView {
     }
 
 
+    func historyChip(
+        title: String,
+        value: String
+    ) -> some View {
+        let selected =
+            category == value
+
+        return Button(title) {
+            withAnimation(
+                .spring(
+                    response: 0.24,
+                    dampingFraction: 0.84
+                )
+            ) {
+                category = value
+            }
+        }
+        .font(Theme.label)
+        .foregroundStyle(
+            selected
+                ? Color.white
+                : Theme.ink
+        )
+        .padding(
+            .horizontal,
+            Theme.spaceM
+        )
+        .frame(
+            minHeight:
+                Theme.minimumTapTarget
+        )
+        .background(
+            selected
+                ? Theme.ink
+                : Theme.surface,
+            in: .capsule
+        )
+        .overlay {
+            if !selected {
+                Capsule()
+                    .stroke(
+                        Theme.border,
+                        lineWidth: 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     var dateFilterSheet: some View {
         NavigationStack {
             Form {
-                Section {
+                Section("Protocol") {
+                    Picker(
+                        "Protocol",
+                        selection: $protocolID
+                    ) {
+                        Text("All protocols")
+                            .tag(nil as UUID?)
+
+                        ForEach(store.protocols) {
+                            record in
+                            Text(record.name)
+                                .tag(Optional(record.id))
+                        }
+                    }
+                }
+
+                Section("Date range") {
                     Toggle(
                         "Use date range",
                         isOn: $dates
@@ -822,17 +869,11 @@ private struct TimelineRow: View {
             spacing: Theme.spaceS
         ) {
             Image(systemName: icon)
-                .font(
-                    .caption.weight(.bold)
-                )
-                .foregroundStyle(.white)
+                .font(Theme.label)
+                .foregroundStyle(tint)
                 .frame(
-                    width: 28,
-                    height: 28
-                )
-                .background(
-                    tint,
-                    in: .circle
+                    width: 24,
+                    height: 24
                 )
 
             VStack(
@@ -840,11 +881,7 @@ private struct TimelineRow: View {
                 spacing: Theme.spaceXXS
             ) {
                 Text(title)
-                    .font(
-                        .subheadline.weight(
-                            .semibold
-                        )
-                    )
+                    .font(Theme.label)
                     .foregroundStyle(Theme.ink)
                     .lineLimit(2)
 
