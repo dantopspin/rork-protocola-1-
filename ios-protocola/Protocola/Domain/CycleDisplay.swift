@@ -22,8 +22,14 @@ enum CycleDisplay {
                 + String(phase.totalDays)
 
         case .off:
-            let calendar =
-                Calendar.current
+            var calendar =
+                Calendar(identifier: .gregorian)
+
+            calendar.timeZone =
+                TimeZone(
+                    identifier:
+                        config.timeZoneID
+                ) ?? .current
 
             let today =
                 calendar.startOfDay(
