@@ -814,3 +814,103 @@ struct SyringePresetTests {
         )
     }
 }
+
+
+
+struct CycleRestartReminderTests {
+
+    @Test
+    func nextRestartUsesCurrentCyclePhase() throws {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let config =
+            ScheduleConfig(
+                kind: .daily,
+                weekdays: [],
+                interval: 1,
+                minutes: [480],
+                anchor: start,
+                timeZoneID: "UTC",
+                cycleOnDays: 2,
+                cycleOffDays: 2
+            )
+
+        let duringOn =
+            Calendar(
+                identifier: .gregorian
+            )
+            .date(
+                byAdding: .day,
+                value: 1,
+                to: start
+            )!
+
+        let duringOff =
+            Calendar(
+                identifier: .gregorian
+            )
+            .date(
+                byAdding: .day,
+                value: 2,
+                to: start
+            )!
+
+        let onRestart =
+            try #require(
+                CycleDisplay
+                    .nextRestart(
+                        config,
+                        after: duringOn
+                    )
+            )
+        let offRestart =
+            try #require(
+                CycleDisplay
+                    .nextRestart(
+                        config,
+                        after: duringOff
+                    )
+            )
+
+        #expect(onRestart == offRestart)
+        #expect(onRestart > duringOff)
+    }
+
+    @Test
+    func reminderPlannerPreservesCycleRestartCopy() {
+        let now = Date.now
+        let restart =
+            ReminderPlanner.Candidate(
+                id: "cycle-restart:test",
+                at:
+                    now.addingTimeInterval(
+                        3_600
+                    ),
+                title:
+                    "Protocola · cycle restart",
+                body:
+                    "A recorded cycle is scheduled to resume."
+            )
+
+        let selected =
+            ReminderPlanner.select(
+                [restart],
+                now: now,
+                otherPending: 0
+            )
+
+        #expect(
+            selected.first?.title
+                == "Protocola · cycle restart"
+        )
+        #expect(
+            selected.first?.body
+                .contains(
+                    "scheduled to resume"
+                ) == true
+        )
+    }
+}

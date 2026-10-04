@@ -55,8 +55,8 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 - [x] ON/OFF cycle scheduling
 - [x] Cycle phase / restart countdown
 - [x] One-tap Skip / Undo Skip from Today
-- [ ] Cycle restart reminder
-- [ ] Combined stack/calendar view
+- [x] Cycle restart reminder
+- [x] Combined stack/calendar view
 - [ ] Planned future titration revisions
 
 ### P1 — features that make Protocola materially better than a notes app
@@ -74,7 +74,7 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 - [ ] Estimated compound-level / half-life curve
 - [ ] Multi-compound estimated-level overview
 - [ ] Change-aware level curve after dose revisions
-- [ ] Weekly stack calendar
+- [x] Weekly stack calendar
 - [ ] Lock Screen / Live Activity for a due entry
 - [ ] Home Screen widgets
 
@@ -91,7 +91,7 @@ These should be stronger than competitors rather than direct copies.
 - [ ] Ask: “Which vial was I using?”
 - [ ] Ask: “Summarize the period after my last change.”
 - [ ] Provider-facing longitudinal summary with revision timeline
-- [ ] Combined stack history with cross-compound site rotation
+- [x] Combined stack history with cross-compound site rotation
 - [ ] Descriptive cycle adherence and restart history
 - [ ] Import existing history from CSV / supported trackers
 

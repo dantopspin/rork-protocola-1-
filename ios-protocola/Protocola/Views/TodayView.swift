@@ -14,6 +14,7 @@ struct TodayView: View {
     @State private var inventory = false
     @State private var addVial = false
     @State private var calculator = false
+    @State private var stackCalendar = false
     @State private var shareCard = false
     @State private var undoLog: DoseLog?
     @State private var undoTask: Task<Void, Never>?
@@ -143,6 +144,13 @@ struct TodayView: View {
                 placement: .topBarTrailing
             ) {
                 Button(
+                    "Stack calendar",
+                    systemImage: "calendar"
+                ) {
+                    stackCalendar = true
+                }
+
+                Button(
                     "Calculator",
                     systemImage: "function"
                 ) {
@@ -186,6 +194,11 @@ struct TodayView: View {
         }
         .sheet(isPresented: $calculator) {
             CalculatorView()
+        }
+        .sheet(
+            isPresented: $stackCalendar
+        ) {
+            StackCalendarView()
         }
         .sheet(isPresented: $shareCard) {
             ShareCardPreviewView(
@@ -1619,4 +1632,482 @@ private extension TodayView {
 private struct CycleOffContext {
     let revision: ScheduleRevision
     let config: ScheduleConfig
+}
+
+
+
+// MARK: - Combined stack calendar
+
+struct StackCalendarView: View {
+    @Environment(TrackingStore.self)
+    private var store
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State
+    private var anchor = Date.now
+
+    @State
+    private var selectedDay =
+        Calendar.current
+            .startOfDay(for: .now)
+
+    private var calendar:
+        Calendar {
+        Calendar.current
+    }
+
+    private var weekStart: Date {
+        calendar
+            .dateInterval(
+                of: .weekOfYear,
+                for: anchor
+            )?
+            .start
+        ?? calendar
+            .startOfDay(for: anchor)
+    }
+
+    private var weekEnd: Date {
+        calendar.date(
+            byAdding: .day,
+            value: 7,
+            to: weekStart
+        ) ?? weekStart
+    }
+
+    private var weekDays: [Date] {
+        (0..<7).compactMap {
+            calendar.date(
+                byAdding: .day,
+                value: $0,
+                to: weekStart
+            )
+        }
+    }
+
+    private var weekEntries:
+        [ScheduledEntry] {
+        store.entries(
+            start: weekStart,
+            end: weekEnd
+        )
+        .filter {
+            store.canTrack(
+                $0.revision.protocolID
+            )
+        }
+    }
+
+    private var selectedEntries:
+        [ScheduledEntry] {
+        weekEntries.filter {
+            calendar.isDate(
+                $0.at,
+                inSameDayAs:
+                    selectedDay
+            )
+        }
+        .sorted {
+            $0.at < $1.at
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceL
+                ) {
+                    weekNavigation
+                    dayStrip
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceM
+                    ) {
+                        Text(
+                            selectedDay.formatted(
+                                .dateTime
+                                    .weekday(.wide)
+                                    .month(.wide)
+                                    .day()
+                            )
+                        )
+                        .font(Theme.sectionTitle)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                        if selectedEntries
+                            .isEmpty {
+                            TrackingEmptyState(
+                                icon: "calendar",
+                                title:
+                                    "No scheduled entries",
+                                message:
+                                    "No recorded schedules create an entry on this day."
+                            )
+                        } else {
+                            ForEach(
+                                selectedEntries
+                            ) { entry in
+                                stackEntryCard(
+                                    entry
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        "Combined calendar of your recorded schedules. It shows what you entered and does not recommend what or when to administer."
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                }
+                .screenPadding()
+            }
+            .background(Theme.paper)
+            .navigationTitle(
+                "Stack calendar"
+            )
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+            .toolbar {
+                ToolbarItem(
+                    placement:
+                        .topBarLeading
+                ) {
+                    Button("Today") {
+                        anchor = .now
+                        selectedDay =
+                            calendar
+                                .startOfDay(
+                                    for: .now
+                                )
+                    }
+                }
+
+                ToolbarItem(
+                    placement:
+                        .confirmationAction
+                ) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var weekNavigation:
+        some View {
+        HStack(
+            spacing: Theme.spaceM
+        ) {
+            Button {
+                moveWeek(-1)
+            } label: {
+                Image(
+                    systemName:
+                        "chevron.left"
+                )
+            }
+            .accessibilityLabel(
+                "Previous week"
+            )
+
+            Spacer()
+
+            Text(weekRangeLabel)
+                .font(Theme.label)
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            Spacer()
+
+            Button {
+                moveWeek(1)
+            } label: {
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+            }
+            .accessibilityLabel(
+                "Next week"
+            )
+        }
+    }
+
+    private var dayStrip: some View {
+        ScrollView(
+            .horizontal,
+            showsIndicators: false
+        ) {
+            HStack(
+                spacing: Theme.spaceXS
+            ) {
+                ForEach(
+                    weekDays,
+                    id: \.self
+                ) { day in
+                    dayButton(day)
+                }
+            }
+        }
+    }
+
+    private func dayButton(
+        _ day: Date
+    ) -> some View {
+        let selected =
+            calendar.isDate(
+                day,
+                inSameDayAs:
+                    selectedDay
+            )
+        let count =
+            entries(on: day).count
+
+        return Button {
+            selectedDay = day
+        } label: {
+            VStack(
+                spacing: Theme.spaceXXS
+            ) {
+                Text(
+                    day.formatted(
+                        .dateTime
+                            .weekday(
+                                .abbreviated
+                            )
+                    )
+                )
+                .font(Theme.micro)
+
+                Text(
+                    day.formatted(
+                        .dateTime.day()
+                    )
+                )
+                .font(Theme.sectionTitle)
+                .monospacedDigit()
+
+                Text(
+                    count == 0
+                        ? "—"
+                        : String(count)
+                )
+                .font(Theme.caption)
+                .monospacedDigit()
+            }
+            .foregroundStyle(
+                selected
+                    ? Theme.onDarkPrimary
+                    : Theme.ink
+            )
+            .frame(
+                minWidth:
+                    Theme.calendarDayWidth,
+                minHeight:
+                    Theme.rowHeight
+            )
+            .padding(
+                .vertical,
+                Theme.spaceXS
+            )
+            .background(
+                selected
+                    ? Theme.ink
+                    : Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusRow
+                )
+            )
+            .overlay {
+                if !selected {
+                    RoundedRectangle(
+                        cornerRadius:
+                            Theme.radiusRow
+                    )
+                    .stroke(
+                        Theme.hairline,
+                        lineWidth: 1
+                    )
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            day.formatted(
+                .dateTime
+                    .weekday(.wide)
+                    .month(.wide)
+                    .day()
+            )
+        )
+        .accessibilityValue(
+            count == 1
+                ? "1 scheduled entry"
+                : String(count)
+                    + " scheduled entries"
+        )
+    }
+
+    private func stackEntryCard(
+        _ entry: ScheduledEntry
+    ) -> some View {
+        TrackingCard {
+            HStack(
+                alignment:
+                    .firstTextBaseline,
+                spacing: Theme.spaceS
+            ) {
+                VStack(
+                    alignment: .leading,
+                    spacing:
+                        Theme.spaceXXS
+                ) {
+                    Text(
+                        entry.at.formatted(
+                            date: .omitted,
+                            time: .shortened
+                        )
+                    )
+                    .font(Theme.label)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                    .monospacedDigit()
+
+                    Text(
+                        entry.revision
+                            .compoundName
+                    )
+                    .font(
+                        Theme.sectionTitle
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                }
+
+                Spacer()
+
+                StatusBadge(
+                    text:
+                        entry.log?.status
+                        ?? "Scheduled"
+                )
+            }
+
+            Text(
+                entry.revision.protocolName
+            )
+            .font(Theme.body)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                Label(
+                    entry.revision.amountText
+                    + " "
+                    + entry.revision.unitText,
+                    systemImage:
+                        "number"
+                )
+
+                Label(
+                    entry.revision
+                        .route.rawValue,
+                    systemImage:
+                        "arrow.right.circle"
+                )
+            }
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+    private func entries(
+        on day: Date
+    ) -> [ScheduledEntry] {
+        weekEntries.filter {
+            calendar.isDate(
+                $0.at,
+                inSameDayAs: day
+            )
+        }
+    }
+
+    private var weekRangeLabel:
+        String {
+        guard
+            let last =
+                calendar.date(
+                    byAdding: .day,
+                    value: 6,
+                    to: weekStart
+                )
+        else {
+            return weekStart.formatted(
+                date: .abbreviated,
+                time: .omitted
+            )
+        }
+
+        return
+            weekStart.formatted(
+                .dateTime
+                    .month(.abbreviated)
+                    .day()
+            )
+            + " – "
+            + last.formatted(
+                .dateTime
+                    .month(.abbreviated)
+                    .day()
+            )
+    }
+
+    private func moveWeek(
+        _ offset: Int
+    ) {
+        guard
+            let next =
+                calendar.date(
+                    byAdding:
+                        .weekOfYear,
+                    value: offset,
+                    to: anchor
+                )
+        else {
+            return
+        }
+
+        anchor = next
+        selectedDay =
+            calendar
+                .dateInterval(
+                    of: .weekOfYear,
+                    for: next
+                )?
+                .start
+            ?? calendar
+                .startOfDay(
+                    for: next
+                )
+    }
 }

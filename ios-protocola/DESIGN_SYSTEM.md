@@ -261,6 +261,21 @@ Shadow is reserved for transient/floating surfaces:
 - over-scale state uses amber attention semantics
 - custom units-per-mL values remain supported
 
+### StackCalendar
+- one week at a time
+- combines scheduled entries across all trackable protocols
+- 64 pt minimum day cell width
+- selected day uses ink fill; unselected days remain surface + hairline
+- entry cards stay read-only in the calendar
+- status reflects the recorded log when present
+- calendar copy must remain descriptive, never prescriptive
+
+### CycleRestartReminder
+- generated only from a user-recorded ON/OFF cycle with reminders enabled
+- copy says the recorded cycle is scheduled to resume
+- never instructs the user to administer, restart treatment, or change a dose
+- uses the same owned notification namespace and capacity policy as entry reminders
+
 ---
 
 ## Screen hierarchy

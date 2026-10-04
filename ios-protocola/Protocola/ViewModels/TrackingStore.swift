@@ -377,11 +377,90 @@ import Observation
 
     func clearData() { _ = perform { try repository.clear() } }
     func resyncReminders() {
-        guard !isDemo else { return }
+        guard !isDemo else {
+            return
+        }
+
         let now = Date()
-        let end = Calendar.current.date(byAdding: .day, value: 90, to: now) ?? now
-        let upcoming = entries(start: now, end: end).filter { $0.revision.reminders && $0.log == nil && canTrack($0.revision.protocolID) }
-        notifications.update(upcoming)
+        let end =
+            Calendar.current.date(
+                byAdding: .day,
+                value: 90,
+                to: now
+            ) ?? now
+
+        let scheduled =
+            entries(
+                start: now,
+                end: end
+            )
+            .filter {
+                $0.revision.reminders
+                && $0.log == nil
+                && canTrack(
+                    $0.revision.protocolID
+                )
+            }
+            .map {
+                ReminderPlanner.Candidate(
+                    id: $0.id,
+                    at: $0.at
+                )
+            }
+
+        let cycleRestarts =
+            revisions.compactMap {
+                revision
+                    -> ReminderPlanner.Candidate?
+                in
+
+                guard
+                    revision.enabled,
+                    revision.reminders,
+                    revision.effectiveUntil
+                        == nil,
+                    canTrack(
+                        revision.protocolID
+                    ),
+                    let config =
+                        revision.config,
+                    config.hasCycle,
+                    let restart =
+                        CycleDisplay
+                            .nextRestart(
+                                config,
+                                after: now
+                            ),
+                    restart <= end
+                else {
+                    return nil
+                }
+
+                return ReminderPlanner
+                    .Candidate(
+                        id:
+                            "cycle-restart:"
+                            + revision.id
+                                .uuidString
+                            + ":"
+                            + String(
+                                Int(
+                                    restart
+                                        .timeIntervalSince1970
+                                )
+                            ),
+                        at: restart,
+                        title:
+                            "Protocola · cycle restart",
+                        body:
+                            "A recorded cycle is scheduled to resume. Open Protocola to review it."
+                    )
+            }
+
+        notifications.update(
+            scheduled
+            + cycleRestarts
+        )
     }
     func enterDemo() {
         do {

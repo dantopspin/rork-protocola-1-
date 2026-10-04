@@ -265,6 +265,7 @@ enum Theme {
     static let emptyStateMinHeight: CGFloat = 260
     static let compactMetricTileHeight: CGFloat = 92
     static let sharePreviewMinHeight: CGFloat = 240
+    static let calendarDayWidth: CGFloat = 64
 
 
     // MARK: - Layout
