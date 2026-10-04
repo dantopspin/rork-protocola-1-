@@ -5,7 +5,7 @@ struct InsightsView: View {
     @Environment(TrackingStore.self) private var store
 
     @State private var protocolID: UUID?
-    @State private var window = 0
+    @State private var window = 7
     @State private var changeID: UUID?
     @State private var assistant = false
     @State private var paywall: PaywallReason?
@@ -19,12 +19,15 @@ struct InsightsView: View {
     }
 
     private var changes: [ProtocolEvent] {
-        store.events.filter {
-            $0.protocolID == selected?.id
-                && $0.isChangeAnchor
-                && $0.title
-                    != "Protocol created"
-        }
+        store.events
+            .filter {
+                $0.protocolID == selected?.id
+                    && $0.isChangeAnchor
+                    && $0.title != "Protocol created"
+            }
+            .sorted {
+                $0.at > $1.at
+            }
     }
 
     private var latest: ProtocolEvent? {
@@ -36,27 +39,19 @@ struct InsightsView: View {
         let beginning =
             selected?.createdAt ?? now
 
-        let start: Date
+        let today =
+            Calendar.current
+                .startOfDay(for: now)
 
-        if window == 0 {
-            start =
-                latest?.at
-                ?? beginning
-        } else {
-            let today =
-                Calendar.current
-                    .startOfDay(for: now)
-
-            start =
-                Calendar.current.date(
-                    byAdding: .day,
-                    value: -(window - 1),
-                    to: today
-                ) ?? today
-        }
+        let requested =
+            Calendar.current.date(
+                byAdding: .day,
+                value: -(window - 1),
+                to: today
+            ) ?? today
 
         return AnalysisPeriod(
-            start: min(start, now),
+            start: max(beginning, requested),
             end: now
         )
     }
@@ -64,15 +59,14 @@ struct InsightsView: View {
     private var periodLogs: [DoseLog] {
         store.logs.filter {
             period.contains($0.loggedAt)
-                && $0.protocolID
-                    == selected?.id
+                && $0.protocolID == selected?.id
         }
     }
 
     private var weeklyShareData: ShareCardData? {
-        guard let summary =
-            store.insights[7],
-              summary.recorded > 0
+        guard
+            let summary = store.insights[7],
+            summary.recorded > 0
         else {
             return nil
         }
@@ -97,8 +91,7 @@ struct InsightsView: View {
             AssistantView()
         }
         .fullScreenCover(item: $paywall) {
-            reason in
-            PaywallView(reason: reason)
+            PaywallView(reason: $0)
         }
         .sheet(isPresented: $shareCard) {
             ShareCardPreviewView(
@@ -110,7 +103,7 @@ struct InsightsView: View {
 }
 
 
-// MARK: - Main states
+// MARK: - Main content
 
 private extension InsightsView {
 
@@ -118,14 +111,13 @@ private extension InsightsView {
         ContentUnavailableView {
             Label(
                 "No protocol yet",
-                systemImage:
-                    "chart.xyaxis.line"
+                systemImage: "chart.xyaxis.line"
             )
         } description: {
             Text(
-                "Add a protocol first. Insights are built "
-                + "from your own recorded entries and changes."
+                "Add a protocol first. Insights are built from your recorded entries and changes."
             )
+            .font(Theme.body)
         }
         .frame(
             maxWidth: .infinity,
@@ -146,48 +138,55 @@ private extension InsightsView {
         return ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceM
+                spacing: Theme.spaceXL
             ) {
-                protocolSelector
-
-                Picker(
-                    "Period",
-                    selection: $window
-                ) {
-                    Text("Current phase")
-                        .tag(0)
-
-                    Text("7D")
-                        .tag(7)
-
-                    Text("30D")
-                        .tag(30)
+                if store.protocols.count > 1 {
+                    protocolSelector
                 }
-                .pickerStyle(.segmented)
 
-                Text(periodLabel)
-                    .font(Theme.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXS
+                ) {
+                    Picker(
+                        "Period",
+                        selection: $window
+                    ) {
+                        Text("7D").tag(7)
+                        Text("30D").tag(30)
+                        Text("90D").tag(90)
+                        Text("1Y").tag(365)
+                    }
+                    .pickerStyle(.segmented)
+                    .tint(Theme.ink)
+
+                    Text(periodLabel)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.muted)
+                        .monospacedDigit()
+                }
 
                 if periodLogs.isEmpty {
                     emptyInsightsState
-
                 } else {
-                    overview(
-                        summary: summary
-                    )
-
                     if summary.scheduled > 0 {
-                        consistencyChart(summary)
+                        consistencyHero(summary)
+                    } else {
+                        activityHero(summary)
+                    }
+
+                    supportingStats(summary)
+
+                    if let latest {
+                        changeContext(latest)
                     }
 
                     if !summary.sites.isEmpty {
-                        sitesRow(summary)
+                        sitesCard(summary)
                     }
 
                     if !summary.symptoms.isEmpty {
-                        symptomsRow(summary)
+                        symptomsCard(summary)
                     }
                 }
 
@@ -199,22 +198,18 @@ private extension InsightsView {
                     } label: {
                         Label(
                             "Share weekly card",
-                            systemImage:
-                                "square.and.arrow.up"
-                        )
-                        .frame(
-                            maxWidth: .infinity
+                            systemImage: "square.and.arrow.up"
                         )
                     }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.teal)
+                    .buttonStyle(
+                        TrackingSecondaryButtonStyle()
+                    )
                 }
             }
             .screenPadding()
             .padding(
                 .bottom,
-                Theme.spaceXL
-                    + Theme.spaceL
+                Theme.spaceXL + Theme.spaceL
             )
         }
         .scrollIndicators(.hidden)
@@ -226,119 +221,80 @@ private extension InsightsView {
     }
 
 
-    @ViewBuilder
     var protocolSelector: some View {
-        if let selected {
-            if store.protocols.count > 1 {
-                Menu {
-                    ForEach(store.protocols) {
-                        record in
-                        Button(record.name) {
-                            protocolID =
-                                record.id
-                            comparing = false
-                            changeID = nil
-                        }
-                    }
-                } label: {
-                    protocolSelectorLabel(
-                        selected.name,
-                        showsChevron: true
-                    )
+        Menu {
+            ForEach(store.protocols) {
+                record in
+
+                Button(record.name) {
+                    protocolID = record.id
+                    comparing = false
+                    changeID = nil
                 }
-                .buttonStyle(.plain)
-
-            } else {
-                protocolSelectorLabel(
-                    selected.name,
-                    showsChevron: false
-                )
             }
-        }
-    }
-
-
-    func protocolSelectorLabel(
-        _ name: String,
-        showsChevron: Bool
-    ) -> some View {
-        HStack(spacing: Theme.spaceS) {
-            Image(
-                systemName:
-                    "list.bullet.rectangle"
-            )
-            .foregroundStyle(Theme.teal)
-
-            Text(name)
-                .font(
-                    .subheadline.weight(
-                        .medium
-                    )
+        } label: {
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                Text(
+                    selected?.name
+                        ?? "Protocol"
                 )
+                .font(Theme.label)
                 .foregroundStyle(Theme.ink)
-                .lineLimit(1)
 
-            Spacer()
+                Spacer()
 
-            if showsChevron {
                 Image(
-                    systemName: "chevron.down"
+                    systemName:
+                        "chevron.up.chevron.down"
                 )
                 .font(Theme.micro)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(
+                    Theme.muted
+                )
             }
-        }
-        .padding(
-            .horizontal,
-            Theme.spaceM
-        )
-        .frame(minHeight: 44)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius: Theme.radiusRow
+            .padding(Theme.spaceM)
+            .background(
+                Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusRow
+                )
             )
-        )
+            .inkBorder(
+                cornerRadius:
+                    Theme.radiusRow
+            )
+        }
+        .buttonStyle(.plain)
     }
 
 
     var emptyInsightsState: some View {
-        ContentUnavailableView {
-            Label(
-                "No insights yet",
-                systemImage:
-                    "chart.xyaxis.line"
-            )
-        } description: {
-            Text(
-                "Record your first entry from Today. "
-                + "Overview, consistency, sites, and observations "
-                + "will appear here as your history grows."
-            )
-        }
-        .frame(
-            maxWidth: .infinity,
-            minHeight: 260
+        TrackingEmptyState(
+            icon: "chart.xyaxis.line",
+            title: "No insights yet",
+            message:
+                "Record entries from Today. Consistency, changes, sites, and observations will appear as your history grows."
         )
+        .frame(minHeight: 260)
     }
 }
 
 
-// MARK: - Period and overview
+// MARK: - Period
 
 private extension InsightsView {
 
     var periodLabel: String {
-        let calendar =
-            Calendar.current
+        guard let selected else {
+            return ""
+        }
 
-        if window == 0,
-           latest == nil,
-           let created =
-                selected?.createdAt,
-           calendar.isDateInToday(
-                created
-           ) {
+        if Calendar.current.isDateInToday(
+            selected.createdAt
+        ) {
             return "Started today"
         }
 
@@ -356,7 +312,7 @@ private extension InsightsView {
                     .day()
             )
 
-        if calendar.isDate(
+        if Calendar.current.isDate(
             period.start,
             inSameDayAs: period.end
         ) {
@@ -365,111 +321,55 @@ private extension InsightsView {
 
         return start + " – " + end
     }
+}
 
 
-    func overview(
-        summary: InsightsSummary
-    ) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceS
-        ) {
-            Text("Overview")
-                .font(Theme.sectionTitle)
+// MARK: - Primary insight
 
-            LazyVGrid(
-                columns: [
-                    GridItem(
-                        .flexible(),
-                        spacing: Theme.spaceXS
-                    ),
-                    GridItem(
-                        .flexible(),
-                        spacing: Theme.spaceXS
-                    )
-                ],
-                spacing: Theme.spaceXS
-            ) {
-                InsightStatTile(
-                    icon: "checkmark.circle",
-                    label: "Entries",
-                    value:
-                        String(
-                            periodLogs.count
-                        ),
-                    detail:
-                        summary.scheduled > 0
-                        ? "of \(summary.scheduled) scheduled"
-                        : "recorded"
-                )
+private extension InsightsView {
 
-                InsightStatTile(
-                    icon: "scope",
-                    label: "Consistency",
-                    value:
-                        summary.percentage,
-                    detail:
-                        summary.scheduled > 0
-                        ? "\(summary.recorded) of \(summary.scheduled) logged"
-                        : "No schedule"
-                )
-
-                InsightStatTile(
-                    icon:
-                        "checkmark.circle.fill",
-                    label: "Logged",
-                    value:
-                        String(
-                            summary.recorded
-                        ),
-                    detail:
-                        summary.recorded == 1
-                        ? "entry"
-                        : "entries"
-                )
-
-                let skipped =
-                    periodLogs.filter {
-                        $0.status == "Skipped"
-                    }.count
-
-                InsightStatTile(
-                    icon: "xmark.circle.fill",
-                    label: "Skipped",
-                    value: String(skipped),
-                    detail:
-                        skipped == 1
-                        ? "entry"
-                        : "entries",
-                    attention: skipped > 0
-                )
-            }
-        }
-    }
-
-
-    func consistencyChart(
+    func consistencyHero(
         _ summary: InsightsSummary
     ) -> some View {
         VStack(
             alignment: .leading,
             spacing: Theme.spaceM
         ) {
-            HStack {
-                Text("Recorded vs scheduled")
-                    .font(
-                        .subheadline.weight(
-                            .semibold
-                        )
+            HStack(
+                alignment: .top
+            ) {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Text("Consistency")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+
+                    Text(summary.percentage)
+                        .font(Theme.metric)
+                        .monospacedDigit()
+                        .foregroundStyle(Theme.ink)
+
+                    Text(
+                        "\(summary.recorded) of \(summary.scheduled) scheduled"
                     )
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.muted)
+                }
 
                 Spacer()
 
-                chartLegend
+                Image(
+                    systemName: "chevron.right"
+                )
+                .font(Theme.micro)
+                .foregroundStyle(Theme.muted)
             }
 
             Chart(summary.days) {
                 day in
+
                 BarMark(
                     x: .value(
                         "Day",
@@ -482,7 +382,7 @@ private extension InsightsView {
                     )
                 )
                 .foregroundStyle(
-                    Theme.line.opacity(0.9)
+                    Theme.line
                 )
 
                 BarMark(
@@ -496,17 +396,12 @@ private extension InsightsView {
                         day.recorded
                     )
                 )
-                .foregroundStyle(Theme.teal)
+                .foregroundStyle(
+                    Theme.teal
+                )
             }
-            .frame(height: 170)
-            .chartYAxis {
-                AxisMarks(
-                    position: .leading
-                ) {
-                    AxisGridLine()
-                    AxisValueLabel()
-                }
-            }
+            .frame(height: 145)
+            .chartYAxis(.hidden)
             .chartXAxis {
                 AxisMarks(
                     values: .automatic(
@@ -517,107 +412,225 @@ private extension InsightsView {
                             )
                     )
                 ) { value in
+                    AxisGridLine()
+                        .foregroundStyle(
+                            Theme.line
+                        )
+
                     AxisValueLabel(
                         format:
                             .dateTime
                                 .day()
                     )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
                 }
             }
-
-            Text(
-                "Recorded means a scheduled entry has a non-skipped log."
-            )
-            .font(Theme.caption)
-            .foregroundStyle(.secondary)
         }
         .padding(Theme.spaceM)
         .background(
             Theme.surface,
             in: .rect(
-                cornerRadius: Theme.radiusCard
+                cornerRadius:
+                    Theme.radiusCard
             )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
         )
     }
 
 
-    var chartLegend: some View {
-        HStack(spacing: Theme.spaceS) {
-            legendItem(
-                "Logged",
-                color: Theme.teal
+    func activityHero(
+        _ summary: InsightsSummary
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXS
+        ) {
+            Text("Recorded entries")
+                .font(Theme.label)
+                .foregroundStyle(Theme.ink)
+
+            Text(String(periodLogs.count))
+                .font(Theme.metric)
+                .monospacedDigit()
+                .foregroundStyle(Theme.ink)
+
+            Text(
+                "No recurring schedule is recorded for this period."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(Theme.muted)
+        }
+        .padding(Theme.spaceM)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
+        )
+    }
+
+
+    func supportingStats(
+        _ summary: InsightsSummary
+    ) -> some View {
+        let skipped =
+            periodLogs.filter {
+                $0.status == "Skipped"
+            }.count
+
+        return HStack(
+            spacing: Theme.spaceXS
+        ) {
+            statTile(
+                value:
+                    String(summary.recorded),
+                label: "Logged",
+                dot: Theme.teal
             )
 
-            legendItem(
-                "Scheduled",
-                color: Theme.line
+            statTile(
+                value: String(skipped),
+                label: "Skipped",
+                dot: Theme.muted
+            )
+
+            statTile(
+                value:
+                    String(
+                        summary.sites.count
+                    ),
+                label: "Sites",
+                dot: Theme.line
             )
         }
     }
 
 
-    func legendItem(
-        _ title: String,
-        color: Color
+    func statTile(
+        value: String,
+        label: String,
+        dot: Color
     ) -> some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(
-                    width: 7,
-                    height: 7
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXS
+        ) {
+            Text(value)
+                .font(
+                    .system(
+                        size: 26,
+                        weight: .medium,
+                        design: .serif
+                    )
                 )
+                .monospacedDigit()
+                .foregroundStyle(Theme.ink)
 
-            Text(title)
-                .font(Theme.micro)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(dot)
+                    .frame(
+                        width: 6,
+                        height: 6
+                    )
+
+                Text(label)
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+            }
         }
+        .padding(Theme.spaceM)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: 92,
+            alignment: .leading
+        )
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusRow
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusRow
+        )
     }
 }
 
 
-// MARK: - Observation rows
+// MARK: - Change context
 
 private extension InsightsView {
 
-    func sitesRow(
-        _ summary: InsightsSummary
+    func changeContext(
+        _ change: ProtocolEvent
     ) -> some View {
-        NavigationLink {
-            SitesBreakdownView(
-                sites: summary.sites
-            )
+        Button {
+            if store.isPremium {
+                comparing = true
+                changeID = change.id
+            } else {
+                paywall = .compare
+            }
         } label: {
-            HStack(spacing: Theme.spaceM) {
+            HStack(
+                spacing: Theme.spaceM
+            ) {
                 Image(
-                    systemName: "mappin.circle"
+                    systemName:
+                        "arrow.left.arrow.right"
                 )
-                .foregroundStyle(Theme.teal)
+                .font(Theme.sectionTitle)
+                .foregroundStyle(
+                    Color.white.opacity(0.76)
+                )
 
                 VStack(
                     alignment: .leading,
                     spacing: Theme.spaceXXS
                 ) {
-                    Text("Injection sites")
-                        .font(
-                            .subheadline.weight(
-                                .medium
-                            )
+                    Text("Since last change")
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Color.white.opacity(0.58)
                         )
-                        .foregroundStyle(Theme.ink)
 
                     Text(
-                        summary.sites.prefix(2)
-                            .map {
-                                "\($0.name) · \($0.count)"
-                            }
-                            .joined(
-                                separator: "   "
-                            )
+                        changeSummary(change)
+                    )
+                    .font(Theme.sectionTitle)
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+
+                    Text(
+                        change.at.formatted(
+                            date: .abbreviated,
+                            time: .omitted
+                        )
                     )
                     .font(Theme.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .foregroundStyle(
+                        Color.white.opacity(0.58)
+                    )
                 }
 
                 Spacer()
@@ -626,7 +639,161 @@ private extension InsightsView {
                     systemName: "chevron.right"
                 )
                 .font(Theme.micro)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(
+                    Color.white.opacity(0.52)
+                )
+            }
+            .padding(Theme.spaceM)
+            .frame(
+                maxWidth: .infinity,
+                alignment: .leading
+            )
+            .background(
+                Theme.ink,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+
+    func changeSummary(
+        _ change: ProtocolEvent
+    ) -> String {
+        if let amount =
+            change.changes.first(
+                where: {
+                    $0.field == "Amount"
+                }
+            ) {
+            let before =
+                amount.before.isEmpty
+                ? "Not recorded"
+                : amount.before
+
+            let after =
+                amount.after.isEmpty
+                ? "Not recorded"
+                : amount.after
+
+            return before + " → " + after
+        }
+
+        let meaningful =
+            change.changes.first {
+                $0.isMeaningful
+            }
+
+        if let meaningful {
+            return
+                meaningful.field
+                + ": "
+                + meaningful.before
+                + " → "
+                + meaningful.after
+        }
+
+        return change.detail
+    }
+}
+
+
+// MARK: - Secondary insight cards
+
+private extension InsightsView {
+
+    func sitesCard(
+        _ summary: InsightsSummary
+    ) -> some View {
+        NavigationLink {
+            SitesBreakdownView(
+                sites: summary.sites
+            )
+        } label: {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceM
+            ) {
+                HStack {
+                    Text("Top injection sites")
+                        .font(Theme.sectionTitle)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                    Spacer()
+
+                    Image(
+                        systemName:
+                            "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+                }
+
+                let total =
+                    max(
+                        1,
+                        summary.sites
+                            .reduce(0) {
+                                $0 + $1.count
+                            }
+                    )
+
+                ForEach(
+                    summary.sites.prefix(3)
+                ) { site in
+                    HStack(
+                        spacing: Theme.spaceS
+                    ) {
+                        Circle()
+                            .fill(Theme.teal)
+                            .opacity(
+                                opacity(
+                                    for: site,
+                                    in: summary.sites
+                                )
+                            )
+                            .frame(
+                                width: 8,
+                                height: 8
+                            )
+
+                        Text(site.name)
+                            .font(Theme.body)
+                            .foregroundStyle(
+                                Theme.ink
+                            )
+
+                        Spacer()
+
+                        Text(
+                            String(
+                                Int(
+                                    (
+                                        Double(
+                                            site.count
+                                        )
+                                        / Double(
+                                            total
+                                        )
+                                    ) * 100
+                                )
+                            )
+                            + "%"
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                        .monospacedDigit()
+                    }
+                }
             }
             .padding(Theme.spaceM)
         }
@@ -634,13 +801,40 @@ private extension InsightsView {
         .background(
             Theme.surface,
             in: .rect(
-                cornerRadius: Theme.radiusRow
+                cornerRadius:
+                    Theme.radiusCard
             )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
         )
     }
 
 
-    func symptomsRow(
+    func opacity(
+        for site: InsightsSummary.Site,
+        in sites: [InsightsSummary.Site]
+    ) -> Double {
+        guard
+            let index =
+                sites.firstIndex(
+                    where: {
+                        $0.id == site.id
+                    }
+                )
+        else {
+            return 0.45
+        }
+
+        return max(
+            0.35,
+            1 - Double(index) * 0.22
+        )
+    }
+
+
+    func symptomsCard(
         _ summary: InsightsSummary
     ) -> some View {
         VStack(
@@ -648,16 +842,8 @@ private extension InsightsView {
             spacing: Theme.spaceXS
         ) {
             HStack {
-                Label(
-                    "Recorded observations",
-                    systemImage:
-                        "waveform.path.ecg"
-                )
-                .font(
-                    .subheadline.weight(
-                        .medium
-                    )
-                )
+                Text("Recorded observations")
+                    .font(Theme.sectionTitle)
 
                 Spacer()
 
@@ -667,7 +853,9 @@ private extension InsightsView {
                     )
                 )
                 .font(Theme.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(
+                    Theme.muted
+                )
                 .monospacedDigit()
             }
 
@@ -688,21 +876,30 @@ private extension InsightsView {
                     + "/10"
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(
+                    Theme.muted
+                )
             }
 
             Text(
                 "Recorded observations only. Timing does not establish causation."
             )
             .font(Theme.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(
+                Theme.muted
+            )
         }
         .padding(Theme.spaceM)
         .background(
             Theme.surface,
             in: .rect(
-                cornerRadius: Theme.radiusRow
+                cornerRadius:
+                    Theme.radiusCard
             )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
         )
     }
 }
@@ -714,65 +911,6 @@ private extension InsightsView {
 
     @ViewBuilder
     var proFeatures: some View {
-        if store.isPremium,
-           !changes.isEmpty {
-            Button {
-                comparing.toggle()
-            } label: {
-                Label(
-                    comparing
-                        ? "Hide comparison"
-                        : "Compare change periods",
-                    systemImage:
-                        "arrow.left.arrow.right"
-                )
-            }
-            .buttonStyle(.bordered)
-            .tint(Theme.teal)
-
-        } else if !store.isPremium,
-                  !changes.isEmpty {
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceS
-            ) {
-                Text("Protocola Pro")
-                    .font(Theme.micro)
-                    .foregroundStyle(Theme.teal)
-
-                Text(
-                    "\(changes.count) recorded "
-                    + (
-                        changes.count == 1
-                        ? "change"
-                        : "changes"
-                    )
-                    + " ready to compare"
-                )
-                .font(Theme.sectionTitle)
-
-                Text(
-                    "Compare descriptive windows around your own recorded changes."
-                )
-                .font(Theme.body)
-                .foregroundStyle(.secondary)
-
-                Button("See comparison") {
-                    paywall = .compare
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.teal)
-            }
-            .padding(Theme.spaceM)
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius:
-                        Theme.radiusCard
-                )
-            )
-        }
-
         if comparing,
            store.isPremium {
             Picker(
@@ -789,9 +927,12 @@ private extension InsightsView {
                     .tag(Optional($0.id))
                 }
             }
+            .tint(Theme.ink)
             .onAppear {
-                changeID =
-                    changes.first?.id
+                if changeID == nil {
+                    changeID =
+                        changes.first?.id
+                }
             }
 
             if let change =
@@ -818,8 +959,9 @@ private extension InsightsView {
                     systemImage: "text.bubble"
                 )
             }
-            .buttonStyle(.bordered)
-            .tint(Theme.teal)
+            .buttonStyle(
+                TrackingSecondaryButtonStyle()
+            )
 
         } else if !store.isPremium,
                   !periodLogs.isEmpty,
@@ -830,15 +972,12 @@ private extension InsightsView {
             } label: {
                 Label(
                     "Ask about \(protocolName)",
-                    systemImage:
-                        "text.bubble"
-                )
-                .frame(
-                    maxWidth: .infinity
+                    systemImage: "text.bubble"
                 )
             }
-            .buttonStyle(.bordered)
-            .tint(Theme.teal)
+            .buttonStyle(
+                TrackingSecondaryButtonStyle()
+            )
         }
     }
 }
@@ -846,81 +985,28 @@ private extension InsightsView {
 
 // MARK: - Supporting views
 
-private struct InsightStatTile: View {
-    let icon: String
-    let label: String
-    let value: String
-    let detail: String
-    var attention = false
-
-    var body: some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceXS
-        ) {
-            HStack(spacing: Theme.spaceXS) {
-                Image(systemName: icon)
-                    .foregroundStyle(
-                        attention
-                            ? Theme.amber
-                            : Theme.teal
-                    )
-
-                Text(label)
-                    .font(Theme.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text(value)
-                .font(.title2.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(Theme.ink)
-
-            Text(detail)
-                .font(Theme.micro)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .padding(Theme.spaceM)
-        .frame(
-            maxWidth: .infinity,
-            minHeight: 108,
-            alignment: .leading
-        )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius: Theme.radiusRow
-            )
-        )
-    }
-}
-
-
 private struct SitesBreakdownView: View {
     let sites: [InsightsSummary.Site]
 
     var body: some View {
         List {
             Section("Recorded sites") {
-                ForEach(sites) { site in
-                    HStack {
-                        Text(site.name)
+                ForEach(sites) {
+                    site in
 
-                        Spacer()
-
-                        Text(
+                    RecordRow(
+                        label: site.name,
+                        value:
                             String(site.count)
-                        )
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                    }
+                    )
                 }
             }
         }
         .listStyle(.insetGrouped)
         .paperList()
-        .navigationTitle("Injection Sites")
+        .navigationTitle(
+            "Injection Sites"
+        )
         .navigationBarTitleDisplayMode(
             .inline
         )
@@ -938,11 +1024,7 @@ struct PeriodSummaryCard: View {
             spacing: Theme.spaceS
         ) {
             Text("Recorded in this period")
-                .font(
-                    .subheadline.weight(
-                        .semibold
-                    )
-                )
+                .font(Theme.sectionTitle)
 
             RecordRow(
                 label: "Entries",
@@ -989,8 +1071,13 @@ struct PeriodSummaryCard: View {
         .background(
             Theme.surface,
             in: .rect(
-                cornerRadius: Theme.radiusRow
+                cornerRadius:
+                    Theme.radiusRow
             )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusRow
         )
     }
 }
@@ -1028,11 +1115,12 @@ private struct ComparisonCard: View {
             )
 
             Text(
-                "Equal-duration windows, up to 30 days each. "
-                + "Differences do not establish causation or medical conclusions."
+                "Equal-duration windows, up to 30 days each. Differences do not establish causation or medical conclusions."
             )
             .font(Theme.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(
+                Theme.muted
+            )
         }
     }
 
@@ -1060,7 +1148,9 @@ private struct ComparisonCard: View {
                 )
             )
             .font(Theme.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(
+                Theme.muted
+            )
             .monospacedDigit()
 
             PeriodSummaryCard(
