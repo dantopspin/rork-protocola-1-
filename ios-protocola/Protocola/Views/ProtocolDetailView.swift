@@ -22,11 +22,14 @@ struct ProtocolDetailView: View {
                 protocolList(record)
 
             } else {
-                ContentUnavailableView(
-                    "Protocol unavailable",
-                    systemImage:
-                        "list.bullet.rectangle"
+                TrackingEmptyState(
+                    icon:
+                        "list.bullet.rectangle",
+                    title: "Protocol unavailable",
+                    message:
+                        "This protocol is no longer available."
                 )
+                .screenPadding()
             }
         }
         .sheet(isPresented: $choice) {
