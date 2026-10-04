@@ -23,20 +23,7 @@ struct OnboardingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView(selection: $step) {
-                introduction
-                    .tag(0)
-
-                intentSelection
-                    .tag(1)
-
-                personalizedValue
-                    .tag(2)
-
-                trust
-                    .tag(3)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            currentPage
 
             controls
         }
@@ -51,6 +38,31 @@ struct OnboardingView: View {
             )
         }
         .trackingErrors()
+    }
+}
+
+
+// MARK: - Page routing
+
+private extension OnboardingView {
+
+    /// Button-driven routing keeps required steps genuinely required.
+    /// A paged TabView allowed users to swipe around the intent gate.
+    @ViewBuilder
+    var currentPage: some View {
+        switch step {
+        case 0:
+            introduction
+
+        case 1:
+            intentSelection
+
+        case 2:
+            personalizedValue
+
+        default:
+            trust
+        }
     }
 }
 
