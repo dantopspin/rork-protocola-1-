@@ -96,7 +96,7 @@ struct ProtocolEditorView: View {
             .sheet(isPresented: $addVial) {
                 VialEditorView()
             }
-            .fullScreenCover(
+            .sheet(
                 isPresented: $paywall
             ) {
                 PaywallView(

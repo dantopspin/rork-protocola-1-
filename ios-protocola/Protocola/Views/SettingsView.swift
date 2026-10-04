@@ -39,7 +39,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .fullScreenCover(item: $paywall) { reason in
+            .sheet(item: $paywall) { reason in
                 PaywallView(reason: reason)
             }
             .sheet(item: $document) { document in
@@ -71,17 +71,18 @@ struct SettingsView: View {
                 )
             }
             .alert(
-                "Purchase unavailable",
+                purchases.alert?.title ?? "",
                 isPresented: Binding(
-                    get: { purchases.error != nil },
-                    set: { if !$0 { purchases.error = nil } }
-                )
-            ) {
+                    get: { purchases.alert != nil },
+                    set: { if !$0 { purchases.alert = nil } }
+                ),
+                presenting: purchases.alert
+            ) { _ in
                 Button("OK") {
-                    purchases.error = nil
+                    purchases.alert = nil
                 }
-            } message: {
-                Text(purchases.error ?? "")
+            } message: { alert in
+                Text(alert.message)
             }
             .trackingErrors()
         }

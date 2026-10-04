@@ -90,7 +90,7 @@ struct InsightsView: View {
         .sheet(isPresented: $assistant) {
             AssistantView()
         }
-        .fullScreenCover(item: $paywall) {
+        .sheet(item: $paywall) {
             PaywallView(reason: $0)
         }
         .sheet(isPresented: $shareCard) {

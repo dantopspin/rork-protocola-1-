@@ -225,7 +225,7 @@ struct HistoryView: View {
         ) {
             dateFilterSheet
         }
-        .fullScreenCover(
+        .sheet(
             isPresented: $paywall
         ) {
             PaywallView(reason: .summary)

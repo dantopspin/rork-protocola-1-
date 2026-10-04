@@ -29,7 +29,7 @@ struct ContentView: View {
         .onChange(of: store.needsProtocolChoice) { _, needs in choosingProtocol = needs }
         .sheet(isPresented: $choosingProtocol) { FreeProtocolChoiceView() }
         // Only explicit attempts to use Pro functionality present this paywall.
-        .fullScreenCover(isPresented: Binding(
+        .sheet(isPresented: Binding(
             get: { store.pendingPaywall },
             set: { if !$0 { store.dismissPaywall() } }
         )) { PaywallView(reason: .secondProtocol) }

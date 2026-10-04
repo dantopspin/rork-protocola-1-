@@ -97,7 +97,7 @@ struct ProtocolsView: View {
         .sheet(isPresented: $calculator) {
             CalculatorView()
         }
-        .fullScreenCover(
+        .sheet(
             isPresented: $paywall
         ) {
             PaywallView(

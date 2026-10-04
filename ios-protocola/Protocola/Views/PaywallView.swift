@@ -70,21 +70,23 @@ struct PaywallView: View {
                 }
             }
         }
+        .presentationDetents([.large])
         .sheet(item: $document) {
             LegalDocumentView(document: $0)
         }
         .alert(
-            "Purchase unavailable",
+            purchases.alert?.title ?? "",
             isPresented: Binding(
-                get: { purchases.error != nil },
-                set: { if !$0 { purchases.error = nil } }
-            )
-        ) {
+                get: { purchases.alert != nil },
+                set: { if !$0 { purchases.alert = nil } }
+            ),
+            presenting: purchases.alert
+        ) { _ in
             Button("OK") {
-                purchases.error = nil
+                purchases.alert = nil
             }
-        } message: {
-            Text(purchases.error ?? "")
+        } message: { alert in
+            Text(alert.message)
         }
         .onChange(of: store.isPremium) { _, active in
             if active {
