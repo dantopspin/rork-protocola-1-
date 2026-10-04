@@ -354,14 +354,14 @@ private extension TodayView {
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
             .overlay(
                 alignment: .bottom
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
         }
     }
@@ -401,14 +401,14 @@ private extension TodayView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
         .overlay(
             alignment: .bottom
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -456,14 +456,14 @@ private extension TodayView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
         .overlay(
             alignment: .bottom
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -567,7 +567,7 @@ private extension TodayView {
                     if index < remainingTodayEntries.count - 1 {
                         Rectangle()
                             .fill(Theme.hairline)
-                            .frame(height: 1)
+                            .frame(height: Theme.ruleThickness)
                     }
                 }
             }
@@ -576,14 +576,14 @@ private extension TodayView {
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
             .overlay(
                 alignment: .bottom
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
             .animation(
                 reduceMotion
@@ -710,7 +710,7 @@ private extension TodayView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -903,7 +903,7 @@ private extension TodayView {
 
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
 
             RecordRow(
                 label: "Protocol",
@@ -983,7 +983,7 @@ private extension TodayView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 

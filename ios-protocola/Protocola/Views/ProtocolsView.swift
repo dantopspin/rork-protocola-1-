@@ -159,7 +159,7 @@ private extension ProtocolsView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -204,7 +204,7 @@ private extension ProtocolsView {
                             .fill(
                                 Theme.hairline
                             )
-                            .frame(height: 1)
+                            .frame(height: Theme.ruleThickness)
                     }
                 }
             }
@@ -213,14 +213,14 @@ private extension ProtocolsView {
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
             .overlay(
                 alignment: .bottom
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
         }
     }
@@ -415,7 +415,7 @@ private extension ProtocolsView {
 
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
 
                 Button {
                     calculator = true
@@ -434,14 +434,14 @@ private extension ProtocolsView {
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
             .overlay(
                 alignment: .bottom
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
         }
     }

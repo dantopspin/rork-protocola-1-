@@ -257,14 +257,14 @@ private extension InsightsView {
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
             .overlay(
                 alignment: .bottom
             ) {
                 Rectangle()
                     .fill(Theme.hairline)
-                    .frame(height: 1)
+                    .frame(height: Theme.ruleThickness)
             }
         }
         .buttonStyle(.plain)
@@ -436,14 +436,14 @@ private extension InsightsView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
         .overlay(
             alignment: .bottom
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -481,14 +481,14 @@ private extension InsightsView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
         .overlay(
             alignment: .bottom
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -515,7 +515,7 @@ private extension InsightsView {
             Rectangle()
                 .fill(Theme.hairline)
                 .frame(
-                    width: 1,
+                    width: Theme.ruleThickness,
                     height:
                         Theme.compactMetricTileHeight
                 )
@@ -529,7 +529,7 @@ private extension InsightsView {
             Rectangle()
                 .fill(Theme.hairline)
                 .frame(
-                    width: 1,
+                    width: Theme.ruleThickness,
                     height:
                         Theme.compactMetricTileHeight
                 )
@@ -548,14 +548,14 @@ private extension InsightsView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
         .overlay(
             alignment: .bottom
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -814,14 +814,14 @@ private extension InsightsView {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
         .overlay(
             alignment: .bottom
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 }

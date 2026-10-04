@@ -151,14 +151,14 @@ struct PaywallView: View {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
         .overlay(
             alignment: .bottom
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -320,7 +320,7 @@ struct PaywallView: View {
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 

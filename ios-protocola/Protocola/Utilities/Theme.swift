@@ -237,6 +237,7 @@ enum Theme {
 
     static let shadowRadius: CGFloat = 6
     static let shadowY: CGFloat = 2
+    static let ruleThickness: CGFloat = 1
 
     static let statusDot: CGFloat = 6
     static let siteDot: CGFloat = 8

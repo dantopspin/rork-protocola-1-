@@ -190,7 +190,7 @@ private extension InventoryView {
                         .fill(
                             Theme.hairline
                         )
-                        .frame(height: 1)
+                        .frame(height: Theme.ruleThickness)
                 }
                 .overlay(
                     alignment: .bottom
@@ -199,7 +199,7 @@ private extension InventoryView {
                         .fill(
                             Theme.hairline
                         )
-                        .frame(height: 1)
+                        .frame(height: Theme.ruleThickness)
                 }
             }
         }
