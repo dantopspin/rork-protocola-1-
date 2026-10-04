@@ -28,7 +28,7 @@ final class ProtocolaUITests: XCTestCase {
         XCTAssertFalse(continueButton.isEnabled)
 
         let scheduleChoice =
-            app.staticTexts["Stay on schedule"]
+            app.buttons["onboarding.intent.schedule"]
 
         XCTAssertTrue(
             scheduleChoice.waitForExistence(timeout: 2)
@@ -58,9 +58,7 @@ final class ProtocolaUITests: XCTestCase {
         XCTAssertFalse(setupButton.isEnabled)
 
         let acknowledgement =
-            app.buttons[
-                "Record-keeping acknowledgement, required"
-            ]
+            app.buttons["onboarding.acknowledgement"]
 
         XCTAssertTrue(
             acknowledgement.waitForExistence(
