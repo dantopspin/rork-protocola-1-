@@ -49,6 +49,8 @@ struct ProtocolaApp: App {
                 }
             }
             .environment(purchases)
+            .font(Theme.body)
+            .tint(Theme.ink)
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     store?.refresh()
