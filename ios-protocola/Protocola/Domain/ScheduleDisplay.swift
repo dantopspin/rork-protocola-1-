@@ -2,6 +2,30 @@ import Foundation
 
 enum ScheduleDisplay {
 
+    static func kindLabel(
+        _ kind: ScheduleConfig.Kind
+    ) -> String {
+        switch kind {
+        case .daily:
+            return "Daily"
+
+        case .weekdays:
+            return "Specific weekdays"
+
+        case .everyNDays:
+            return "Every N days"
+
+        case .weekly:
+            return "Weekly"
+
+        case .timesPerWeek:
+            return "Multiple times per week"
+
+        case .asRecorded:
+            return "As recorded"
+        }
+    }
+
     static func summary(
         _ config: ScheduleConfig
     ) -> String {
