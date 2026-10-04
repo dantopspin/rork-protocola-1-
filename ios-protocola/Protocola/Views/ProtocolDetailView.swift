@@ -213,11 +213,20 @@ private extension ProtocolDetailView {
     ) -> some View {
         Section(revision.compoundName) {
             RecordRow(
-                label: "Scheduled amount",
+                label:
+                    revision.config?.kind
+                        == .asRecorded
+                    ? "Recorded amount"
+                    : "Scheduled amount",
                 value:
                     revision.amountText
                     + " "
                     + revision.unitText
+            )
+
+            RecordRow(
+                label: "Route",
+                value: revision.routeText
             )
 
             RecordRow(
@@ -229,16 +238,32 @@ private extension ProtocolDetailView {
                     ?? "Not available"
             )
 
-            RecordRow(
-                label: "Vial",
-                value:
-                    store.vial(
-                        revision.vialID
-                    )?.name
-                    ?? "Not selected"
-            )
+            if let config = revision.config,
+               let cycle =
+                    CycleDisplay.status(
+                        config
+                    ) {
+                RecordRow(
+                    label: "Cycle",
+                    value: cycle
+                )
+            }
 
-            if let site =
+            if revision.route
+                .usesInjectionSite {
+                RecordRow(
+                    label: "Vial",
+                    value:
+                        store.vial(
+                            revision.vialID
+                        )?.name
+                        ?? "Not selected"
+                )
+            }
+
+            if revision.route
+                .usesInjectionSite,
+               let site =
                 revision.configuredSite {
                 RecordRow(
                     label: "Configured site",
@@ -262,7 +287,10 @@ private extension ProtocolDetailView {
                 logging = revision
             } label: {
                 Label(
-                    "Log unscheduled entry",
+                    revision.config?.kind
+                        == .asRecorded
+                    ? "Log entry"
+                    : "Log unscheduled entry",
                     systemImage:
                         "plus.circle"
                 )
