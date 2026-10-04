@@ -32,8 +32,8 @@ struct CalculatorView: View {
                     Text(
                         "Arithmetic only. Protocola converts the explicit values you enter. It does not recommend a dose, dilution, or administration technique."
                     )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
                 }
             }
             .paperList()
@@ -209,7 +209,7 @@ private extension CalculatorView {
                     maxWidth: .infinity
                 )
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(TrackingCompactButtonStyle(prominent: true))
             .tint(Theme.ink)
 
         } header: {
