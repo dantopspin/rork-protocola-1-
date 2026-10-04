@@ -5,6 +5,9 @@ import RevenueCat
 /// Bridges RevenueCat to TrackingStore access. Only the single `pro`
 /// entitlement grants Pro.
 ///
+/// Configuration happens once at launch in ProtocolaApp.configurePurchases(),
+/// using the bundled public SDK key (`RevenueCatSDKKey`).
+///
 /// A failed refresh retains the last verified state, so an offline launch never
 /// fakes expiry. All RevenueCat entry points are guarded so an unconfigured
 /// development build cannot accidentally access Purchases.shared.
