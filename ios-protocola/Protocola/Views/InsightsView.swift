@@ -5,23 +5,25 @@ struct InsightsView: View {
     @Environment(TrackingStore.self) private var store
 
     @State private var protocolID: UUID?
-    @State private var window: Int = 0
+    @State private var window = 0
     @State private var changeID: UUID?
-    @State private var assistant: Bool = false
+    @State private var assistant = false
     @State private var paywall: PaywallReason?
-    @State private var comparing: Bool = false
-    @State private var shareCard: Bool = false
+    @State private var comparing = false
+    @State private var shareCard = false
 
     private var selected: ProtocolRecord? {
-        store.protocols.first { $0.id == protocolID }
-            ?? store.protocols.first
+        store.protocols.first {
+            $0.id == protocolID
+        } ?? store.protocols.first
     }
 
     private var changes: [ProtocolEvent] {
         store.events.filter {
             $0.protocolID == selected?.id
                 && $0.isChangeAnchor
-                && $0.title != "Protocol created"
+                && $0.title
+                    != "Protocol created"
         }
     }
 
@@ -31,18 +33,27 @@ struct InsightsView: View {
 
     private var period: AnalysisPeriod {
         let now = Date.now
-        let beginning = selected?.createdAt ?? now
+        let beginning =
+            selected?.createdAt ?? now
 
-        let start =
-            window == 0
-            ? (latest?.at ?? beginning)
-            : (
+        let start: Date
+
+        if window == 0 {
+            start =
+                latest?.at
+                ?? beginning
+        } else {
+            let today =
+                Calendar.current
+                    .startOfDay(for: now)
+
+            start =
                 Calendar.current.date(
                     byAdding: .day,
-                    value: -window,
-                    to: now
-                ) ?? now
-            )
+                    value: -(window - 1),
+                    to: today
+                ) ?? today
+        }
 
         return AnalysisPeriod(
             start: min(start, now),
@@ -53,16 +64,21 @@ struct InsightsView: View {
     private var periodLogs: [DoseLog] {
         store.logs.filter {
             period.contains($0.loggedAt)
-                && $0.protocolID == selected?.id
+                && $0.protocolID
+                    == selected?.id
         }
     }
 
     private var weeklyShareData: ShareCardData? {
-        ShareCardData(
-            summary: InsightsSummary(
-                store: store,
-                window: 7
-            ),
+        guard let summary =
+            store.insights[7],
+              summary.recorded > 0
+        else {
+            return nil
+        }
+
+        return ShareCardData(
+            summary: summary,
             window: 7
         )
     }
@@ -80,7 +96,8 @@ struct InsightsView: View {
         .sheet(isPresented: $assistant) {
             AssistantView()
         }
-        .fullScreenCover(item: $paywall) { reason in
+        .fullScreenCover(item: $paywall) {
+            reason in
             PaywallView(reason: reason)
         }
         .sheet(isPresented: $shareCard) {
@@ -90,18 +107,24 @@ struct InsightsView: View {
         }
         .trackingErrors()
     }
+}
 
 
-    private var emptyProtocolState: some View {
+// MARK: - Main states
+
+private extension InsightsView {
+
+    var emptyProtocolState: some View {
         ContentUnavailableView {
             Label(
                 "No protocol yet",
-                systemImage: "chart.xyaxis.line"
+                systemImage:
+                    "chart.xyaxis.line"
             )
         } description: {
             Text(
-                "Record a protocol first. Insights are built only "
-                + "from your own entries and protocol changes."
+                "Add a protocol first. Insights are built "
+                + "from your own recorded entries and changes."
             )
         }
         .frame(
@@ -112,73 +135,59 @@ struct InsightsView: View {
     }
 
 
-    private var insightsContent: some View {
-        let summary = InsightsSummary(
-            store: store,
-            period: period,
-            protocolID: selected?.id
-        )
+    var insightsContent: some View {
+        let summary =
+            InsightsSummary(
+                store: store,
+                period: period,
+                protocolID: selected?.id
+            )
 
         return ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.spaceM
             ) {
-                Picker(
-                    "Protocol",
-                    selection: $protocolID
-                ) {
-                    ForEach(store.protocols) {
-                        Text($0.name)
-                            .tag(Optional($0.id))
-                    }
-                }
-                .onAppear {
-                    if protocolID == nil {
-                        protocolID = selected?.id
-                    }
-                }
+                protocolSelector
 
                 Picker(
                     "Period",
                     selection: $window
                 ) {
-                    Text("Since change")
+                    Text("Current phase")
                         .tag(0)
 
-                    Text("7 days")
+                    Text("7D")
                         .tag(7)
 
-                    Text("30 days")
+                    Text("30D")
                         .tag(30)
                 }
                 .pickerStyle(.segmented)
 
-                periodHeader
+                Text(periodLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
 
                 if periodLogs.isEmpty {
-                    TrackingCard {
-                        TrackingEmptyState(
-                            icon: "chart.xyaxis.line",
-                            title: "Nothing recorded in this period",
-                            message:
-                                "Insights appear after you record entries. "
-                                + "Choose another period if you already have history."
-                        )
-                    }
+                    emptyInsightsState
+
                 } else {
-                    PeriodSummaryCard(
-                        summary: summary,
-                        logs: periodLogs
+                    overview(
+                        summary: summary
                     )
 
                     if summary.scheduled > 0 {
                         consistencyChart(summary)
                     }
 
-                    if !summary.sites.isEmpty
-                        || !summary.symptoms.isEmpty {
-                        observationsCard(summary)
+                    if !summary.sites.isEmpty {
+                        sitesRow(summary)
+                    }
+
+                    if !summary.symptoms.isEmpty {
+                        symptomsRow(summary)
                     }
                 }
 
@@ -189,66 +198,293 @@ struct InsightsView: View {
                         shareCard = true
                     } label: {
                         Label(
-                            "Share this week's card",
-                            systemImage: "square.and.arrow.up"
+                            "Share weekly card",
+                            systemImage:
+                                "square.and.arrow.up"
+                        )
+                        .frame(
+                            maxWidth: .infinity
                         )
                     }
-                    .buttonStyle(
-                        TrackingSecondaryButtonStyle()
-                    )
+                    .buttonStyle(.bordered)
+                    .tint(Theme.teal)
                 }
             }
             .screenPadding()
-            .padding(.bottom, Theme.spaceS)
+            .padding(
+                .bottom,
+                Theme.spaceXL
+                    + Theme.spaceL
+            )
         }
         .scrollIndicators(.hidden)
-    }
-
-
-    private var periodHeader: some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceXS
-        ) {
-            Text(
-                window == 0
-                    ? (
-                        latest == nil
-                            ? "Since this protocol began"
-                            : "Since your last protocol change"
-                    )
-                    : "Last \(window) days"
-            )
-            .font(.title2.weight(.semibold))
-
-            Text(
-                "\(period.start.formatted(date: .abbreviated, time: .shortened)) "
-                + "– "
-                + "\(period.end.formatted(date: .abbreviated, time: .shortened))"
-            )
-            .font(.caption)
-            .foregroundStyle(Theme.muted)
-            .monospacedDigit()
-
-            if window == 0,
-               let latest {
-                Text(latest.detail)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
+        .onAppear {
+            if protocolID == nil {
+                protocolID = selected?.id
             }
         }
     }
 
 
-    private func consistencyChart(
-        _ summary: InsightsSummary
+    @ViewBuilder
+    var protocolSelector: some View {
+        if let selected {
+            if store.protocols.count > 1 {
+                Menu {
+                    ForEach(store.protocols) {
+                        record in
+                        Button(record.name) {
+                            protocolID =
+                                record.id
+                            comparing = false
+                            changeID = nil
+                        }
+                    }
+                } label: {
+                    protocolSelectorLabel(
+                        selected.name,
+                        showsChevron: true
+                    )
+                }
+                .buttonStyle(.plain)
+
+            } else {
+                protocolSelectorLabel(
+                    selected.name,
+                    showsChevron: false
+                )
+            }
+        }
+    }
+
+
+    func protocolSelectorLabel(
+        _ name: String,
+        showsChevron: Bool
     ) -> some View {
-        TrackingCard {
-            Eyebrow(
-                text: "Recorded scheduled entries"
+        HStack(spacing: Theme.spaceS) {
+            Image(
+                systemName:
+                    "list.bullet.rectangle"
+            )
+            .foregroundStyle(Theme.teal)
+
+            Text(name)
+                .font(
+                    .subheadline.weight(
+                        .medium
+                    )
+                )
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+
+            Spacer()
+
+            if showsChevron {
+                Image(
+                    systemName: "chevron.down"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(
+            .horizontal,
+            Theme.spaceM
+        )
+        .frame(minHeight: 44)
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius: Theme.radiusRow
+            )
+        )
+    }
+
+
+    var emptyInsightsState: some View {
+        ContentUnavailableView {
+            Label(
+                "No insights yet",
+                systemImage:
+                    "chart.xyaxis.line"
+            )
+        } description: {
+            Text(
+                "Record your first entry from Today. "
+                + "Overview, consistency, sites, and observations "
+                + "will appear here as your history grows."
+            )
+        }
+        .frame(
+            maxWidth: .infinity,
+            minHeight: 260
+        )
+    }
+}
+
+
+// MARK: - Period and overview
+
+private extension InsightsView {
+
+    var periodLabel: String {
+        let calendar =
+            Calendar.current
+
+        if window == 0,
+           latest == nil,
+           let created =
+                selected?.createdAt,
+           calendar.isDateInToday(
+                created
+           ) {
+            return "Started today"
+        }
+
+        let start =
+            period.start.formatted(
+                .dateTime
+                    .month(.abbreviated)
+                    .day()
             )
 
-            Chart(summary.days) { day in
+        let end =
+            period.end.formatted(
+                .dateTime
+                    .month(.abbreviated)
+                    .day()
+            )
+
+        if calendar.isDate(
+            period.start,
+            inSameDayAs: period.end
+        ) {
+            return start
+        }
+
+        return start + " – " + end
+    }
+
+
+    func overview(
+        summary: InsightsSummary
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
+        ) {
+            Text("Overview")
+                .font(.headline)
+
+            LazyVGrid(
+                columns: [
+                    GridItem(
+                        .flexible(),
+                        spacing: Theme.spaceXS
+                    ),
+                    GridItem(
+                        .flexible(),
+                        spacing: Theme.spaceXS
+                    )
+                ],
+                spacing: Theme.spaceXS
+            ) {
+                InsightStatTile(
+                    icon: "checkmark.circle",
+                    label: "Entries",
+                    value:
+                        String(
+                            periodLogs.count
+                        ),
+                    detail:
+                        summary.scheduled > 0
+                        ? "of \(summary.scheduled) scheduled"
+                        : "recorded"
+                )
+
+                InsightStatTile(
+                    icon: "scope",
+                    label: "Consistency",
+                    value:
+                        summary.percentage,
+                    detail:
+                        summary.scheduled > 0
+                        ? "\(summary.recorded) of \(summary.scheduled) logged"
+                        : "No schedule"
+                )
+
+                InsightStatTile(
+                    icon:
+                        "checkmark.circle.fill",
+                    label: "Logged",
+                    value:
+                        String(
+                            summary.recorded
+                        ),
+                    detail:
+                        summary.recorded == 1
+                        ? "entry"
+                        : "entries"
+                )
+
+                let skipped =
+                    periodLogs.filter {
+                        $0.status == "Skipped"
+                    }.count
+
+                InsightStatTile(
+                    icon: "xmark.circle.fill",
+                    label: "Skipped",
+                    value: String(skipped),
+                    detail:
+                        skipped == 1
+                        ? "entry"
+                        : "entries",
+                    attention: skipped > 0
+                )
+            }
+        }
+    }
+
+
+    func consistencyChart(
+        _ summary: InsightsSummary
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            HStack {
+                Text("Recorded vs scheduled")
+                    .font(
+                        .subheadline.weight(
+                            .semibold
+                        )
+                    )
+
+                Spacer()
+
+                chartLegend
+            }
+
+            Chart(summary.days) {
+                day in
+                BarMark(
+                    x: .value(
+                        "Day",
+                        day.date,
+                        unit: .day
+                    ),
+                    y: .value(
+                        "Scheduled",
+                        day.scheduled
+                    )
+                )
+                .foregroundStyle(
+                    Theme.line.opacity(0.9)
+                )
+
                 BarMark(
                     x: .value(
                         "Day",
@@ -262,60 +498,224 @@ struct InsightsView: View {
                 )
                 .foregroundStyle(Theme.teal)
             }
-            .frame(height: 140)
+            .frame(height: 170)
+            .chartYAxis {
+                AxisMarks(
+                    position: .leading
+                ) {
+                    AxisGridLine()
+                    AxisValueLabel()
+                }
+            }
+            .chartXAxis {
+                AxisMarks(
+                    values: .automatic(
+                        desiredCount:
+                            min(
+                                summary.days.count,
+                                7
+                            )
+                    )
+                ) { value in
+                    AxisValueLabel(
+                        format:
+                            .dateTime
+                                .day()
+                    )
+                }
+            }
 
             Text(
-                "Consistency = recorded non-skipped scheduled entries "
-                + "÷ elapsed scheduled entries. Unscheduled logs do not "
-                + "enter this percentage."
+                "Recorded means a scheduled entry has a non-skipped log."
             )
             .font(.caption)
-            .foregroundStyle(Theme.muted)
+            .foregroundStyle(.secondary)
+        }
+        .padding(Theme.spaceM)
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius: Theme.radiusCard
+            )
+        )
+    }
+
+
+    var chartLegend: some View {
+        HStack(spacing: Theme.spaceS) {
+            legendItem(
+                "Logged",
+                color: Theme.teal
+            )
+
+            legendItem(
+                "Scheduled",
+                color: Theme.line
+            )
         }
     }
 
 
-    private func observationsCard(
+    func legendItem(
+        _ title: String,
+        color: Color
+    ) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(
+                    width: 7,
+                    height: 7
+                )
+
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+
+// MARK: - Observation rows
+
+private extension InsightsView {
+
+    func sitesRow(
         _ summary: InsightsSummary
     ) -> some View {
-        TrackingCard {
-            Eyebrow(text: "Sites and symptoms")
-
-            ForEach(summary.sites) {
-                RecordRow(
-                    label: $0.name,
-                    value:
-                        "\($0.count) "
-                        + (
-                            $0.count == 1
-                                ? "entry"
-                                : "entries"
-                        )
-                )
-            }
-
-            ForEach(summary.symptoms) { symptom in
-                Text(
-                    "\(symptom.date.formatted(date: .abbreviated, time: .shortened)) "
-                    + "· \(symptom.name) "
-                    + "· severity \(symptom.severity)/10"
-                )
-                .font(.subheadline)
-            }
-
-            Text(
-                "Recorded observations only. "
-                + "Timing does not establish causation."
+        NavigationLink {
+            SitesBreakdownView(
+                sites: summary.sites
             )
-            .font(.caption)
-            .foregroundStyle(Theme.muted)
+        } label: {
+            HStack(spacing: Theme.spaceM) {
+                Image(
+                    systemName: "mappin.circle"
+                )
+                .foregroundStyle(Theme.teal)
+
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Text("Injection sites")
+                        .font(
+                            .subheadline.weight(
+                                .medium
+                            )
+                        )
+                        .foregroundStyle(Theme.ink)
+
+                    Text(
+                        summary.sites.prefix(2)
+                            .map {
+                                "\($0.name) · \($0.count)"
+                            }
+                            .joined(
+                                separator: "   "
+                            )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                }
+
+                Spacer()
+
+                Image(
+                    systemName: "chevron.right"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+            }
+            .padding(Theme.spaceM)
         }
+        .buttonStyle(.plain)
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius: Theme.radiusRow
+            )
+        )
     }
 
 
+    func symptomsRow(
+        _ summary: InsightsSummary
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXS
+        ) {
+            HStack {
+                Label(
+                    "Recorded observations",
+                    systemImage:
+                        "waveform.path.ecg"
+                )
+                .font(
+                    .subheadline.weight(
+                        .medium
+                    )
+                )
+
+                Spacer()
+
+                Text(
+                    String(
+                        summary.symptoms.count
+                    )
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+            }
+
+            if let latest =
+                summary.symptoms
+                    .sorted(
+                        by: {
+                            $0.date > $1.date
+                        }
+                    )
+                    .first {
+                Text(
+                    latest.name
+                    + " · severity "
+                    + String(
+                        latest.severity
+                    )
+                    + "/10"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Text(
+                "Recorded observations only. Timing does not establish causation."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(Theme.spaceM)
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius: Theme.radiusRow
+            )
+        )
+    }
+}
+
+
+// MARK: - Pro features
+
+private extension InsightsView {
+
     @ViewBuilder
-    private var proFeatures: some View {
-        if store.isPremium {
+    var proFeatures: some View {
+        if store.isPremium,
+           !changes.isEmpty {
             Button {
                 comparing.toggle()
             } label: {
@@ -323,44 +723,58 @@ struct InsightsView: View {
                     comparing
                         ? "Hide comparison"
                         : "Compare change periods",
-                    systemImage: "arrow.left.arrow.right"
+                    systemImage:
+                        "arrow.left.arrow.right"
                 )
             }
-            .buttonStyle(
-                TrackingSecondaryButtonStyle()
-            )
+            .buttonStyle(.bordered)
+            .tint(Theme.teal)
 
-        } else if !changes.isEmpty {
-            TrackingCard {
-                Eyebrow(text: "Protocola Pro")
+        } else if !store.isPremium,
+                  !changes.isEmpty {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceS
+            ) {
+                Text("Protocola Pro")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.teal)
 
                 Text(
                     "\(changes.count) recorded "
                     + (
                         changes.count == 1
-                            ? "change"
-                            : "changes"
+                        ? "change"
+                        : "changes"
                     )
                     + " ready to compare"
                 )
                 .font(.headline)
 
                 Text(
-                    "Before-and-after windows computed from your own records."
+                    "Compare descriptive windows around your own recorded changes."
                 )
                 .font(.subheadline)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(.secondary)
 
                 Button("See comparison") {
                     paywall = .compare
                 }
-                .buttonStyle(
-                    TrackingPrimaryButtonStyle()
-                )
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.teal)
             }
+            .padding(Theme.spaceM)
+            .background(
+                Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
+            )
         }
 
-        if comparing && store.isPremium {
+        if comparing,
+           store.isPremium {
             Picker(
                 "Recorded change",
                 selection: $changeID
@@ -376,26 +790,26 @@ struct InsightsView: View {
                 }
             }
             .onAppear {
-                changeID = changes.first?.id
+                changeID =
+                    changes.first?.id
             }
 
-            if let change = changes.first(
-                where: { $0.id == changeID }
-            ) {
+            if let change =
+                changes.first(
+                    where: {
+                        $0.id == changeID
+                    }
+                ) {
                 ComparisonCard(
-                    protocolID: selected?.id,
+                    protocolID:
+                        selected?.id,
                     change: change
                 )
-            } else {
-                Text(
-                    "A meaningful recorded change is needed for comparison."
-                )
-                .font(.subheadline)
-                .foregroundStyle(Theme.muted)
             }
         }
 
-        if store.isPremium {
+        if store.isPremium,
+           !periodLogs.isEmpty {
             Button {
                 assistant = true
             } label: {
@@ -404,33 +818,112 @@ struct InsightsView: View {
                     systemImage: "text.bubble"
                 )
             }
-            .buttonStyle(
-                TrackingSecondaryButtonStyle()
-            )
+            .buttonStyle(.bordered)
+            .tint(Theme.teal)
 
-        } else if !periodLogs.isEmpty,
-                  let protocolName = selected?.name {
-            TrackingCard {
-                Eyebrow(text: "Protocola Pro")
-
-                Text("Ask about \(protocolName)")
-                    .font(.headline)
-
-                Text(
-                    "Answers grounded in this protocol's "
-                    + "recorded entries and changes."
+        } else if !store.isPremium,
+                  !periodLogs.isEmpty,
+                  let protocolName =
+                    selected?.name {
+            Button {
+                paywall = .ask
+            } label: {
+                Label(
+                    "Ask about \(protocolName)",
+                    systemImage:
+                        "text.bubble"
                 )
-                .font(.subheadline)
-                .foregroundStyle(Theme.muted)
-
-                Button("Try Ask Protocola") {
-                    paywall = .ask
-                }
-                .buttonStyle(
-                    TrackingSecondaryButtonStyle()
+                .frame(
+                    maxWidth: .infinity
                 )
             }
+            .buttonStyle(.bordered)
+            .tint(Theme.teal)
         }
+    }
+}
+
+
+// MARK: - Supporting views
+
+private struct InsightStatTile: View {
+    let icon: String
+    let label: String
+    let value: String
+    let detail: String
+    var attention = false
+
+    var body: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXS
+        ) {
+            HStack(spacing: Theme.spaceXS) {
+                Image(systemName: icon)
+                    .foregroundStyle(
+                        attention
+                            ? Theme.amber
+                            : Theme.teal
+                    )
+
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(value)
+                .font(.title2.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(Theme.ink)
+
+            Text(detail)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .padding(Theme.spaceM)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: 108,
+            alignment: .leading
+        )
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius: Theme.radiusRow
+            )
+        )
+    }
+}
+
+
+private struct SitesBreakdownView: View {
+    let sites: [InsightsSummary.Site]
+
+    var body: some View {
+        List {
+            Section("Recorded sites") {
+                ForEach(sites) { site in
+                    HStack {
+                        Text(site.name)
+
+                        Spacer()
+
+                        Text(
+                            String(site.count)
+                        )
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .paperList()
+        .navigationTitle("Injection Sites")
+        .navigationBarTitleDisplayMode(
+            .inline
+        )
     }
 }
 
@@ -440,8 +933,16 @@ struct PeriodSummaryCard: View {
     let logs: [DoseLog]
 
     var body: some View {
-        TrackingCard {
-            Eyebrow(text: "Recorded in this period")
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
+        ) {
+            Text("Recorded in this period")
+                .font(
+                    .subheadline.weight(
+                        .semibold
+                    )
+                )
 
             RecordRow(
                 label: "Entries",
@@ -451,8 +952,15 @@ struct PeriodSummaryCard: View {
             RecordRow(
                 label: "Consistency",
                 value:
-                    "\(summary.percentage) "
-                    + "· \(summary.recorded)/\(summary.scheduled)"
+                    summary.percentage
+                    + " · "
+                    + String(
+                        summary.recorded
+                    )
+                    + "/"
+                    + String(
+                        summary.scheduled
+                    )
             )
 
             ForEach(
@@ -464,9 +972,10 @@ struct PeriodSummaryCard: View {
                 ],
                 id: \.self
             ) { status in
-                let count = logs.filter {
-                    $0.status == status
-                }.count
+                let count =
+                    logs.filter {
+                        $0.status == status
+                    }.count
 
                 if count > 0 {
                     RecordRow(
@@ -475,16 +984,14 @@ struct PeriodSummaryCard: View {
                     )
                 }
             }
-
-            if !summary.symptoms.isEmpty {
-                RecordRow(
-                    label: "Symptom observations",
-                    value: String(
-                        summary.symptoms.count
-                    )
-                )
-            }
         }
+        .padding(Theme.spaceM)
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius: Theme.radiusRow
+            )
+        )
     }
 }
 
@@ -493,13 +1000,15 @@ private struct ComparisonCard: View {
     let protocolID: UUID?
     let change: ProtocolEvent
 
-    @Environment(TrackingStore.self) private var store
+    @Environment(TrackingStore.self)
+    private var store
 
     var body: some View {
-        let periods = AnalysisPeriod.comparison(
-            change: change.at,
-            now: .now
-        )
+        let periods =
+            AnalysisPeriod.comparison(
+                change: change.at,
+                now: .now
+            )
 
         VStack(
             alignment: .leading,
@@ -520,17 +1029,15 @@ private struct ComparisonCard: View {
 
             Text(
                 "Equal-duration windows, up to 30 days each. "
-                + "Records at the change time belong to After. "
-                + "Other changes within these windows are not controlled for; "
-                + "differences do not establish causation or medical conclusions."
+                + "Differences do not establish causation or medical conclusions."
             )
             .font(.caption)
-            .foregroundStyle(Theme.muted)
+            .foregroundStyle(.secondary)
         }
     }
 
 
-    private func periodView(
+    func periodView(
         _ title: String,
         period: AnalysisPeriod
     ) -> some View {
@@ -542,44 +1049,36 @@ private struct ComparisonCard: View {
                 .font(.headline)
 
             Text(
-                "\(period.start.formatted(date: .abbreviated, time: .shortened)) "
-                + "– "
-                + "\(period.end.formatted(date: .abbreviated, time: .shortened)) "
-                + "(end excluded)"
+                period.start.formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                )
+                + " – "
+                + period.end.formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                )
             )
             .font(.caption)
-            .foregroundStyle(Theme.muted)
+            .foregroundStyle(.secondary)
             .monospacedDigit()
 
-            if let beginning =
-                store.protocols.first(
-                    where: { $0.id == protocolID }
-                )?.createdAt,
-               beginning > period.start {
-                Text(
-                    "Partial coverage: protocol began "
-                    + beginning.formatted(
-                        date: .abbreviated,
-                        time: .shortened
-                    )
-                    + "."
-                )
-                .font(.caption)
-                .foregroundStyle(Theme.amber)
-            }
-
             PeriodSummaryCard(
-                summary: InsightsSummary(
-                    store: store,
-                    period: period,
-                    protocolID: protocolID
-                ),
-                logs: store.logs.filter {
-                    $0.protocolID == protocolID
-                        && period.contains(
-                            $0.loggedAt
-                        )
-                }
+                summary:
+                    InsightsSummary(
+                        store: store,
+                        period: period,
+                        protocolID:
+                            protocolID
+                    ),
+                logs:
+                    store.logs.filter {
+                        $0.protocolID
+                            == protocolID
+                            && period.contains(
+                                $0.loggedAt
+                            )
+                    }
             )
         }
     }
