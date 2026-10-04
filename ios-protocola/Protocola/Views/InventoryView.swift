@@ -138,11 +138,7 @@ private extension InventoryView {
                         )
                         + " mg"
                     )
-                    .font(
-                        .subheadline.weight(
-                            .medium
-                        )
-                    )
+                    .font(Theme.label)
                     .foregroundStyle(Theme.ink)
                     .monospacedDigit()
                 }
