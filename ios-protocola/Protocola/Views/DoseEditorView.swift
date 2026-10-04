@@ -42,13 +42,18 @@ struct DoseEditorView: View {
         NavigationStack {
             Form {
                 entrySection
-                vialSection
+                if currentRoute.usesInjectionSite {
+                    vialSection
 
-                if let conversion {
-                    conversionSection(conversion)
+                    if let conversion {
+                        conversionSection(
+                            conversion
+                        )
+                    }
+
+                    injectionSiteSection
                 }
 
-                injectionSiteSection
                 symptomsSection
 
                 if correcting != nil {
@@ -112,6 +117,11 @@ private extension DoseEditorView {
                         )
                 )
             }
+
+            RecordRow(
+                label: "Route",
+                value: currentRoute.rawValue
+            )
 
             Picker(
                 "Status",
@@ -348,6 +358,13 @@ private extension DoseEditorView {
 // MARK: - Derived values
 
 private extension DoseEditorView {
+
+    var currentRoute: AdministrationRoute {
+        correcting?.route
+        ?? revision?.route
+        ?? .injection
+    }
+
 
     var matchingVials: [VialRecord] {
         guard let compound =
