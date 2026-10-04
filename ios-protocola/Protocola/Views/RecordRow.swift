@@ -13,7 +13,7 @@ struct RecordRow: View {
                 Text(label)
                     .font(Theme.body)
                     .foregroundStyle(
-                        Color.white.opacity(0.58)
+                        Theme.onDarkSecondary
                     )
 
                 Spacer(
