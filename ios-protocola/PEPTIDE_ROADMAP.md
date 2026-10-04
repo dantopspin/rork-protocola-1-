@@ -50,11 +50,12 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 - [x] Symptoms / severity / notes
 - [x] PDF visit summary
 - [x] AI over personal timeline
-- [ ] Administration route per compound
-- [ ] Explicit “as needed” protocol mode
-- [ ] ON/OFF cycle scheduling
-- [ ] Cycle phase / restart countdown
-- [ ] One-tap Skip / Undo Skip from Today
+- [x] Administration route per compound
+- [x] Explicit “as needed” protocol mode
+- [x] ON/OFF cycle scheduling
+- [x] Cycle phase / restart countdown
+- [x] One-tap Skip / Undo Skip from Today
+- [ ] Cycle restart reminder
 - [ ] Combined stack/calendar view
 - [ ] Planned future titration revisions
 
