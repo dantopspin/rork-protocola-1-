@@ -108,17 +108,13 @@ struct InsightsView: View {
 private extension InsightsView {
 
     var emptyProtocolState: some View {
-        ContentUnavailableView {
-            Label(
-                "No protocol yet",
-                systemImage: "chart.xyaxis.line"
-            )
-        } description: {
-            Text(
+        TrackingEmptyState(
+            icon: "chart.xyaxis.line",
+            title: "No protocol yet",
+            message:
                 "Add a protocol first. Insights are built from your recorded entries and changes."
-            )
-            .font(Theme.body)
-        }
+        )
+        .screenPadding()
         .frame(
             maxWidth: .infinity,
             maxHeight: .infinity
