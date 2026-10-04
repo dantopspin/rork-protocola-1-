@@ -37,7 +37,7 @@ struct InventoryView: View {
                             add = true
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(Theme.teal)
+                        .tint(Theme.ink)
                     }
                 }
             }
