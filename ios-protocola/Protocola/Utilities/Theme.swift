@@ -219,6 +219,9 @@ enum Theme {
     static let shareCardWidth: CGFloat = 520
     static let shareBarHeight: CGFloat = 64
 
+    static let shadowRadius: CGFloat = 8
+    static let shadowY: CGFloat = 3
+
 
     // MARK: - Layout
 
