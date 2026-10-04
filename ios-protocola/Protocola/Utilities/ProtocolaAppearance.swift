@@ -137,7 +137,9 @@ enum ProtocolaAppearance {
                 [
                     .font: font,
                     .foregroundColor:
-                        UIColor.white
+                        UIColor(
+                            Theme.onDarkPrimary
+                        )
                 ],
                 for: .selected
             )
