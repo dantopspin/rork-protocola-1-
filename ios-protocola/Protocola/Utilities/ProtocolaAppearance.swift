@@ -1,3 +1,4 @@
+import SwiftUI
 import UIKit
 
 enum ProtocolaAppearance {
@@ -13,14 +14,16 @@ enum ProtocolaAppearance {
         guard
             let largeDescriptor =
                 UIFont.systemFont(
-                    ofSize: 34,
+                    ofSize:
+                        Theme.pageTitleSize,
                     weight: .semibold
                 )
                 .fontDescriptor
                 .withDesign(.serif),
             let inlineDescriptor =
                 UIFont.systemFont(
-                    ofSize: 18,
+                    ofSize:
+                        Theme.sectionTitleSize,
                     weight: .semibold
                 )
                 .fontDescriptor
@@ -35,15 +38,11 @@ enum ProtocolaAppearance {
                     UIFont(
                         descriptor:
                             largeDescriptor,
-                        size: 34
+                        size:
+                            Theme.pageTitleSize
                     ),
                 .foregroundColor:
-                    UIColor(
-                        red: 0.0784,
-                        green: 0.0784,
-                        blue: 0.0706,
-                        alpha: 1
-                    )
+                    UIColor(Theme.ink)
             ]
 
         UINavigationBar.appearance()
@@ -52,15 +51,11 @@ enum ProtocolaAppearance {
                     UIFont(
                         descriptor:
                             inlineDescriptor,
-                        size: 18
+                        size:
+                            Theme.sectionTitleSize
                     ),
                 .foregroundColor:
-                    UIColor(
-                        red: 0.0784,
-                        green: 0.0784,
-                        blue: 0.0706,
-                        alpha: 1
-                    )
+                    UIColor(Theme.ink)
             ]
     }
 
@@ -69,7 +64,8 @@ enum ProtocolaAppearance {
         guard
             let descriptor =
                 UIFont.systemFont(
-                    ofSize: 10,
+                    ofSize:
+                        Theme.tabLabelSize,
                     weight: .medium
                 )
                 .fontDescriptor
@@ -81,7 +77,8 @@ enum ProtocolaAppearance {
         let font =
             UIFont(
                 descriptor: descriptor,
-                size: 10
+                size:
+                    Theme.tabLabelSize
             )
 
         UITabBarItem.appearance()
@@ -102,7 +99,8 @@ enum ProtocolaAppearance {
         guard
             let descriptor =
                 UIFont.systemFont(
-                    ofSize: 13,
+                    ofSize:
+                        Theme.segmentLabelSize,
                     weight: .medium
                 )
                 .fontDescriptor
@@ -114,17 +112,13 @@ enum ProtocolaAppearance {
         let font =
             UIFont(
                 descriptor: descriptor,
-                size: 13
+                size:
+                    Theme.segmentLabelSize
             )
 
         UISegmentedControl.appearance()
             .selectedSegmentTintColor =
-                UIColor(
-                    red: 0.0784,
-                    green: 0.0784,
-                    blue: 0.0706,
-                    alpha: 1
-                )
+                UIColor(Theme.ink)
 
         UISegmentedControl.appearance()
             .setTitleTextAttributes(
@@ -132,10 +126,7 @@ enum ProtocolaAppearance {
                     .font: font,
                     .foregroundColor:
                         UIColor(
-                            red: 0.4353,
-                            green: 0.4235,
-                            blue: 0.3961,
-                            alpha: 1
+                            Theme.textSecondary
                         )
                 ],
                 for: .normal
