@@ -23,21 +23,14 @@ struct InventoryView: View {
             if activeVials.isEmpty,
                (!showArchived || archivedVials.isEmpty) {
                 Section {
-                    ContentUnavailableView {
-                        Label(
-                            "No vials recorded",
-                            systemImage: "shippingbox"
-                        )
-                    } description: {
-                        Text(
-                            "Add the vial details from your own label or instructions."
-                        )
-                    } actions: {
-                        Button("Add vial") {
-                            add = true
-                        }
-                        .buttonStyle(TrackingCompactButtonStyle(prominent: true))
-                        .tint(Theme.ink)
+                    TrackingEmptyState(
+                        icon: "shippingbox",
+                        title: "No vials recorded",
+                        message:
+                            "Add the vial details from your own label or instructions.",
+                        actionTitle: "Add vial"
+                    ) {
+                        add = true
                     }
                 }
             }
