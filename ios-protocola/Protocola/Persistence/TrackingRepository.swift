@@ -182,32 +182,31 @@ import SwiftData
 
                 for otherID
                     in otherCompoundIDs {
+                    let currentOther =
+                        revisions
+                            .filter {
+                                $0.compoundID
+                                    == otherID
+                                && $0.isEffective(
+                                    at: now
+                                )
+                            }
+                            .max {
+                                $0.effectiveFrom
+                                    < $1.effectiveFrom
+                            }
+
+                    let otherCompound =
+                        compounds.first {
+                            $0.id == otherID
+                        }
+
                     guard
-                        let old =
-                            revisions
-                                .filter {
-                                    $0.compoundID
-                                        == otherID
-                                    && $0
-                                        .isEffective(
-                                            at: now
-                                        )
-                                }
-                                .max(
-                                    by: {
-                                        $0.effectiveFrom
-                                            < $1.effectiveFrom
-                                    }
-                                ),
+                        let old = currentOther,
                         let oldConfig =
                             old.config,
                         let other =
-                            compounds.first(
-                                where: {
-                                    $0.id
-                                        == otherID
-                                }
-                            )
+                            otherCompound
                     else {
                         continue
                     }
