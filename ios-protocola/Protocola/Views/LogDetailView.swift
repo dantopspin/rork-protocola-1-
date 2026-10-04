@@ -104,6 +104,11 @@ private extension LogDetailView {
             )
 
             RecordRow(
+                label: "Route",
+                value: log.routeText
+            )
+
+            RecordRow(
                 label: "Actual amount",
                 value:
                     log.actualAmountText
@@ -152,12 +157,15 @@ private extension LogDetailView {
                 )
             }
 
-            RecordRow(
-                label: "Vial",
-                value: log.vialName
-            )
+            if log.route.usesInjectionSite {
+                RecordRow(
+                    label: "Vial",
+                    value: log.vialName
+                )
+            }
 
-            if let concentration =
+            if log.route.usesInjectionSite,
+               let concentration =
                 log.concentrationText {
                 RecordRow(
                     label:
@@ -168,7 +176,8 @@ private extension LogDetailView {
                 )
             }
 
-            if let volume =
+            if log.route.usesInjectionSite,
+               let volume =
                 log.volumeMlText {
                 RecordRow(
                     label: "Volume",
@@ -208,13 +217,15 @@ private extension LogDetailView {
         _ log: DoseLog
     ) -> some View {
         Section("Observations") {
-            RecordRow(
-                label: "Site",
-                value:
-                    log.site.isEmpty
-                    ? "Not recorded"
-                    : log.site
-            )
+            if log.route.usesInjectionSite {
+                RecordRow(
+                    label: "Site",
+                    value:
+                        log.site.isEmpty
+                        ? "Not recorded"
+                        : log.site
+                )
+            }
 
             if !log.symptoms.isEmpty {
                 RecordRow(
@@ -236,7 +247,11 @@ private extension LogDetailView {
 
             if log.symptoms.isEmpty,
                log.notes.isEmpty,
-               log.site.isEmpty {
+               (
+                    !log.route
+                        .usesInjectionSite
+                    || log.site.isEmpty
+               ) {
                 Text(
                     "No site, symptoms, or notes were recorded."
                 )
