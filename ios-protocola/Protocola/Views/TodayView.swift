@@ -109,7 +109,7 @@ struct TodayView: View {
                     + "what, when, or where to administer."
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
             }
             .screenPadding()
             .padding(.bottom, Theme.spaceXL + Theme.spaceL)
@@ -241,7 +241,7 @@ private extension TodayView {
                     Button("Add protocol") {
                         create = true
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(TrackingCompactButtonStyle(prominent: true))
                     .tint(Theme.ink)
                 }
             }
@@ -256,7 +256,7 @@ private extension TodayView {
                         systemImage: "square.and.arrow.up"
                     )
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(TrackingCompactButtonStyle())
                 .tint(Theme.ink)
             }
         }
@@ -320,7 +320,7 @@ private extension TodayView {
                             manualRevision =
                                 revision
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(TrackingCompactButtonStyle())
                         .tint(Theme.ink)
                         .controlSize(.small)
                     }
@@ -371,13 +371,13 @@ private extension TodayView {
                 + "to your history."
             )
             .font(Theme.body)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.textSecondary)
 
             Button("Set up your protocol") {
                 store.exitDemo()
                 create = true
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(TrackingCompactButtonStyle(prominent: true))
             .tint(Theme.ink)
         }
         .padding(Theme.spaceM)
@@ -416,14 +416,14 @@ private extension TodayView {
                         "Track inventory and get low-balance context."
                     )
                     .font(Theme.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 }
 
                 Spacer(minLength: Theme.spaceS)
 
                 Image(systemName: "chevron.right")
                     .font(Theme.micro)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
             .padding(Theme.spaceM)
             .contentShape(Rectangle())
@@ -453,7 +453,7 @@ private extension TodayView {
                     "\(resolvedCount) / \(store.today.count) resolved"
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .monospacedDigit()
             }
 
@@ -761,14 +761,14 @@ private extension TodayView {
 
                     Text(inventorySummary)
                         .font(Theme.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(Theme.micro)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
             .padding(Theme.spaceM)
             .contentShape(Rectangle())
@@ -1256,7 +1256,7 @@ private extension TodayView {
                     + entry.revision.protocolName
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .monospacedDigit()
             }
 
@@ -1268,7 +1268,7 @@ private extension TodayView {
                 Button("Log") {
                     open(entry)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(TrackingCompactButtonStyle())
                 .tint(Theme.ink)
                 .controlSize(.small)
             }
