@@ -22,18 +22,18 @@ struct AssistantView: View {
                 Section("Your timeline") {
                     Picker("Protocol", selection: $protocolID) { ForEach(store.protocols) { Text($0.name).tag(Optional($0.id)) } }
                     Picker("Dates", selection: $scope) { ForEach(["Since last change", "Last month", "From the beginning"], id: \.self) { Text($0).tag($0) } }
-                    Text("\(start.formatted(date: .abbreviated, time: .shortened)) – \(end.formatted(date: .abbreviated, time: .shortened)) (end excluded)").font(.caption).foregroundStyle(Theme.muted)
+                    Text("\(start.formatted(date: .abbreviated, time: .shortened)) – \(end.formatted(date: .abbreviated, time: .shortened)) (end excluded)").font(Theme.caption).foregroundStyle(Theme.muted)
                 }.disabled(model.isSending)
                 Section("Ask about recorded events") {
                     Button("What changed last month?") { scope = "Last month"; model.question = "What changed last month?" }
                     Button("What did I record after my last change?") { scope = "Since last change"; model.question = "What did I record after my last change?" }
                     Button("Summarize this protocol from the beginning.") { scope = "From the beginning"; model.question = "Summarize this protocol from the beginning." }
                     TextField("Question about your timeline", text: $model.question, axis: .vertical)
-                    Text("Recorded events only. No medical advice or causal conclusions.").font(.caption).foregroundStyle(Theme.muted)
+                    Text("Recorded events only. No medical advice or causal conclusions.").font(Theme.caption).foregroundStyle(Theme.muted)
                 }
                 if !store.aiSharing {
                     Section("Before your first question") {
-                        Text("When you ask, your typed question and scoped compound, amount, schedule, status, site, and symptom records go to a network AI service. Private notes, protocol names, vial labels, and suppliers are excluded from automatic sharing. AI can make mistakes; avoid typing information you do not want sent.").font(.subheadline)
+                        Text("When you ask, your typed question and scoped compound, amount, schedule, status, site, and symptom records go to a network AI service. Private notes, protocol names, vial labels, and suppliers are excluded from automatic sharing. AI can make mistakes; avoid typing information you do not want sent.").font(Theme.body)
                         Button("Allow sharing for Ask Protocola") { store.setAISharing(true) }
                     }
                 }
@@ -45,7 +45,7 @@ struct AssistantView: View {
                         .disabled(!store.isPremium || !store.aiSharing || model.isSending || records.isEmpty || model.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 } footer: { Text("Sharing remains enabled until you turn it off in Settings. No per-question confirmation; nothing is sent in the background.") }
                 if let answer = model.answer {
-                    Section("Timeline summary · AI-generated") { Text(answer).textSelection(.enabled); Text("Verify against the cited records. AI may be incorrect.").font(.caption).foregroundStyle(Theme.muted) }
+                    Section("Timeline summary · AI-generated") { Text(answer).textSelection(.enabled); Text("Verify against the cited records. AI may be incorrect.").font(Theme.caption).foregroundStyle(Theme.muted) }
                     Section("Supporting records · sent scope") {
                         ForEach(Array(model.sentReferences.enumerated()), id: \.element.id) { index, record in
                             if let log = record.log { NavigationLink(value: TrackingRoute.logDetail(log.id)) { Text("[T\(index + 1)] \(record.title) · \(record.at.formatted())") } }
