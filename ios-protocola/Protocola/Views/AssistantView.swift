@@ -57,7 +57,7 @@ struct AssistantView: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { model.cancel(); dismiss() } } }
                 .onAppear { protocolID = selected?.id }
                 .sheet(isPresented: $viewData) {
-                    NavigationStack { ScrollView { Text((model.answer != nil ? model.sentContext : nil)?.text ?? AssistantViewModel.timelineContext(records).text).font(.caption.monospaced()).textSelection(.enabled).screenPadding() }.background(Theme.paper).navigationTitle("Shared data").toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { viewData = false } } } }
+                    NavigationStack { ScrollView { Text((model.answer != nil ? model.sentContext : nil)?.text ?? AssistantViewModel.timelineContext(records).text).font(Theme.caption.monospaced()).textSelection(.enabled).screenPadding() }.background(Theme.paper).navigationTitle("Shared data").toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { viewData = false } } } }
                 }
                 .alert("Ask Protocola unavailable", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) { Button("OK") { model.error = nil } } message: { Text(model.error ?? "") }
                 .onDisappear { model.cancel() }.trackingRoutes()
