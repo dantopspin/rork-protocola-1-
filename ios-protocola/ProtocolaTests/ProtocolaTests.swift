@@ -740,12 +740,16 @@ struct VialIntelligenceTests {
             )
 
         #expect(
-            store.dosesPerVial(vial) == 5
+            store.dosesPerVial(
+                vial,
+                at: now
+            ) == 5
         )
         #expect(
             store
                 .scheduledEntriesRemaining(
-                    in: vial
+                    in: vial,
+                    at: now
                 ) == 5
         )
         #expect(
