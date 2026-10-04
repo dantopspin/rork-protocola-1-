@@ -2,8 +2,7 @@ import Foundation
 
 /// App identity constants used by About, Help, and support surfaces.
 enum AppInfo {
-    /// Replace with the final support inbox before release if it changes.
-    static let supportEmail = "support@protocola.app"
+    static let supportEmail = "taskalidaniyal@gmail.com"
 
     static var versionString: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
