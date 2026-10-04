@@ -57,7 +57,7 @@ struct FreeProtocolChoiceView: View {
                                         )
                                         .font(Theme.body)
                                         .foregroundStyle(
-                                            .secondary
+                                            Theme.textSecondary
                                         )
                                     }
                                 }
