@@ -612,12 +612,16 @@ private extension DoseEditorView {
 private extension DoseEditorView {
 
     func save() {
+        let corrects = correcting != nil
         if store.saveDose(
             draft,
             revision: revision,
             occurrence: occurrence,
             correcting: correcting
         ) {
+            if corrects {
+                Haptics.success()
+            }
             dismiss()
         }
     }

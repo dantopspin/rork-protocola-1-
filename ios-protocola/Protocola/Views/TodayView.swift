@@ -139,6 +139,12 @@ struct TodayView: View {
         ) { old, new in
             new > old
         }
+        .sensoryFeedback(
+            .selection,
+            trigger: dropTarget
+        ) { _, newValue in
+            newValue != nil
+        }
         .toolbar {
             ToolbarItemGroup(
                 placement: .topBarTrailing
@@ -1330,6 +1336,7 @@ private extension TodayView {
         active: Bool
     ) {
         if active {
+            Haptics.selection()
             dropTarget = id
             dropAfter = isBottom
         } else if dropTarget == id {
@@ -1354,11 +1361,13 @@ private extension TodayView {
                 ? nil
                 : .snappy(duration: 0.3)
         ) {
-            store.moveTodayEntry(
+            if store.moveTodayEntry(
                 draggedID,
                 relativeTo: anchorID,
                 after: after
-            )
+            ) {
+                Haptics.impact()
+            }
         }
 
         dropTarget = nil
@@ -1374,10 +1383,12 @@ private extension TodayView {
                 ? nil
                 : .snappy(duration: 0.3)
         ) {
-            store.moveTodayEntry(
+            if store.moveTodayEntry(
                 entry.id,
                 by: delta
-            )
+            ) {
+                Haptics.selection()
+            }
         }
     }
 }
@@ -1495,6 +1506,7 @@ private extension TodayView {
             Button("Undo") {
                 if store.deleteDose(log) {
                     undoLog = nil
+                    Haptics.impact()
                 }
             }
             .font(Theme.label)
