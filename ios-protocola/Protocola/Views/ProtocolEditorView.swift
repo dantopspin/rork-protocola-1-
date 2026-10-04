@@ -35,7 +35,8 @@ struct ProtocolEditorView: View {
 
         } else {
             var value = ProtocolDraft()
-            value.reminders = prefersReminders
+            value.reminders =
+                prefersReminders
 
             if let record {
                 value.name = record.name
@@ -55,25 +56,34 @@ struct ProtocolEditorView: View {
             Form {
                 instructionsSection
                 scheduleSection
-                vialAndSiteSection
+
+                if draft.route
+                    .usesInjectionSite {
+                    vialAndSiteSection
+                }
 
                 if revision != nil {
                     Section {
                         Text(
-                            "Changes apply from now onward. Past scheduled entries and logs remain unchanged."
+                            "Changes apply from now onward. Past schedules and recorded entries remain unchanged."
                         )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
                     }
                 }
             }
             .paperList()
             .doneKeyboard()
             .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
             .toolbar {
                 ToolbarItem(
-                    placement: .cancellationAction
+                    placement:
+                        .cancellationAction
                 ) {
                     Button("Cancel") {
                         dismiss()
@@ -82,7 +92,8 @@ struct ProtocolEditorView: View {
                 }
 
                 ToolbarItem(
-                    placement: .confirmationAction
+                    placement:
+                        .confirmationAction
                 ) {
                     if saving {
                         ProgressView()
@@ -133,7 +144,7 @@ private extension ProtocolEditorView {
 
             HStack {
                 TextField(
-                    "Scheduled amount",
+                    "Recorded amount",
                     text: $draft.amount
                 )
                 .keyboardType(.decimalPad)
@@ -142,12 +153,27 @@ private extension ProtocolEditorView {
                     "Unit",
                     selection: $draft.unit
                 ) {
-                    ForEach(AmountUnit.allCases) {
+                    ForEach(
+                        AmountUnit.allCases
+                    ) {
                         Text($0.rawValue)
                             .tag($0)
                     }
                 }
                 .labelsHidden()
+            }
+
+            Picker(
+                "Route",
+                selection: $draft.route
+            ) {
+                ForEach(
+                    AdministrationRoute
+                        .allCases
+                ) {
+                    Text($0.rawValue)
+                        .tag($0)
+                }
             }
 
             Picker(
@@ -174,14 +200,14 @@ private extension ProtocolEditorView {
 
         } footer: {
             Text(
-                "Enter values from instructions you already have. Protocola does not generate a dose or schedule."
+                "Enter values from instructions you already have. Protocola records them; it does not generate a dose, route, or schedule."
             )
         }
     }
 
 
     var scheduleSection: some View {
-        Section("Recorded schedule") {
+        Section {
             DatePicker(
                 "Start date",
                 selection: $draft.start,
@@ -193,7 +219,8 @@ private extension ProtocolEditorView {
                 selection: $draft.kind
             ) {
                 ForEach(
-                    ScheduleConfig.Kind.allCases
+                    ScheduleConfig.Kind
+                        .allCases
                 ) {
                     Text(
                         ScheduleDisplay
@@ -203,7 +230,8 @@ private extension ProtocolEditorView {
                 }
             }
 
-            if draft.kind == .everyNDays {
+            if draft.kind
+                == .everyNDays {
                 Stepper(
                     "Every \(draft.interval) "
                     + (
@@ -223,28 +251,67 @@ private extension ProtocolEditorView {
             ]
             .contains(draft.kind) {
                 weekdayControls
-
-                Text(
-                    "Choose the days already present in your instructions. Protocola does not distribute entries across the week."
-                )
-                .font(Theme.caption)
-                .foregroundStyle(.secondary)
             }
 
-            if draft.kind != .asRecorded {
+            if draft.kind
+                != .asRecorded {
                 scheduledTimes
+
+                Toggle(
+                    "Use ON / OFF cycle",
+                    isOn:
+                        $draft.cycleEnabled
+                )
+
+                if draft.cycleEnabled {
+                    Stepper(
+                        "ON · \(draft.cycleOnDays) "
+                        + (
+                            draft.cycleOnDays == 1
+                            ? "day"
+                            : "days"
+                        ),
+                        value:
+                            $draft.cycleOnDays,
+                        in: 1...3650
+                    )
+
+                    Stepper(
+                        "OFF · \(draft.cycleOffDays) "
+                        + (
+                            draft.cycleOffDays == 1
+                            ? "day"
+                            : "days"
+                        ),
+                        value:
+                            $draft.cycleOffDays,
+                        in: 1...3650
+                    )
+                }
 
                 Toggle(
                     "Local reminders",
                     isOn: $draft.reminders
                 )
                 .disabled(store.isDemo)
+            }
 
+        } header: {
+            Text("Recorded schedule")
+
+        } footer: {
+            if draft.kind == .asRecorded {
+                Text(
+                    "As needed creates no automatic scheduled entries. Log an entry whenever you need to record one."
+                )
+            } else if draft.cycleEnabled {
+                Text(
+                    "The cycle starts on the recorded start date. Scheduled entries are created only during ON days and resume automatically after each OFF period."
+                )
+            } else {
                 Text(
                     "Times use this iPhone's current time zone."
                 )
-                .font(Theme.caption)
-                .foregroundStyle(.secondary)
             }
         }
     }
@@ -371,16 +438,16 @@ private extension ProtocolEditorView {
             }
 
             TextField(
-                "Configured site (optional)",
+                "Default site (optional)",
                 text: $draft.site
             )
 
         } header: {
-            Text("Vial and site")
+            Text("Injection context")
 
         } footer: {
             Text(
-                "A vial is optional. Leave the site blank to choose and record it only when logging."
+                "A vial is optional. Leave the site blank to record the actual site only when logging."
             )
         }
     }
@@ -425,7 +492,8 @@ private extension ProtocolEditorView {
         let compound =
             draft.compound
                 .trimmingCharacters(
-                    in: .whitespacesAndNewlines
+                    in:
+                        .whitespacesAndNewlines
                 )
 
         guard !compound.isEmpty else {
@@ -450,7 +518,9 @@ private extension ProtocolEditorView {
     func removeTime(
         _ id: UUID
     ) {
-        guard draft.times.count > 1 else {
+        guard
+            draft.times.count > 1
+        else {
             return
         }
 
@@ -461,10 +531,11 @@ private extension ProtocolEditorView {
 
 
     func save() {
-        guard record.map({
-            store.canEdit($0.id)
-        })
-        ?? store.canCreateProtocol
+        guard
+            record.map({
+                store.canEdit($0.id)
+            })
+            ?? store.canCreateProtocol
         else {
             paywall = true
             return
@@ -474,6 +545,7 @@ private extension ProtocolEditorView {
 
         Task {
             if draft.reminders,
+               draft.kind != .asRecorded,
                !store.isDemo {
                 _ =
                     await store
@@ -483,7 +555,8 @@ private extension ProtocolEditorView {
 
             if store.saveProtocol(
                 draft,
-                protocolID: record?.id,
+                protocolID:
+                    record?.id,
                 compoundID:
                     revision?.compoundID
             ) {
