@@ -70,26 +70,40 @@ struct PaywallView: View {
                 }
             }
         }
+        .presentationDetents([.large])
         .sheet(item: $document) {
             LegalDocumentView(document: $0)
         }
         .alert(
-            "Purchase unavailable",
+            purchases.alert?.title ?? "",
             isPresented: Binding(
-                get: { purchases.error != nil },
-                set: { if !$0 { purchases.error = nil } }
-            )
-        ) {
+                get: { purchases.alert != nil },
+                set: { if !$0 { purchases.alert = nil } }
+            ),
+            presenting: purchases.alert
+        ) { _ in
             Button("OK") {
-                purchases.error = nil
+                purchases.alert = nil
             }
-        } message: {
-            Text(purchases.error ?? "")
+        } message: { alert in
+            Text(alert.message)
         }
         .onChange(of: store.isPremium) { _, active in
             if active {
                 dismiss()
             }
+        }
+        .sensoryFeedback(
+            .success,
+            trigger: store.isPremium
+        ) { wasActive, active in
+            active && !wasActive
+        }
+        .sensoryFeedback(
+            .impact(weight: .light),
+            trigger: purchases.isPurchasing
+        ) { wasActive, isActive in
+            isActive && !wasActive
         }
     }
 
@@ -254,13 +268,23 @@ struct PaywallView: View {
                     }
                 }
 
-                Text(
-                    "\(package.storeProduct.localizedPriceString) "
-                    + periodSuffix(package)
-                )
-                .font(Theme.caption)
-                .foregroundStyle(Theme.muted)
-                .monospacedDigit()
+                HStack(
+                    alignment: .firstTextBaseline,
+                    spacing: Theme.spaceXS
+                ) {
+                    Text(
+                        "\(package.storeProduct.localizedPriceString) "
+                        + periodSuffix(package)
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.muted)
+                    .monospacedDigit()
+
+                    if package.packageType == .annual,
+                       let savings = annualSavingsPercent {
+                        rectTag("Save \(savings)%")
+                    }
+                }
             }
 
             Spacer(minLength: Theme.spaceXS)
@@ -294,7 +318,14 @@ struct PaywallView: View {
 
 
     private var bestValue: some View {
-        Text("Best value")
+        rectTag("Best value")
+    }
+
+
+    private func rectTag(
+        _ text: String
+    ) -> some View {
+        Text(text)
             .font(Theme.micro)
             .foregroundStyle(Theme.ink)
             .padding(
@@ -307,21 +338,68 @@ struct PaywallView: View {
             )
             .background(
                 Theme.neutralTint,
-                in: RoundedRectangle(
-                    cornerRadius: Theme.radiusBadge,
-                    style: .continuous
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusBadge
                 )
             )
-            .overlay {
-                RoundedRectangle(
-                    cornerRadius: Theme.radiusBadge,
-                    style: .continuous
+            .inkBorder(
+                cornerRadius:
+                    Theme.radiusBadge
+            )
+    }
+
+
+    private var annualSavingsPercent: Int? {
+        guard
+            let annual =
+                purchases.offerings.first(
+                    where: {
+                        $0.packageType == .annual
+                    }
+                ),
+            let monthly =
+                purchases.offerings.first(
+                    where: {
+                        $0.packageType == .monthly
+                    }
                 )
-                .strokeBorder(
-                    Theme.border,
-                    lineWidth: 1
-                )
-            }
+        else {
+            return nil
+        }
+
+        let monthlyPrice =
+            NSDecimalNumber(
+                decimal:
+                    monthly.storeProduct.price
+            )
+            .doubleValue
+        let annualPrice =
+            NSDecimalNumber(
+                decimal:
+                    annual.storeProduct.price
+            )
+            .doubleValue
+
+        guard monthlyPrice * 12 > 0 else {
+            return nil
+        }
+
+        let savings =
+            1
+            - (
+                annualPrice
+                / (monthlyPrice * 12)
+            )
+
+        guard savings > 0 else {
+            return nil
+        }
+
+        return Int(
+            (savings * 100)
+                .rounded()
+        )
     }
 
 
