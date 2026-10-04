@@ -64,9 +64,9 @@ struct SettingsView: View {
             } message: {
                 Text(
                     """
-                    This permanently removes your protocols, recorded entries,                     inventory, symptoms, and other local data from this iPhone.
+                    This permanently removes your protocols, recorded entries, inventory, symptoms, and other local data from this iPhone.
 
-                    This cannot be undone. Your Pro subscription, if active,                     will not be cancelled.
+                    This cannot be undone. Your Pro subscription, if active, will not be cancelled.
                     """
                 )
             }
@@ -126,7 +126,8 @@ private extension SettingsView {
                     Button("Upgrade") {
                         paywall = .pro
                     }
-                    .fontWeight(.semibold)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.ink)
                 }
             }
 
