@@ -23,6 +23,22 @@ struct TodayView: View {
         store.today.filter { $0.log != nil }.count
     }
 
+    private var nextUnloggedEntry: ScheduledEntry? {
+        store.today.first { $0.log == nil }
+    }
+
+    /// The hero already represents the next unlogged entry.
+    /// Keep it out of the list so the same action is not shown twice.
+    private var remainingTodayEntries: [ScheduledEntry] {
+        guard let nextUnloggedEntry else {
+            return store.today
+        }
+
+        return store.today.filter {
+            $0.id != nextUnloggedEntry.id
+        }
+    }
+
     private var usesStackedHero: Bool {
         typeSize.isAccessibilitySize
     }
@@ -44,9 +60,7 @@ struct TodayView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-                if let next = store.today.first(
-                    where: { $0.log == nil }
-                ) {
+                if let next = nextUnloggedEntry {
                     nextEntryHero(next)
                 } else {
                     todayEmptyState
@@ -62,7 +76,7 @@ struct TodayView: View {
                     addFirstVialCard
                 }
 
-                if !store.today.isEmpty {
+                if !remainingTodayEntries.isEmpty {
                     todayEntriesSection
                 }
 
@@ -324,7 +338,7 @@ private extension TodayView {
             VStack(spacing: 0) {
                 ForEach(
                     Array(
-                        store.today.enumerated()
+                        remainingTodayEntries.enumerated()
                     ),
                     id: \.element.id
                 ) { index, entry in
@@ -399,7 +413,7 @@ private extension TodayView {
                             shift(entry, by: 1)
                         }
 
-                    if index < store.today.count - 1 {
+                    if index < remainingTodayEntries.count - 1 {
                         Divider()
                             .padding(.leading, 48)
                     }
