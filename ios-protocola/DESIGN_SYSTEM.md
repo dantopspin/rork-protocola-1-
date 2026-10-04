@@ -1,80 +1,282 @@
-# Protocola Design System
+# Protocola Design System v2
 
-This file is the fixed visual reference for Protocola. New screens and refactors should use these rules before inventing local styling.
+This file is the fixed visual reference for every Protocola screen. Product UI must use shared tokens/components before introducing local styling.
 
 ## Direction
 
 **Classical Clinical Minimalism**
 
-- Native iOS interaction model.
-- Classical editorial typography using the system serif design (New York-style).
-- Warm neutral canvas.
-- Near-black as the dominant visual anchor.
-- Muted mineral teal only for status, selection, links, charts, and recorded/success semantics.
-- Sharp-but-not-square geometry.
-- Thin hairlines, almost no decorative shadow.
-- Generous whitespace.
-- One primary action or figure per screen.
-- No gradients, glassmorphism for decoration, loud color, neo-brutalism, or soft wellness styling.
+Protocola should feel like a premium protocol record and editorial utility, not a wellness app or generic Settings screen.
 
-## Hierarchy
+- warm paper canvas
+- warm-white product surfaces
+- near-black typography and primary actions
+- muted mineral teal only for semantic active/recorded/chart states
+- classical system-serif typography
+- relatively sharp geometry
+- thin hairlines
+- almost no decorative shadow
+- generous whitespace
+- native iOS interaction and navigation underneath
 
-- Page title: serif, 30–32 pt, semibold.
-- Section title: serif, 17 pt, medium.
-- Body: serif, 15 pt, regular.
-- Label / row title: serif, 13–14 pt, medium.
-- Caption / metadata: serif, 12 pt, regular.
-- Key metric: serif, 30–34 pt, medium, monospaced digits where appropriate.
-- Primary text: near-black.
-- Supporting text: muted warm gray.
-- Selected segmented state: near-black fill, white text.
-- Primary action: near-black fill on light surfaces; white fill on the dark hero.
-- No all-caps headlines. Short uppercase technical labels are avoided unless the content itself is an acronym.
+### Chrome vs product content
+
+**Native iOS chrome may use system glass/material. Product content may not.**
+
+Allowed glass/material:
+- tab bar
+- navigation toolbar
+- menus
+- system sheets/popovers
+- transient undo/toast surfaces
+
+Do not use glass/material for:
+- cards
+- protocol surfaces
+- paywall benefits
+- insight modules
+- forms
+- primary buttons
+
+---
+
+## Color tokens
+
+| Token | Value | Use |
+| --- | --- | --- |
+| canvas / paper | #F5F3EE | main app background |
+| surface | #FCFBF8 | cards and grouped content |
+| surfaceRaised | #FFFFFF | rare modal/foreground surface |
+| ink | #151513 | primary text/icons/actions |
+| textSecondary | #706D66 | supporting copy |
+| textTertiary | #96928A | dates/metadata/inactive |
+| hairline | ink @ 11% | borders/dividers |
+| subtleFill | ink @ 4.5% | quiet selection/fill |
+| teal | #466C64 | recorded/active/chart/link semantics |
+| tealFill | teal @ 10% | semantic background |
+| amber | #94763F | overdue/low inventory/attention |
+| amberFill | amber @ 10% | warning background |
+| danger | #A6534D | destructive only |
+| darkSurface | #171715 | one high-value dark module per screen |
+| onDarkPrimary | #FAF9F5 | main text on dark |
+| onDarkSecondary | onDarkPrimary @ 62% | supporting text on dark |
+
+**90% of the product UI should remain canvas + surface + black + gray.**
+
+No decorative blue, purple, gradients, or random accent colors.
+
+---
+
+## Typography
+
+Use Apple's system serif design throughout product content. Native chrome can remain system-controlled.
+
+| Token | Size | Weight | Use |
+| --- | ---: | --- | --- |
+| display | 38 | Semibold | rare onboarding/paywall hero |
+| pageTitle | 34 | Semibold | root screens |
+| metricLarge | 34 | Medium | key number/amount |
+| modalTitle | 20 | Medium | modal emphasis |
+| sectionTitle | 18 | Medium | major sections |
+| cardTitle | 16 | Medium | card/object titles |
+| body | 15 | Regular | main content |
+| buttonLabel | 15 | Medium | primary/secondary actions |
+| label | 14 | Medium | row labels/compact controls |
+| caption | 12.5 | Regular | support/meta |
+| micro | 11 | Medium | badges/tiny metadata |
+
+Rules:
+- sentence case
+- no all-caps product headings
+- important numbers may use monospaced digits
+- do not use native pre-styled sans typography inside product content
+- root tabs use 34 pt serif titles; detail/modal titles use inline navigation serif
+
+---
 
 ## Spacing
 
-- Page horizontal inset: 24 pt.
-- Major section separation: 32 pt.
-- Card internal spacing: 16 pt.
-- Row vertical rhythm: 12–14 pt.
-- Label-to-value spacing: 4 pt.
-- Minimum interactive target: 44 pt.
-- Empty space is intentional; do not fill a screen merely to reduce whitespace.
+4 pt base grid only:
 
-## Geometry
+- 4
+- 8
+- 12
+- 16
+- 20
+- 24
+- 32
+- 40
+- 48
 
-- Primary cards: 12 pt radius.
-- Rows / compact surfaces: 10 pt radius.
-- Buttons: 10 pt radius.
-- Badges: 6 pt radius.
-- Pills are reserved for segmented selection and compact statuses.
-- Avoid oversized 20–30 pt radii.
+Core layout:
+- page horizontal inset: 24
+- major section gap: 32
+- standard card padding: 16
+- hero padding: 20
+- row gap: 12
+- label-to-value: 4
+- minimum tap target: 44
 
-## Surfaces
+Empty space is part of the interface.
 
-- Canvas: warm paper.
-- Standard surface: warm white.
-- Dark surface: near-black; use selectively for one high-value module.
-- Borders: 1 px equivalent, low-contrast warm neutral.
-- Shadows: subtle and rare; borders and spacing should do most of the separation work.
+---
 
-## Screen composition
+## Radius
 
-- Today: one dark next-entry hero, then quiet utility/data surfaces.
-- Protocols: one stronger active protocol surface, secondary protocols as quieter rows.
-- History: editorial timeline with dates and thin separators, not card soup.
-- Insights: one dominant metric/chart, then small supporting modules and one dark change-context surface.
-- Forms/editors: native Form/List behavior, serif hierarchy, compact sections, no decorative cards.
-- Onboarding: native navigation, grouped selection rows, one preview surface per step, minimal copy.
+Only these radii are allowed in product content:
 
-## Motion
+- primary card: 12
+- compact card/row: 10
+- button: 10
+- text field: 8
+- badge: 6
+- segmented state: capsule
+- avatar/status dot: circle
 
-- Native navigation/sheet transitions first.
-- Spring motion only for state changes that materially help orientation.
-- Slight overshoot is acceptable for selection/morph transitions.
-- No continuous decorative motion.
-- Respect Reduce Motion.
+Do not introduce local 16/18/22/26 pt card radii.
 
-## Product rule
+---
 
-If a new element does not improve hierarchy, comprehension, or interaction, do not add it.
+## Borders and shadows
+
+Standard border:
+- 1 pt
+- hairline color
+
+Normal cards:
+- no shadow
+
+Shadow is reserved for transient/floating surfaces:
+- opacity ~5–6%
+- blur 8
+- y 3
+
+---
+
+## Core components
+
+### HeroCard
+- darkSurface
+- radius 12
+- padding 20
+- max one per screen
+- used only for the highest-value context
+
+### SurfaceCard
+- surface
+- radius 12
+- hairline border
+- no shadow
+- padding 16
+
+### DataTile
+- surface
+- radius 10
+- hairline border
+- padding 14–16
+
+### RecordRow
+- 48 pt dense / 54 pt standard rhythm
+- label → flexible space → value
+- serif body typography
+
+### NavigationRow
+- optional 16–18 pt SF Symbol
+- title/detail
+- chevron 11–12 pt
+- no decorative icon color unless semantic
+
+### StatusBadge
+- height 20
+- radius 6
+- 8 pt horizontal padding
+- semantic color only
+
+### PrimaryButton
+- height 46
+- radius 10
+- ink fill / white label
+- one dominant primary action per screen/context
+
+### PrimaryButton on dark
+- onDarkPrimary fill
+- ink label
+
+### SecondaryButton
+- min height 44
+- radius 10
+- surface fill
+- hairline border
+- ink label
+
+### CompactButton
+- min 44 pt tap target
+- compact horizontal padding
+- radius 10
+- use for inline Log/Add actions
+
+### SegmentedSelector
+- selected = ink + white
+- unselected = transparent/subtle surface + secondary text
+- capsules only for actual segmented/filter states
+
+### EditorialEmptyState
+- icon 28, textTertiary
+- title 20 medium serif
+- description 15 serif / secondary
+- optional secondary/tertiary action
+- never use ContentUnavailableView for branded product screens
+
+### InlineNotice
+- surface/subtle fill
+- compact serif copy
+- semantic color only when attention/destructive
+
+### MetricBlock
+- metricLarge
+- supporting caption beneath
+- one dominant metric per screen
+
+---
+
+## Screen hierarchy
+
+Every screen must have one first-read object:
+
+- Today → next entry / resolved-day state
+- Protocols → active protocol
+- History → timeline
+- Insights → primary metric
+- Inventory → remaining supply
+- Vial → remaining amount
+- Calculator → calculated result
+- Paywall → value of Pro
+- Onboarding → one concept per page
+
+Everything else visually recedes.
+
+---
+
+## Forms
+
+Keep native SwiftUI Form/List behavior, but enforce:
+- paper canvas
+- serif typography
+- sentence-case headers
+- black primary controls
+- secondary/tertiary token colors
+- shared spacing
+- no decorative cards inside forms
+
+---
+
+## Enforcement rule
+
+**No local font sizes.  
+No local product colors.  
+No local corner radii.  
+No local shadows.  
+No arbitrary spacing outside the token grid.  
+No new card geometry without first adding it here and to Theme.swift.**
+
+All new product UI should be composed from the shared visual primitives or added to the system first.
