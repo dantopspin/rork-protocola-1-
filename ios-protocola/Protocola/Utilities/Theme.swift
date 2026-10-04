@@ -103,23 +103,38 @@ enum Theme {
 
     // MARK: - Typography
 
+    static let displaySize: CGFloat = 38
+    static let pageTitleSize: CGFloat = 34
+    static let metricLargeSize: CGFloat = 34
+    static let modalTitleSize: CGFloat = 20
+    static let sectionTitleSize: CGFloat = 18
+    static let cardTitleSize: CGFloat = 16
+    static let bodySize: CGFloat = 15
+    static let buttonLabelSize: CGFloat = 15
+    static let labelSize: CGFloat = 14
+    static let captionSize: CGFloat = 12.5
+    static let microSize: CGFloat = 11
+    static let tabLabelSize: CGFloat = 10
+    static let segmentLabelSize: CGFloat = 13
+    static let shareMetricSize: CGFloat = 64
+
     static let display =
         Font.system(
-            size: 38,
+            size: displaySize,
             weight: .semibold,
             design: .serif
         )
 
     static let pageTitle =
         Font.system(
-            size: 34,
+            size: pageTitleSize,
             weight: .semibold,
             design: .serif
         )
 
     static let metricLarge =
         Font.system(
-            size: 34,
+            size: metricLargeSize,
             weight: .medium,
             design: .serif
         )
@@ -129,56 +144,56 @@ enum Theme {
 
     static let modalTitle =
         Font.system(
-            size: 20,
+            size: modalTitleSize,
             weight: .medium,
             design: .serif
         )
 
     static let sectionTitle =
         Font.system(
-            size: 18,
+            size: sectionTitleSize,
             weight: .medium,
             design: .serif
         )
 
     static let cardTitle =
         Font.system(
-            size: 16,
+            size: cardTitleSize,
             weight: .medium,
             design: .serif
         )
 
     static let body =
         Font.system(
-            size: 15,
+            size: bodySize,
             weight: .regular,
             design: .serif
         )
 
     static let label =
         Font.system(
-            size: 14,
+            size: labelSize,
             weight: .medium,
             design: .serif
         )
 
     static let buttonLabel =
         Font.system(
-            size: 15,
+            size: buttonLabelSize,
             weight: .medium,
             design: .serif
         )
 
     static let caption =
         Font.system(
-            size: 12.5,
+            size: captionSize,
             weight: .regular,
             design: .serif
         )
 
     static let micro =
         Font.system(
-            size: 11,
+            size: microSize,
             weight: .medium,
             design: .serif
         )
@@ -221,6 +236,18 @@ enum Theme {
 
     static let shadowRadius: CGFloat = 8
     static let shadowY: CGFloat = 3
+
+    static let statusDot: CGFloat = 6
+    static let siteDot: CGFloat = 8
+    static let insertionLineHeight: CGFloat = 2
+    static let onboardingRowHeight: CGFloat = 58
+    static let onboardingProgressHeight: CGFloat = 4
+    static let onboardingProgressActiveWidth: CGFloat = 18
+    static let onboardingProgressInactiveWidth: CGFloat = 6
+    static let shareBarRadius: CGFloat = 2
+    static let emptyStateMinHeight: CGFloat = 260
+    static let compactMetricTileHeight: CGFloat = 92
+    static let sharePreviewMinHeight: CGFloat = 240
 
 
     // MARK: - Layout
