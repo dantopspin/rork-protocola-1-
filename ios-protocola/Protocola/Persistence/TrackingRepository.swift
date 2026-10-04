@@ -26,15 +26,19 @@ import SwiftData
         let protocols = try all(ProtocolRecord.self)
         let compounds = try all(CompoundRecord.self)
         let revisions = try all(ScheduleRevision.self)
-        let vial = try all(VialRecord.self).first { $0.id == draft.vialID }
+        let recordedVialID =
+            draft.route.usesInjectionSite
+            ? draft.vialID
+            : nil
+        let vial = try all(VialRecord.self).first { $0.id == recordedVialID }
         if let vial, vial.isArchived || vial.compoundName.caseInsensitiveCompare(compoundName) != .orderedSame { throw TrackingError.invalidInput("Choose an available vial for this compound.") }
-        if draft.vialID != nil && vial == nil { throw TrackingError.missingRecord }
+        if recordedVialID != nil && vial == nil { throw TrackingError.missingRecord }
         let existing = protocols.first { $0.id == protocolID }
         let priorRevision = revisions.first { $0.compoundID == compoundID && $0.effectiveUntil == nil }
         var before = existing.map { ProtocolSnapshot.values(record: $0, revision: priorRevision) } ?? [:]
         var after = ProtocolSnapshot.values(draft: draft, name: name, compound: compoundName, amount: amount, config: config, status: existing?.status ?? "Active")
         let vialRecords = try all(VialRecord.self)
-        for values in [priorRevision?.vialID, draft.vialID].compactMap({ $0 }) {
+        for values in [priorRevision?.vialID, recordedVialID].compactMap({ $0 }) {
             let label = vialRecords.first { $0.id == values }?.name ?? "Retained vial"
             if before["Vial"] == values.uuidString { before["Vial"] = "\(label) (\(values.uuidString))" }
             if after["Vial"] == values.uuidString { after["Vial"] = "\(label) (\(values.uuidString))" }
@@ -63,7 +67,7 @@ import SwiftData
                     amount: amount,
                     unit: draft.unit,
                     route: draft.route,
-                    vialID: draft.vialID,
+                    vialID: recordedVialID,
                     config: config,
                     effectiveFrom: from,
                     enabled: record.status == "Active",
