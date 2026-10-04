@@ -276,7 +276,7 @@ struct PaywallView: View {
                         : "Subscribe"
                 )
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(TrackingCompactButtonStyle(prominent: true))
             .tint(Theme.ink)
             .controlSize(.regular)
             .disabled(purchases.isPurchasing)
