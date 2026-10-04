@@ -27,6 +27,14 @@ final class ProtocolaUITests: XCTestCase {
 
         XCTAssertFalse(continueButton.isEnabled)
 
+        // Required steps cannot be bypassed by horizontal paging.
+        app.swipeLeft()
+
+        XCTAssertTrue(
+            app.staticTexts["Make it yours."].exists
+        )
+        XCTAssertFalse(continueButton.isEnabled)
+
         let scheduleChoice =
             app.buttons["onboarding.intent.schedule"]
 
