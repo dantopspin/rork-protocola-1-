@@ -212,7 +212,7 @@ private extension TodayView {
                         create = true
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Theme.teal)
+                    .tint(Theme.ink)
                 }
             }
 
@@ -227,7 +227,7 @@ private extension TodayView {
                     )
                 }
                 .buttonStyle(.bordered)
-                .tint(Theme.teal)
+                .tint(Theme.ink)
             }
         }
         .frame(maxWidth: .infinity)
@@ -258,7 +258,7 @@ private extension TodayView {
                 create = true
             }
             .buttonStyle(.borderedProminent)
-            .tint(Theme.teal)
+            .tint(Theme.ink)
         }
         .padding(Theme.spaceM)
         .frame(
@@ -1044,7 +1044,7 @@ private extension TodayView {
                     open(entry)
                 }
                 .buttonStyle(.bordered)
-                .tint(Theme.teal)
+                .tint(Theme.ink)
                 .controlSize(.small)
             }
         }
