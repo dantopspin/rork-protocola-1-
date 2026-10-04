@@ -1,18 +1,9 @@
 import SwiftUI
 
-/// Minimal, conversion-focused onboarding:
-///
-/// 1. Introduction
-/// 2. Intent
-/// 3. Personalized payoff + social proof
-/// 4. Trust + required acknowledgement
-///
-/// Then directly into the real ProtocolEditorView.
-///
-/// Keep this short: every screen must create relevance,
-/// demonstrate value, create commitment, or establish trust.
+/// Four short onboarding steps:
+/// introduction → intent → personalized payoff → trust.
+/// The visual system follows ios-protocola/DESIGN_SYSTEM.md.
 struct OnboardingView: View {
-
     @Environment(TrackingStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -28,13 +19,25 @@ struct OnboardingView: View {
             controls
         }
         .background(Theme.paper)
-        .sensoryFeedback(.selection, trigger: step)
-        .sensoryFeedback(.selection, trigger: intent)
-        .sensoryFeedback(.success, trigger: accepted)
-        .fullScreenCover(isPresented: $setup) {
+        .sensoryFeedback(
+            .selection,
+            trigger: step
+        )
+        .sensoryFeedback(
+            .selection,
+            trigger: intent
+        )
+        .sensoryFeedback(
+            .success,
+            trigger: accepted
+        )
+        .fullScreenCover(
+            isPresented: $setup
+        ) {
             ProtocolEditorView(
                 onboarding: true,
-                prefersReminders: intent == .schedule
+                prefersReminders:
+                    intent == .schedule
             )
         }
         .trackingErrors()
@@ -42,24 +45,19 @@ struct OnboardingView: View {
 }
 
 
-// MARK: - Page routing
+// MARK: - Routing
 
 private extension OnboardingView {
 
-    /// Button-driven routing keeps required steps genuinely required.
-    /// A paged TabView allowed users to swipe around the intent gate.
     @ViewBuilder
     var currentPage: some View {
         switch step {
         case 0:
             introduction
-
         case 1:
             intentSelection
-
         case 2:
             personalizedValue
-
         default:
             trust
         }
@@ -71,13 +69,18 @@ private extension OnboardingView {
 
 private extension OnboardingView {
 
-    enum Intent: String, CaseIterable, Identifiable, Hashable {
+    enum Intent: String,
+                 CaseIterable,
+                 Identifiable,
+                 Hashable {
         case schedule
         case history
         case inventory
         case changes
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
 
         var title: String {
             switch self {
@@ -121,9 +124,9 @@ private extension OnboardingView {
         var payoffDetail: String {
             switch self {
             case .schedule:
-                return "Today keeps your next scheduled entry clear, with reminders when you want them."
+                return "Today keeps your next recorded schedule clear, with reminders when you want them."
             case .history:
-                return "Entries and protocol changes stay attached to the history they belong to."
+                return "Entries and changes stay attached to the point in history where they happened."
             case .inventory:
                 return "Entries, vials, inventory, and injection sites stay connected in one record."
             case .changes:
@@ -131,12 +134,7 @@ private extension OnboardingView {
             }
         }
     }
-}
 
-
-// MARK: - Social proof
-
-private extension OnboardingView {
 
     struct SocialProof {
         let rating: String
@@ -144,17 +142,14 @@ private extension OnboardingView {
         let quote: String
     }
 
-    /// Preview data is available in DEBUG builds so the design can be reviewed
-    /// without shipping unverified claims to real users.
-    ///
-    /// Replace the release branch below with verified production values
-    /// once App Store ratings, protocol counts, and testimonial permission exist.
+
     var socialProof: SocialProof? {
         #if DEBUG
         SocialProof(
             rating: "4.8",
             protocolCount: "12,000+",
-            quote: "Finally I can see what changed and when."
+            quote:
+                "Finally I can see what changed and when."
         )
         #else
         nil
@@ -163,7 +158,7 @@ private extension OnboardingView {
 }
 
 
-// MARK: - 1. Introduction
+// MARK: - Screen 1
 
 private extension OnboardingView {
 
@@ -173,50 +168,76 @@ private extension OnboardingView {
                 alignment: .leading,
                 spacing: Theme.spaceXL
             ) {
-                Text("PROTOCOLA")
-                    .font(.caption.weight(.semibold))
-                    .tracking(1.5)
+                Text("Protocola")
+                    .font(Theme.label)
                     .foregroundStyle(Theme.teal)
-
-                Spacer()
-                    .frame(height: Theme.spaceXS)
 
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceM
+                    spacing: Theme.spaceS
                 ) {
-                    Text("Your protocol.\nWith a memory.")
-                        .font(.largeTitle.weight(.bold))
-                        .tracking(-0.7)
-                        .foregroundStyle(Theme.ink)
+                    Text(
+                        "Your protocol.\nWith a memory."
+                    )
+                    .font(Theme.pageTitle)
+                    .foregroundStyle(Theme.ink)
 
                     Text(
-                        "Track what you recorded, what changed, "
-                        + "and the history behind your protocol."
+                        "Track what you recorded, what changed, and the history behind your protocol."
                     )
-                    .font(.title3)
+                    .font(Theme.body)
                     .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
                 }
 
                 introPreview
 
                 if let proof = socialProof {
-                    socialProofStrip(proof)
+                    HStack(
+                        spacing: Theme.spaceXS
+                    ) {
+                        Image(
+                            systemName: "star.fill"
+                        )
+                        .font(Theme.micro)
+                        .foregroundStyle(Theme.teal)
+
+                        Text(proof.rating)
+                            .font(Theme.label)
+                            .monospacedDigit()
+
+                        Text("·")
+                            .foregroundStyle(Theme.line)
+
+                        Text(
+                            proof.protocolCount
+                                + " protocols recorded"
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                    }
                 }
 
-                HStack(spacing: Theme.spaceXS) {
-                    Image(systemName: "lock.shield")
-                        .foregroundStyle(Theme.muted)
-
-                    Text("Core records stay on this iPhone · No account")
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                }
+                Text(
+                    "No account required · Core records stay on this iPhone"
+                )
+                .font(Theme.caption)
+                .foregroundStyle(Theme.muted)
             }
             .screenPadding()
-            .padding(.bottom, Theme.spaceXL)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(
+                .bottom,
+                Theme.spaceXL
+            )
+            .frame(
+                maxWidth: .infinity,
+                alignment: .leading
+            )
         }
         .scrollIndicators(.hidden)
     }
@@ -225,119 +246,71 @@ private extension OnboardingView {
     var introPreview: some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceL
+            spacing: Theme.spaceM
         ) {
-            HStack {
-                Text("TODAY")
-                    .font(.caption2.weight(.semibold))
-                    .tracking(1.2)
-                    .foregroundStyle(Color.white.opacity(0.58))
+            Text("Next entry")
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Color.white.opacity(0.56)
+                )
+
+            HStack(
+                alignment: .firstTextBaseline
+            ) {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Text("Monday")
+                        .font(Theme.sectionTitle)
+                        .foregroundStyle(.white)
+
+                    Text("8:00 PM")
+                        .font(Theme.metric)
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                }
 
                 Spacer()
 
-                Image(systemName: "clock.arrow.circlepath")
-                    .foregroundStyle(Color.white.opacity(0.64))
-            }
-
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXS
-            ) {
-                Text("Next entry")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.white.opacity(0.64))
-
-                Text("Monday · 8:00 PM")
-                    .font(.title2.weight(.semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(.white)
+                Image(
+                    systemName:
+                        "clock.arrow.circlepath"
+                )
+                .font(Theme.sectionTitle)
+                .foregroundStyle(
+                    Color.white.opacity(0.56)
+                )
             }
 
             Divider()
-                .overlay(Color.white.opacity(0.15))
+                .overlay(
+                    Color.white.opacity(0.12)
+                )
 
-            HStack(
-                alignment: .top,
-                spacing: Theme.spaceXS
-            ) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.white.opacity(0.9))
-
-                Text("Every entry and change becomes part of your history.")
-                    .font(.caption)
-                    .foregroundStyle(Color.white.opacity(0.72))
-            }
+            Label(
+                "Every entry and change becomes part of your history.",
+                systemImage:
+                    "checkmark.circle"
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Color.white.opacity(0.68)
+            )
         }
-        .padding(Theme.spaceL)
+        .padding(Theme.spaceM)
         .background(
             Theme.ink,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusCard,
-                style: .continuous
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
             )
         )
-    }
-
-
-    func socialProofStrip(_ proof: SocialProof) -> some View {
-        HStack(spacing: 0) {
-            VStack(
-                alignment: .leading,
-                spacing: 3
-            ) {
-                HStack(spacing: 4) {
-                    Image(systemName: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(Theme.teal)
-
-                    Text(proof.rating)
-                        .font(.headline)
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.ink)
-                }
-
-                Text("App Store")
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-            }
-
-            Spacer()
-
-            Rectangle()
-                .fill(Theme.line)
-                .frame(width: 1, height: 34)
-
-            Spacer()
-
-            VStack(
-                alignment: .leading,
-                spacing: 3
-            ) {
-                Text(proof.protocolCount)
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.ink)
-
-                Text("protocols recorded")
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-            }
-        }
-        .padding(.horizontal, Theme.spaceM)
-        .padding(.vertical, Theme.spaceS)
-        .background(
-            Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusRow,
-                style: .continuous
-            )
-        )
-        .inkBorder(cornerRadius: Theme.radiusRow)
     }
 }
 
 
-// MARK: - 2. Intent
+// MARK: - Screen 2
 
 private extension OnboardingView {
 
@@ -352,68 +325,107 @@ private extension OnboardingView {
                     spacing: Theme.spaceS
                 ) {
                     Text("Make it yours.")
-                        .font(.largeTitle.weight(.bold))
-                        .tracking(-0.7)
-                        .foregroundStyle(Theme.ink)
+                        .font(Theme.pageTitle)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
 
-                    Text("What matters most to you right now?")
-                        .font(.title3)
-                        .foregroundStyle(Theme.muted)
+                    Text(
+                        "What matters most to you right now?"
+                    )
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
                 }
 
-                VStack(spacing: Theme.spaceXS) {
-                    ForEach(Intent.allCases) { item in
+                VStack(spacing: 0) {
+                    ForEach(
+                        Array(
+                            Intent.allCases
+                                .enumerated()
+                        ),
+                        id: \.element.id
+                    ) { index, item in
                         intentRow(item)
+
+                        if index
+                            < Intent.allCases.count - 1 {
+                            Divider()
+                                .padding(
+                                    .leading,
+                                    52
+                                )
+                        }
                     }
                 }
+                .background(
+                    Theme.surface,
+                    in: .rect(
+                        cornerRadius:
+                            Theme.radiusCard
+                    )
+                )
+                .inkBorder(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
 
-                HStack(
-                    alignment: .top,
-                    spacing: Theme.spaceXS
-                ) {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-
-                    Text("Your choice changes the next preview. You can use every feature later.")
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text(
+                    "You can use every feature later."
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.muted
+                )
             }
             .screenPadding()
-            .padding(.bottom, Theme.spaceXL)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(
+                .bottom,
+                Theme.spaceXL
+            )
         }
         .scrollIndicators(.hidden)
     }
 
 
-    func intentRow(_ item: Intent) -> some View {
-        let selected = intent == item
+    func intentRow(
+        _ item: Intent
+    ) -> some View {
+        let selected =
+            intent == item
 
         return Button {
             withAnimation(
                 reduceMotion
                     ? nil
-                    : .snappy(duration: 0.2)
+                    : .spring(
+                        response: 0.26,
+                        dampingFraction: 0.8
+                    )
             ) {
                 intent = item
             }
         } label: {
-            HStack(spacing: Theme.spaceM) {
-                Image(systemName: item.icon)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(
-                        selected
-                            ? Theme.teal
-                            : Theme.ink
-                    )
-                    .frame(width: 28)
+            HStack(
+                spacing: Theme.spaceM
+            ) {
+                Image(
+                    systemName: item.icon
+                )
+                .font(Theme.label)
+                .foregroundStyle(
+                    selected
+                        ? Theme.ink
+                        : Theme.muted
+                )
+                .frame(width: 24)
 
                 Text(item.title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Theme.ink)
+                    .font(Theme.label)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
 
                 Spacer()
 
@@ -423,36 +435,26 @@ private extension OnboardingView {
                         ? "checkmark.circle.fill"
                         : "circle"
                 )
-                .font(.body)
+                .font(Theme.body)
                 .foregroundStyle(
                     selected
-                        ? Theme.teal
+                        ? Theme.ink
                         : Theme.line
                 )
             }
-            .padding(Theme.spaceM)
-            .frame(maxWidth: .infinity, minHeight: 54)
+            .padding(
+                .horizontal,
+                Theme.spaceM
+            )
+            .frame(
+                minHeight: 58
+            )
             .background(
                 selected
-                    ? Theme.tealTint
-                    : Theme.surface,
-                in: RoundedRectangle(
-                    cornerRadius: Theme.radiusRow,
-                    style: .continuous
-                )
+                    ? Theme.neutralTint
+                    : Color.clear
             )
-            .overlay {
-                RoundedRectangle(
-                    cornerRadius: Theme.radiusRow,
-                    style: .continuous
-                )
-                .strokeBorder(
-                    selected
-                        ? Theme.teal.opacity(0.45)
-                        : Theme.border,
-                    lineWidth: 1
-                )
-            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(
@@ -467,7 +469,7 @@ private extension OnboardingView {
 }
 
 
-// MARK: - 3. Personalized payoff
+// MARK: - Screen 3
 
 private extension OnboardingView {
 
@@ -481,49 +483,115 @@ private extension OnboardingView {
                     alignment: .leading,
                     spacing: Theme.spaceS
                 ) {
-                    Text(intent?.payoffTitle ?? "More than a log.")
-                        .font(.largeTitle.weight(.bold))
-                        .tracking(-0.7)
-                        .foregroundStyle(Theme.ink)
+                    Text(
+                        intent?.payoffTitle
+                            ?? "More than a log."
+                    )
+                    .font(Theme.pageTitle)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
 
                     Text(
                         intent?.payoffDetail
                             ?? "Protocola remembers how your protocol evolves."
                     )
-                    .font(.title3)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
                 }
 
                 personalizedPreview
 
-                VStack(spacing: Theme.spaceM) {
-                    valueRow(
-                        icon: "checkmark.circle",
-                        title: "Track",
-                        detail: "Record scheduled entries in seconds."
-                    )
-
+                VStack(spacing: 0) {
                     valueRow(
                         icon: "clock.arrow.circlepath",
-                        title: "Remember",
-                        detail: "Protocol changes remain part of your timeline."
+                        title: "History stays intact",
+                        detail:
+                            "Previous values are not overwritten."
                     )
+
+                    Divider()
+                        .padding(
+                            .leading,
+                            48
+                        )
 
                     valueRow(
-                        icon: "chart.xyaxis.line",
-                        title: "Understand",
-                        detail: "Review what you recorded around each change."
+                        icon:
+                            "arrow.left.arrow.right",
+                        title: "Review changes in context",
+                        detail:
+                            "See what you recorded around each change."
                     )
                 }
+                .padding(
+                    .horizontal,
+                    Theme.spaceM
+                )
+                .background(
+                    Theme.surface,
+                    in: .rect(
+                        cornerRadius:
+                            Theme.radiusCard
+                    )
+                )
+                .inkBorder(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
 
                 if let proof = socialProof {
-                    testimonialCard(proof)
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceXS
+                    ) {
+                        HStack(
+                            spacing: 4
+                        ) {
+                            ForEach(
+                                0..<5,
+                                id: \.self
+                            ) { _ in
+                                Image(
+                                    systemName:
+                                        "star.fill"
+                                )
+                                .font(Theme.micro)
+                                .foregroundStyle(
+                                    Theme.teal
+                                )
+                            }
+
+                            Text(proof.rating)
+                                .font(Theme.caption)
+                                .foregroundStyle(
+                                    Theme.muted
+                                )
+                        }
+
+                        Text(
+                            "“\(proof.quote)”"
+                        )
+                        .font(Theme.sectionTitle)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                        Text("App Store review")
+                            .font(Theme.caption)
+                            .foregroundStyle(
+                                Theme.muted
+                            )
+                    }
                 }
             }
             .screenPadding()
-            .padding(.bottom, Theme.spaceXL)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(
+                .bottom,
+                Theme.spaceXL
+            )
         }
         .scrollIndicators(.hidden)
     }
@@ -533,13 +601,25 @@ private extension OnboardingView {
     var personalizedPreview: some View {
         switch intent ?? .history {
         case .schedule:
-            schedulePreview
+            previewCard(
+                label: "Next entry",
+                primary: "Monday · 8:00 PM",
+                detail:
+                    "Your current recorded schedule stays visible on Today.",
+                dark: true
+            )
 
         case .history:
-            historyPreview
+            timelinePreview
 
         case .inventory:
-            inventoryPreview
+            previewCard(
+                label: "Current vial",
+                primary: "~9 entries remaining",
+                detail:
+                    "Entries stay linked to the vial you recorded.",
+                dark: false
+            )
 
         case .changes:
             changesPreview
@@ -547,101 +627,67 @@ private extension OnboardingView {
     }
 
 
-    var schedulePreview: some View {
+    func previewCard(
+        label: String,
+        primary: String,
+        detail: String,
+        dark: Bool
+    ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceM
+            spacing: Theme.spaceS
         ) {
-            HStack {
-                Text("NEXT")
-                    .font(.caption2.weight(.semibold))
-                    .tracking(1)
-                    .foregroundStyle(Color.white.opacity(0.56))
+            Text(label)
+                .font(Theme.caption)
+                .foregroundStyle(
+                    dark
+                        ? Color.white.opacity(0.56)
+                        : Theme.muted
+                )
 
-                Spacer()
-
-                Image(systemName: "bell")
-                    .foregroundStyle(Color.white.opacity(0.64))
-            }
-
-            Text("Monday · 8:00 PM")
-                .font(.title2.weight(.semibold))
+            Text(primary)
+                .font(Theme.sectionTitle)
                 .monospacedDigit()
-                .foregroundStyle(.white)
+                .foregroundStyle(
+                    dark
+                        ? Color.white
+                        : Theme.ink
+                )
 
-            Text("Your current schedule stays visible on Today.")
-                .font(.caption)
-                .foregroundStyle(Color.white.opacity(0.72))
-        }
-        .padding(Theme.spaceL)
-        .background(
-            Theme.ink,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusCard,
-                style: .continuous
-            )
-        )
-    }
-
-
-    var historyPreview: some View {
-        timelinePreview
-    }
-
-
-    var inventoryPreview: some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
-        ) {
-            HStack {
-                Text("INVENTORY")
-                    .font(.caption2.weight(.semibold))
-                    .tracking(1)
-                    .foregroundStyle(Theme.muted)
-
-                Spacer()
-
-                Text("Active vial")
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-            }
-
-            HStack(alignment: .firstTextBaseline) {
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXXS
-                ) {
-                    Text("Current vial")
-                        .font(.headline)
-                        .foregroundStyle(Theme.ink)
-
-                    Text("Entries stay linked to the vial you used.")
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                }
-
-                Spacer()
-
-                Text("9")
-                    .font(.title2.weight(.semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.ink)
-
-                Text("left")
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-            }
+            Text(detail)
+                .font(Theme.caption)
+                .foregroundStyle(
+                    dark
+                        ? Color.white.opacity(0.66)
+                        : Theme.muted
+                )
         }
         .padding(Theme.spaceM)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
         .background(
-            Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusCard,
-                style: .continuous
+            dark
+                ? Theme.ink
+                : Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
             )
         )
-        .inkBorder(cornerRadius: Theme.radiusCard)
+        .overlay {
+            if !dark {
+                RoundedRectangle(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
+                .stroke(
+                    Theme.border,
+                    lineWidth: 1
+                )
+            }
+        }
     }
 
 
@@ -650,20 +696,28 @@ private extension OnboardingView {
             alignment: .leading,
             spacing: Theme.spaceM
         ) {
-            Text("PROTOCOL CHANGE")
-                .font(.caption2.weight(.semibold))
-                .tracking(1)
-                .foregroundStyle(Theme.muted)
+            Text("Protocol change")
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.muted
+                )
 
-            HStack(spacing: Theme.spaceM) {
+            HStack(
+                spacing: Theme.spaceM
+            ) {
                 changeValue(
                     label: "Before",
                     value: "1.0 mg"
                 )
 
-                Image(systemName: "arrow.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Theme.muted)
+                Image(
+                    systemName:
+                        "arrow.right"
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.muted
+                )
 
                 changeValue(
                     label: "After",
@@ -671,19 +725,26 @@ private extension OnboardingView {
                 )
             }
 
-            Text("The previous value stays preserved in your history.")
-                .font(.caption)
-                .foregroundStyle(Theme.muted)
+            Text(
+                "The previous value stays preserved in your history."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.muted
+            )
         }
         .padding(Theme.spaceM)
         .background(
             Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusCard,
-                style: .continuous
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
             )
         )
-        .inkBorder(cornerRadius: Theme.radiusCard)
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
+        )
     }
 
 
@@ -696,69 +757,69 @@ private extension OnboardingView {
             spacing: Theme.spaceXXS
         ) {
             Text(label)
-                .font(.caption)
-                .foregroundStyle(Theme.muted)
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.muted
+                )
 
             Text(value)
-                .font(.headline)
+                .font(Theme.sectionTitle)
                 .monospacedDigit()
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(
+                    Theme.ink
+                )
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
     }
 
 
-    func testimonialCard(_ proof: SocialProof) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
+    func valueRow(
+        icon: String,
+        title: String,
+        detail: String
+    ) -> some View {
+        HStack(
+            alignment: .top,
+            spacing: Theme.spaceS
         ) {
-            HStack(spacing: 4) {
-                ForEach(0..<5, id: \.self) { _ in
-                    Image(systemName: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(Theme.teal)
-                }
+            Image(systemName: icon)
+                .font(Theme.label)
+                .foregroundStyle(
+                    Theme.muted
+                )
+                .frame(width: 24)
 
-                Text(proof.rating)
-                    .font(.caption.weight(.semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.muted)
-                    .padding(.leading, 4)
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(title)
+                    .font(Theme.label)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+
+                Text(detail)
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
             }
 
-            Text("“\(proof.quote)”")
-                .font(.body.weight(.medium))
-                .foregroundStyle(Theme.ink)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack {
-                Text("App Store review")
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-
-                Spacer()
-
-                Text("\(proof.protocolCount) recorded")
-                    .font(.caption)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.muted)
-            }
+            Spacer()
         }
-        .padding(Theme.spaceM)
-        .background(
-            Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusCard,
-                style: .continuous
-            )
+        .padding(
+            .vertical,
+            Theme.spaceS
         )
-        .inkBorder(cornerRadius: Theme.radiusCard)
     }
 }
 
 
-// MARK: - 4. Trust
+// MARK: - Screen 4
 
 private extension OnboardingView {
 
@@ -773,148 +834,240 @@ private extension OnboardingView {
                     spacing: Theme.spaceS
                 ) {
                     Text("Private by design.")
-                        .font(.largeTitle.weight(.bold))
-                        .tracking(-0.7)
-                        .foregroundStyle(Theme.ink)
+                        .font(Theme.pageTitle)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
 
                     Text(
-                        "Your records belong to you. "
-                        + "Protocola records — it doesn't prescribe."
+                        "Your records belong to you. Protocola records — it doesn't prescribe."
                     )
-                    .font(.title3)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
                 }
 
                 VStack(spacing: 0) {
                     trustRow(
                         icon: "iphone",
                         title: "Stored locally",
-                        detail: "Your core records stay on this iPhone."
+                        detail:
+                            "Your core records stay on this iPhone."
                     )
 
                     Divider()
 
                     trustRow(
-                        icon: "person.crop.circle",
-                        title: "No account required",
-                        detail: "Start tracking without creating an account."
+                        icon:
+                            "person.crop.circle",
+                        title:
+                            "No account required",
+                        detail:
+                            "Start tracking without creating an account."
                     )
 
                     Divider()
 
                     trustRow(
                         icon: "text.bubble",
-                        title: "AI only when you ask",
-                        detail: "Relevant records are used only when you invoke Ask Protocola."
+                        title:
+                            "AI only when you ask",
+                        detail:
+                            "Relevant records are used only when you invoke Ask Protocola."
                     )
                 }
+                .padding(
+                    .horizontal,
+                    Theme.spaceM
+                )
                 .background(
                     Theme.surface,
-                    in: RoundedRectangle(
-                        cornerRadius: Theme.radiusCard,
-                        style: .continuous
+                    in: .rect(
+                        cornerRadius:
+                            Theme.radiusCard
                     )
                 )
-                .inkBorder(cornerRadius: Theme.radiusCard)
+                .inkBorder(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
             }
             .screenPadding()
-            .padding(.bottom, Theme.spaceXL)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(
+                .bottom,
+                Theme.spaceXL
+            )
         }
         .scrollIndicators(.hidden)
+    }
+
+
+    func trustRow(
+        icon: String,
+        title: String,
+        detail: String
+    ) -> some View {
+        TrustRow(
+            icon: icon,
+            title: title,
+            detail: detail
+        )
     }
 }
 
 
-// MARK: - Controls
+// MARK: - Bottom controls
 
 private extension OnboardingView {
 
     @ViewBuilder
     var controls: some View {
-        VStack(spacing: Theme.spaceS) {
+        VStack(
+            spacing: Theme.spaceS
+        ) {
             progress
 
-            switch step {
-            case 0:
-                VStack(spacing: Theme.spaceXS) {
+            if step == 3 {
+                acknowledgementRow
+            }
+
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                if step > 0 {
+                    Button {
+                        go(
+                            to: max(
+                                step - 1,
+                                0
+                            )
+                        )
+                    } label: {
+                        Image(
+                            systemName:
+                                "chevron.left"
+                        )
+                        .font(Theme.label)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+                        .frame(
+                            width:
+                                Theme.minimumTapTarget,
+                            height:
+                                Theme.minimumTapTarget
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        "Back"
+                    )
+                }
+
+                switch step {
+                case 0:
                     Button("Get started") {
                         go(to: 1)
                     }
-                    .buttonStyle(TrackingPrimaryButtonStyle())
+                    .buttonStyle(
+                        TrackingPrimaryButtonStyle()
+                    )
 
-                    Button {
-                        enterDemo()
-                    } label: {
-                        Text("Explore sample records")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Theme.muted)
-                            .frame(
-                                maxWidth: .infinity,
-                                minHeight: 44
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-
-            case 1:
-                HStack(spacing: Theme.spaceS) {
-                    backButton
-
+                case 1:
                     Button("Continue") {
                         go(to: 2)
                     }
-                    .buttonStyle(TrackingPrimaryButtonStyle())
-                    .disabled(intent == nil)
-                    .opacity(intent == nil ? 0.45 : 1)
-                }
+                    .buttonStyle(
+                        TrackingPrimaryButtonStyle()
+                    )
+                    .disabled(
+                        intent == nil
+                    )
+                    .opacity(
+                        intent == nil
+                            ? 0.42
+                            : 1
+                    )
 
-            case 2:
-                HStack(spacing: Theme.spaceS) {
-                    backButton
-
+                case 2:
                     Button("Continue") {
                         go(to: 3)
                     }
-                    .buttonStyle(TrackingPrimaryButtonStyle())
-                }
+                    .buttonStyle(
+                        TrackingPrimaryButtonStyle()
+                    )
 
-            default:
-                acknowledgementCard
-
-                HStack(spacing: Theme.spaceS) {
-                    backButton
-
-                    Button("Set up my protocol") {
+                default:
+                    Button(
+                        "Set up my protocol"
+                    ) {
                         setup = true
                     }
-                    .buttonStyle(TrackingPrimaryButtonStyle())
+                    .buttonStyle(
+                        TrackingPrimaryButtonStyle()
+                    )
                     .disabled(!accepted)
-                    .opacity(accepted ? 1 : 0.45)
+                    .opacity(
+                        accepted
+                            ? 1
+                            : 0.42
+                    )
                 }
             }
+
+            if step == 0 {
+                Button {
+                    enterDemo()
+                } label: {
+                    Text(
+                        "Explore sample records"
+                    )
+                    .font(Theme.label)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+                    .frame(
+                        maxWidth: .infinity,
+                        minHeight:
+                            Theme.minimumTapTarget
+                    )
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .padding(.horizontal, Theme.spaceL)
-        .padding(.top, Theme.spaceS)
-        .padding(.bottom, Theme.spaceS)
+        .padding(
+            .horizontal,
+            Theme.spaceL
+        )
+        .padding(
+            .top,
+            Theme.spaceS
+        )
+        .padding(
+            .bottom,
+            Theme.spaceM
+        )
         .background(Theme.paper)
     }
 
 
-    var acknowledgementCard: some View {
+    var acknowledgementRow: some View {
         Button {
             withAnimation(
                 reduceMotion
                     ? nil
-                    : .snappy(duration: 0.2)
+                    : .spring(
+                        response: 0.24,
+                        dampingFraction: 0.82
+                    )
             ) {
                 accepted.toggle()
             }
         } label: {
             HStack(
                 alignment: .top,
-                spacing: Theme.spaceM
+                spacing: Theme.spaceS
             ) {
                 Image(
                     systemName:
@@ -922,10 +1075,10 @@ private extension OnboardingView {
                         ? "checkmark.square.fill"
                         : "square"
                 )
-                .font(.title3)
+                .font(Theme.sectionTitle)
                 .foregroundStyle(
                     accepted
-                        ? Theme.teal
+                        ? Theme.ink
                         : Theme.muted
                 )
 
@@ -935,69 +1088,42 @@ private extension OnboardingView {
                 ) {
                     HStack {
                         Text("I understand")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.ink)
+                            .font(Theme.label)
+                            .foregroundStyle(
+                                Theme.ink
+                            )
 
                         Spacer()
 
-                        Text(
-                            accepted
-                                ? "Confirmed"
-                                : "Required"
-                        )
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(
-                            accepted
-                                ? Theme.teal
-                                : Theme.muted
-                        )
+                        if !accepted {
+                            Text("Required")
+                                .font(Theme.micro)
+                                .foregroundStyle(
+                                    Theme.muted
+                                )
+                        }
                     }
 
                     Text(
-                        "Protocola is a record-keeping tool. "
-                        + "It does not prescribe treatment, recommend doses, "
-                        + "or verify medical appropriateness."
+                        "Protocola records information. It does not recommend treatment or doses."
                     )
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                    if !accepted {
-                        Text("Tap this card to continue.")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(Theme.muted)
-                            .padding(.top, 2)
-                    }
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
                 }
             }
             .padding(Theme.spaceM)
-            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                accepted
-                    ? Theme.tealTint
-                    : Theme.surface,
-                in: RoundedRectangle(
-                    cornerRadius: Theme.radiusRow,
-                    style: .continuous
+                Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusRow
                 )
             )
-            .overlay {
-                RoundedRectangle(
-                    cornerRadius: Theme.radiusRow,
-                    style: .continuous
-                )
-                .strokeBorder(
-                    accepted
-                        ? Theme.teal.opacity(0.45)
-                        : Theme.border,
-                    lineWidth: 1
-                )
-            }
-            .contentShape(
-                RoundedRectangle(
-                    cornerRadius: Theme.radiusRow,
-                    style: .continuous
-                )
+            .inkBorder(
+                cornerRadius:
+                    Theme.radiusRow
             )
         }
         .buttonStyle(.plain)
@@ -1009,58 +1135,52 @@ private extension OnboardingView {
                 ? "Record-keeping acknowledgement, confirmed"
                 : "Record-keeping acknowledgement, required"
         )
-        .accessibilityAddTraits(
-            accepted
-                ? [.isSelected]
-                : []
-        )
-    }
-
-
-    var backButton: some View {
-        Button {
-            go(to: max(step - 1, 0))
-        } label: {
-            Image(systemName: "chevron.left")
-                .frame(
-                    minWidth: 50,
-                    minHeight: 50
-                )
-        }
-        .buttonStyle(TrackingSecondaryButtonStyle())
-        .frame(width: 56)
-        .accessibilityLabel("Back")
     }
 
 
     var progress: some View {
-        HStack(spacing: Theme.spaceXS) {
-            ForEach(0..<4, id: \.self) { index in
+        HStack(
+            spacing: Theme.spaceXS
+        ) {
+            ForEach(
+                0..<4,
+                id: \.self
+            ) { index in
                 Capsule()
                     .fill(
-                        index <= step
-                            ? Theme.teal
+                        index == step
+                            ? Theme.ink
                             : Theme.line
                     )
                     .frame(
-                        width: index == step ? 22 : 7,
-                        height: 7
+                        width:
+                            index == step
+                            ? 18
+                            : 6,
+                        height: 4
                     )
                     .animation(
                         reduceMotion
                             ? nil
-                            : .snappy(duration: 0.22),
+                            : .spring(
+                                response: 0.24,
+                                dampingFraction: 0.82
+                            ),
                         value: step
                     )
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Step \(step + 1) of 4")
+        .accessibilityElement(
+            children: .ignore
+        )
+        .accessibilityLabel(
+            "Step \(step + 1) of 4"
+        )
     }
 }
 
 
-// MARK: - Shared previews
+// MARK: - Timeline preview
 
 private extension OnboardingView {
 
@@ -1069,70 +1189,66 @@ private extension OnboardingView {
             alignment: .leading,
             spacing: 0
         ) {
-            Text("YOUR HISTORY BUILDS OVER TIME")
-                .font(.caption2.weight(.semibold))
-                .tracking(1)
-                .foregroundStyle(Theme.muted)
-                .padding(.bottom, Theme.spaceM)
-
             timelineRow(
-                date: "SEP 08",
+                date: "Sep 08",
                 title: "Protocol started",
-                detail: "Starting values preserved",
-                icon: "circle.fill"
+                detail: "Starting values preserved"
             )
 
-            timelineDivider
+            Divider()
 
             timelineRow(
-                date: "SEP 22",
+                date: "Sep 22",
                 title: "Protocol changed",
-                detail: "Previous → new values",
-                icon: "arrow.triangle.2.circlepath"
+                detail: "Previous → new values"
             )
 
-            timelineDivider
+            Divider()
 
             timelineRow(
-                date: "SEP 25",
+                date: "Sep 25",
                 title: "Entry recorded",
-                detail: "Attached to that point in your history",
-                icon: "checkmark.circle.fill"
+                detail:
+                    "Attached to that point in history"
             )
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .horizontal,
+            Theme.spaceM
+        )
         .background(
             Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusCard,
-                style: .continuous
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
             )
         )
-        .inkBorder(cornerRadius: Theme.radiusCard)
-    }
-
-
-    var timelineDivider: some View {
-        Divider()
-            .padding(.leading, 44)
-            .padding(.vertical, Theme.spaceXS)
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
+        )
     }
 
 
     func timelineRow(
         date: String,
         title: String,
-        detail: String,
-        icon: String
+        detail: String
     ) -> some View {
         HStack(
             alignment: .top,
             spacing: Theme.spaceM
         ) {
-            Image(systemName: icon)
-                .font(.subheadline)
-                .foregroundStyle(Theme.ink)
-                .frame(width: 24, height: 24)
+            Circle()
+                .fill(Theme.teal)
+                .frame(
+                    width: 7,
+                    height: 7
+                )
+                .padding(
+                    .top,
+                    6
+                )
 
             VStack(
                 alignment: .leading,
@@ -1140,107 +1256,57 @@ private extension OnboardingView {
             ) {
                 HStack {
                     Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.ink)
+                        .font(Theme.label)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
 
                     Spacer()
 
                     Text(date)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(Theme.muted)
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
                 }
 
                 Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
             }
         }
-    }
-
-
-    func valueRow(
-        icon: String,
-        title: String,
-        detail: String
-    ) -> some View {
-        HStack(
-            alignment: .top,
-            spacing: Theme.spaceM
-        ) {
-            Image(systemName: icon)
-                .font(.body.weight(.medium))
-                .foregroundStyle(Theme.ink)
-                .frame(width: 28, height: 28)
-
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXXS
-            ) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(Theme.ink)
-
-                Text(detail)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
-
-
-    func trustRow(
-        icon: String,
-        title: String,
-        detail: String
-    ) -> some View {
-        HStack(
-            alignment: .top,
-            spacing: Theme.spaceM
-        ) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(Theme.ink)
-                .frame(width: 28)
-
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXXS
-            ) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
-
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, Theme.spaceM)
-        .padding(.horizontal, Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceS
+        )
     }
 }
 
 
-// MARK: - Navigation
+// MARK: - Actions
 
 private extension OnboardingView {
 
-    func go(to target: Int) {
-        guard (0..<4).contains(target) else {
+    func go(
+        to target: Int
+    ) {
+        guard (0..<4)
+            .contains(target)
+        else {
             return
         }
 
         if reduceMotion {
             step = target
         } else {
-            withAnimation(.snappy(duration: 0.25)) {
+            withAnimation(
+                .spring(
+                    response: 0.32,
+                    dampingFraction: 0.86
+                )
+            ) {
                 step = target
             }
         }

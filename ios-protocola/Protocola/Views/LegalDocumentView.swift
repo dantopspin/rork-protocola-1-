@@ -8,11 +8,11 @@ struct LegalDocumentView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.spaceL) {
-                    Text("Last updated \(document.updated)").font(.caption).foregroundStyle(Theme.muted)
+                    Text("Last updated \(document.updated)").font(Theme.caption).foregroundStyle(Theme.muted)
                     ForEach(document.sections) { section in
                         VStack(alignment: .leading, spacing: Theme.spaceXS) {
-                            Text(section.heading).font(.headline)
-                            Text(section.body).font(.subheadline).foregroundStyle(Theme.muted)
+                            Text(section.heading).font(Theme.sectionTitle)
+                            Text(section.body).font(Theme.body).foregroundStyle(Theme.muted)
                         }
                     }
                 }

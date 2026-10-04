@@ -64,9 +64,9 @@ struct SettingsView: View {
             } message: {
                 Text(
                     """
-                    This permanently removes your protocols, recorded entries,                     inventory, symptoms, and other local data from this iPhone.
+                    This permanently removes your protocols, recorded entries, inventory, symptoms, and other local data from this iPhone.
 
-                    This cannot be undone. Your Pro subscription, if active,                     will not be cancelled.
+                    This cannot be undone. Your Pro subscription, if active, will not be cancelled.
                     """
                 )
             }
@@ -116,7 +116,7 @@ private extension SettingsView {
                         .foregroundStyle(Theme.ink)
 
                     Text(store.isPremium ? "Active" : "Free plan")
-                        .font(.subheadline)
+                        .font(Theme.body)
                         .foregroundStyle(Theme.muted)
                 }
 
@@ -126,7 +126,8 @@ private extension SettingsView {
                     Button("Upgrade") {
                         paywall = .pro
                     }
-                    .fontWeight(.semibold)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.ink)
                 }
             }
 
@@ -206,7 +207,7 @@ private extension SettingsView {
                         .foregroundStyle(Theme.muted)
 
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(Theme.micro)
                         .foregroundStyle(Theme.muted)
                         .accessibilityHidden(true)
                 }
@@ -303,7 +304,7 @@ private extension SettingsView {
                 )
 
                 Text(appVersionText)
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(Theme.muted)
                     .padding(.top, Theme.spaceXXS)
             }

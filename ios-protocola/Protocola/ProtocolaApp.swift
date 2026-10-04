@@ -12,6 +12,10 @@ struct ProtocolaApp: App {
     // Purchases.configure(withAPIKey:) is added once the RevenueCat
     // public SDK key is available to the iOS build.
 
+    init() {
+        ProtocolaAppearance.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -45,6 +49,8 @@ struct ProtocolaApp: App {
                 }
             }
             .environment(purchases)
+            .font(Theme.body)
+            .tint(Theme.ink)
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     store?.refresh()

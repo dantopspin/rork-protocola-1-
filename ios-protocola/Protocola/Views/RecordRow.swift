@@ -3,15 +3,47 @@ import SwiftUI
 struct RecordRow: View {
     let label: String
     let value: String
-    var onDark: Bool = false
+    var onDark = false
+
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(label).foregroundStyle(onDark ? Color.white.opacity(0.64) : Theme.muted)
-            Spacer(minLength: Theme.spaceM)
-            Text(value)
-                .multilineTextAlignment(.trailing)
-                .monospacedDigit()
-                .foregroundStyle(onDark ? Color.white : Theme.ink)
-        }.font(.subheadline)
+        if onDark {
+            HStack(
+                alignment: .firstTextBaseline
+            ) {
+                Text(label)
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Color.white.opacity(0.58)
+                    )
+
+                Spacer(
+                    minLength: Theme.spaceM
+                )
+
+                Text(value)
+                    .font(Theme.body)
+                    .multilineTextAlignment(
+                        .trailing
+                    )
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+            }
+
+        } else {
+            LabeledContent {
+                Text(value)
+                    .font(Theme.body)
+                    .multilineTextAlignment(
+                        .trailing
+                    )
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.ink)
+
+            } label: {
+                Text(label)
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.muted)
+            }
+        }
     }
 }

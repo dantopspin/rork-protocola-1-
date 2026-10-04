@@ -23,6 +23,22 @@ struct TodayView: View {
         store.today.filter { $0.log != nil }.count
     }
 
+    private var nextUnloggedEntry: ScheduledEntry? {
+        store.today.first { $0.log == nil }
+    }
+
+    /// The hero already represents the next unlogged entry.
+    /// Keep it out of the list so the same action is not shown twice.
+    private var remainingTodayEntries: [ScheduledEntry] {
+        guard let nextUnloggedEntry else {
+            return store.today
+        }
+
+        return store.today.filter {
+            $0.id != nextUnloggedEntry.id
+        }
+    }
+
     private var usesStackedHero: Bool {
         typeSize.isAccessibilitySize
     }
@@ -31,7 +47,7 @@ struct TodayView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceL
+                spacing: Theme.spaceXL
             ) {
                 Text(
                     Date.now.formatted(
@@ -41,12 +57,10 @@ struct TodayView: View {
                             .day()
                     )
                 )
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(Theme.body)
+                .foregroundStyle(Theme.muted)
 
-                if let next = store.today.first(
-                    where: { $0.log == nil }
-                ) {
+                if let next = nextUnloggedEntry {
                     nextEntryHero(next)
                 } else {
                     todayEmptyState
@@ -62,19 +76,20 @@ struct TodayView: View {
                     addFirstVialCard
                 }
 
-                if !store.today.isEmpty {
-                    todayEntriesSection
+                if lastRecordedLog != nil
+                    || activeVial != nil {
+                    summaryTiles
                 }
 
-                if !store.vials.isEmpty {
-                    inventoryRow
+                if !remainingTodayEntries.isEmpty {
+                    todayEntriesSection
                 }
 
                 Text(
                     "Your schedule, as recorded. Protocola does not recommend "
                     + "what, when, or where to administer."
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
             }
             .screenPadding()
@@ -163,6 +178,7 @@ struct TodayView: View {
         ) {
             InventoryView()
         }
+        .trackingRoutes()
         .trackingErrors()
     }
 }
@@ -196,7 +212,7 @@ private extension TodayView {
                         create = true
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Theme.teal)
+                    .tint(Theme.ink)
                 }
             }
 
@@ -211,7 +227,7 @@ private extension TodayView {
                     )
                 }
                 .buttonStyle(.bordered)
-                .tint(Theme.teal)
+                .tint(Theme.ink)
             }
         }
         .frame(maxWidth: .infinity)
@@ -228,13 +244,13 @@ private extension TodayView {
                 "Sample records",
                 systemImage: "eye"
             )
-            .font(.headline)
+            .font(Theme.sectionTitle)
 
             Text(
                 "Sample records stay isolated and are never saved "
                 + "to your history."
             )
-            .font(.subheadline)
+            .font(Theme.body)
             .foregroundStyle(.secondary)
 
             Button("Set up your protocol") {
@@ -242,7 +258,7 @@ private extension TodayView {
                 create = true
             }
             .buttonStyle(.borderedProminent)
-            .tint(Theme.teal)
+            .tint(Theme.ink)
         }
         .padding(Theme.spaceM)
         .frame(
@@ -264,7 +280,7 @@ private extension TodayView {
         } label: {
             HStack(spacing: Theme.spaceM) {
                 Image(systemName: "shippingbox")
-                    .font(.title3)
+                    .font(Theme.sectionTitle)
                     .foregroundStyle(Theme.teal)
                     .frame(width: 28)
 
@@ -273,20 +289,20 @@ private extension TodayView {
                     spacing: Theme.spaceXXS
                 ) {
                     Text("Add your first vial")
-                        .font(.subheadline.weight(.semibold))
+                        .font(Theme.label)
                         .foregroundStyle(Theme.ink)
 
                     Text(
                         "Track inventory and get low-balance context."
                     )
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(.secondary)
                 }
 
                 Spacer(minLength: Theme.spaceS)
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(Theme.micro)
                     .foregroundStyle(.tertiary)
             }
             .padding(Theme.spaceM)
@@ -309,14 +325,14 @@ private extension TodayView {
         ) {
             HStack {
                 Text("Today")
-                    .font(.title3.weight(.semibold))
+                    .font(Theme.sectionTitle)
 
                 Spacer()
 
                 Text(
                     "\(recordedCount) / \(store.today.count) logged"
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
             }
@@ -324,7 +340,7 @@ private extension TodayView {
             VStack(spacing: 0) {
                 ForEach(
                     Array(
-                        store.today.enumerated()
+                        remainingTodayEntries.enumerated()
                     ),
                     id: \.element.id
                 ) { index, entry in
@@ -399,7 +415,7 @@ private extension TodayView {
                             shift(entry, by: 1)
                         }
 
-                    if index < store.today.count - 1 {
+                    if index < remainingTodayEntries.count - 1 {
                         Divider()
                             .padding(.leading, 48)
                     }
@@ -422,6 +438,191 @@ private extension TodayView {
     }
 
 
+    var summaryTiles: some View {
+        HStack(
+            alignment: .top,
+            spacing: Theme.spaceXS
+        ) {
+            if let log = lastRecordedLog {
+                NavigationLink(
+                    value:
+                        TrackingRoute
+                            .logDetail(log.id)
+                ) {
+                    summaryTile(
+                        title: "Last entry",
+                        value: relativeDate(log.loggedAt),
+                        detail:
+                            log.actualAmountText
+                            + " "
+                            + log.unitText
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if let vial = activeVial {
+                NavigationLink {
+                    InventoryView()
+                } label: {
+                    let balance =
+                        store.balances[
+                            vial.id
+                        ] ?? 0
+
+                    let remaining =
+                        store
+                            .scheduledEntriesRemaining(
+                                in: vial
+                            )
+
+                    summaryTile(
+                        title: "Vial inventory",
+                        value:
+                            DoseCalculator.text(
+                                balance
+                            )
+                            + " mg",
+                        detail:
+                            remaining.map {
+                                "~\($0) entries"
+                            }
+                            ?? "Open inventory"
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+
+    func summaryTile(
+        title: String,
+        value: String,
+        detail: String
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXXS
+        ) {
+            Text(title)
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.muted
+                )
+
+            HStack(
+                alignment: .firstTextBaseline
+            ) {
+                Text(value)
+                    .font(Theme.sectionTitle)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .lineLimit(1)
+
+                Spacer(
+                    minLength:
+                        Theme.spaceXXS
+                )
+
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+                .font(Theme.micro)
+                .foregroundStyle(
+                    Theme.muted
+                )
+            }
+
+            Text(detail)
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.muted
+                )
+                .lineLimit(1)
+        }
+        .padding(Theme.spaceM)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusRow
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusRow
+        )
+    }
+
+
+    var lastRecordedLog: DoseLog? {
+        store.logs
+            .filter {
+                !$0.isDeleted
+            }
+            .sorted {
+                $0.loggedAt
+                    > $1.loggedAt
+            }
+            .first
+    }
+
+
+    var activeVial: VialRecord? {
+        store.vials.first {
+            !$0.isArchived
+        }
+    }
+
+
+    func relativeDate(
+        _ date: Date
+    ) -> String {
+        let calendar =
+            Calendar.current
+
+        if calendar.isDateInToday(date) {
+            return "Today"
+        }
+
+        if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        }
+
+        let days =
+            calendar.dateComponents(
+                [.day],
+                from:
+                    calendar
+                        .startOfDay(
+                            for: date
+                        ),
+                to:
+                    calendar
+                        .startOfDay(
+                            for: .now
+                        )
+            ).day ?? 0
+
+        if days > 0,
+           days < 30 {
+            return "\(days) days ago"
+        }
+
+        return date.formatted(
+            date: .abbreviated,
+            time: .omitted
+        )
+    }
+
+
     var inventoryRow: some View {
         Button {
             inventory = true
@@ -435,18 +636,18 @@ private extension TodayView {
                     spacing: Theme.spaceXXS
                 ) {
                     Text("Vial inventory")
-                        .font(.subheadline.weight(.medium))
+                        .font(Theme.label)
                         .foregroundStyle(Theme.ink)
 
                     Text(inventorySummary)
-                        .font(.caption)
+                        .font(Theme.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(Theme.micro)
                     .foregroundStyle(.tertiary)
             }
             .padding(Theme.spaceM)
@@ -522,7 +723,7 @@ private extension TodayView {
             }
 
             Text(next.revision.compoundName)
-                .font(.title2.weight(.semibold))
+                .font(Theme.sectionTitle)
                 .foregroundStyle(.white)
 
             if usesStackedHero {
@@ -550,7 +751,7 @@ private extension TodayView {
                 next.revision.protocolName,
                 systemImage: "list.bullet.rectangle"
             )
-            .font(.subheadline)
+            .font(Theme.body)
             .foregroundStyle(
                 Color.white.opacity(0.72)
             )
@@ -571,7 +772,9 @@ private extension TodayView {
                 )
             }
             .buttonStyle(
-                TrackingPrimaryButtonStyle()
+                TrackingPrimaryButtonStyle(
+                    inverted: true
+                )
             )
 
             Button {
@@ -637,7 +840,7 @@ private extension TodayView {
                         )
                     )
                 }
-                .font(.subheadline)
+                .font(Theme.body)
                 .foregroundStyle(
                     Color.white.opacity(0.82)
                 )
@@ -671,7 +874,7 @@ private extension TodayView {
                         )
                     )
                 }
-                .font(.subheadline.weight(.medium))
+                .font(Theme.label)
                 .foregroundStyle(
                     Color.white.opacity(0.9)
                 )
@@ -690,18 +893,12 @@ private extension TodayView {
             spacing: Theme.spaceXXS
         ) {
             Text(next.revision.amountText)
-                .font(
-                    .system(
-                        .largeTitle,
-                        design: .rounded
-                    )
-                    .weight(.semibold)
-                )
+                .font(Theme.metric)
                 .monospacedDigit()
                 .foregroundStyle(.white)
 
             Text(next.revision.unitText)
-                .font(.title3)
+                .font(Theme.sectionTitle)
                 .foregroundStyle(
                     Color.white.opacity(0.68)
                 )
@@ -713,7 +910,7 @@ private extension TodayView {
         _ next: ScheduledEntry
     ) -> some View {
         Text(next.at, style: .time)
-            .font(.title3.weight(.medium))
+            .font(Theme.sectionTitle)
             .monospacedDigit()
             .foregroundStyle(
                 Color.white.opacity(0.94)
@@ -730,15 +927,11 @@ private extension TodayView {
             text,
             systemImage: "clock"
         )
-        .font(.caption2.weight(.semibold))
+        .font(Theme.micro)
         .foregroundStyle(
             text == "Overdue"
-                ? Color(
-                    red: 1,
-                    green: 0.82,
-                    blue: 0.38
-                )
-                : Color.white.opacity(0.86)
+                ? Theme.amber
+                : Color.white.opacity(0.76)
         )
         .padding(
             .horizontal,
@@ -827,7 +1020,7 @@ private extension TodayView {
                         + " "
                         + entry.revision.unitText
                 )
-                .font(.subheadline.weight(.semibold))
+                .font(Theme.label)
 
                 Text(
                     entry.at.formatted(
@@ -837,7 +1030,7 @@ private extension TodayView {
                     + " · "
                     + entry.revision.protocolName
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
             }
@@ -851,7 +1044,7 @@ private extension TodayView {
                     open(entry)
                 }
                 .buttonStyle(.bordered)
-                .tint(Theme.teal)
+                .tint(Theme.ink)
                 .controlSize(.small)
             }
         }
@@ -871,7 +1064,7 @@ private extension TodayView {
                 ? "checkmark.circle.fill"
                 : "circle"
         )
-        .font(.title3)
+        .font(Theme.sectionTitle)
         .foregroundStyle(
             recorded
                 ? Theme.teal
@@ -1054,11 +1247,7 @@ private extension TodayView {
                 cornerRadius: Theme.radiusCard
             )
         )
-        .shadow(
-            color: Theme.ink.opacity(0.12),
-            radius: 12,
-            y: 4
-        )
+        .quietElevation()
         .padding(
             .horizontal,
             Theme.spaceL
