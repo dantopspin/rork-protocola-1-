@@ -227,7 +227,7 @@ private extension ProtocolEditorView {
                 Text(
                     "Choose the days already present in your instructions. Protocola does not distribute entries across the week."
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
             }
 
@@ -243,7 +243,7 @@ private extension ProtocolEditorView {
                 Text(
                     "Times use this iPhone's current time zone."
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
             }
         }
