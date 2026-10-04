@@ -53,18 +53,47 @@ import SwiftData
                 guard let found = compounds.first(where: { $0.id == compoundID && $0.protocolID == record.id }) else { throw TrackingError.missingRecord }
                 compound = found; compound.name = compoundName
             } else { compound = CompoundRecord(protocolID: record.id, name: compoundName); context.insert(compound) }
-            let needsRevision = compoundID == nil || changes.contains { ["Amount", "Unit", "Compound", "Schedule", "Vial", "Site", "Reminders", "Name"].contains($0.field) }
+            let needsRevision = compoundID == nil || changes.contains { ["Amount", "Unit", "Route", "Compound", "Schedule", "Vial", "Site", "Reminders", "Name"].contains($0.field) }
             if needsRevision {
                 for revision in revisions where revision.compoundID == compound.id && revision.effectiveUntil == nil { revision.effectiveUntil = now }
                 let from = protocolID == nil ? Calendar.current.startOfDay(for: draft.start) : now
-                let revision = try ScheduleRevision(compound: compound, protocolName: name, amount: amount, unit: draft.unit, vialID: draft.vialID, config: config, effectiveFrom: from, enabled: record.status == "Active", reminders: draft.reminders && draft.kind != .asRecorded, configuredSite: draft.site.isEmpty ? nil : draft.site)
+                let revision = try ScheduleRevision(
+                    compound: compound,
+                    protocolName: name,
+                    amount: amount,
+                    unit: draft.unit,
+                    route: draft.route,
+                    vialID: draft.vialID,
+                    config: config,
+                    effectiveFrom: from,
+                    enabled: record.status == "Active",
+                    reminders: draft.reminders && draft.kind != .asRecorded,
+                    configuredSite:
+                        draft.route.usesInjectionSite && !draft.site.isEmpty
+                        ? draft.site
+                        : nil
+                )
                 context.insert(revision)
             }
             if changes.contains(where: { $0.field == "Name" }), protocolID != nil {
                 for old in revisions where old.protocolID == record.id && old.compoundID != compound.id && old.effectiveUntil == nil {
                     guard let oldConfig = old.config, let other = compounds.first(where: { $0.id == old.compoundID }) else { throw TrackingError.missingRecord }
                     old.effectiveUntil = now
-                    context.insert(try ScheduleRevision(compound: other, protocolName: name, amount: old.amount, unit: old.unit, vialID: old.vialID, config: oldConfig, effectiveFrom: now, enabled: old.enabled, reminders: old.reminders, configuredSite: old.configuredSite))
+                    context.insert(
+                        try ScheduleRevision(
+                            compound: other,
+                            protocolName: name,
+                            amount: old.amount,
+                            unit: old.unit,
+                            route: old.route,
+                            vialID: old.vialID,
+                            config: oldConfig,
+                            effectiveFrom: now,
+                            enabled: old.enabled,
+                            reminders: old.reminders,
+                            configuredSite: old.configuredSite
+                        )
+                    )
                 }
             }
             let main = changes.filter { !["Vial", "Site"].contains($0.field) }
@@ -92,7 +121,19 @@ import SwiftData
             for old in revisions {
                 guard let config = old.config, let compound = compounds.first(where: { $0.id == old.compoundID }) else { throw TrackingError.missingRecord }
                 old.effectiveUntil = now
-                let next = try ScheduleRevision(compound: compound, protocolName: record.name, amount: old.amount, unit: old.unit, vialID: old.vialID, config: config, effectiveFrom: now, enabled: status == "Active", reminders: old.reminders, configuredSite: old.configuredSite)
+                let next = try ScheduleRevision(
+                    compound: compound,
+                    protocolName: record.name,
+                    amount: old.amount,
+                    unit: old.unit,
+                    route: old.route,
+                    vialID: old.vialID,
+                    config: config,
+                    effectiveFrom: now,
+                    enabled: status == "Active",
+                    reminders: old.reminders,
+                    configuredSite: old.configuredSite
+                )
                 context.insert(next)
             }
             let event = ProtocolEvent(protocolID: record.id, title: "Protocol \(status.lowercased())", detail: "", at: now)
