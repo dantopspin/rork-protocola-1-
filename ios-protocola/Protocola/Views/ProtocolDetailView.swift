@@ -520,9 +520,6 @@ struct ProtocolEvolutionView: View {
     @Environment(TrackingStore.self)
     private var store
 
-    @State
-    private var paywall = false
-
     private var summary:
         ProtocolEvolutionSummary {
         ProtocolEvolutionSummary(
@@ -563,7 +560,7 @@ struct ProtocolEvolutionView: View {
                     .isEmpty {
                 Section {
                     Button {
-                        paywall = true
+                        store.requestPaywall(.compare)
                     } label: {
                         Label(
                             "Unlock change analysis",
@@ -606,13 +603,6 @@ struct ProtocolEvolutionView: View {
         .navigationBarTitleDisplayMode(
             .inline
         )
-        .fullScreenCover(
-            isPresented: $paywall
-        ) {
-            PaywallView(
-                reason: .compare
-            )
-        }
     }
 }
 

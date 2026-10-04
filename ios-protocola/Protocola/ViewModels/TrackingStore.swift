@@ -35,8 +35,8 @@ import Observation
         guard activeProtocolIDs.contains(id), !isPremium else { return }
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.selectedFreeProtocolID = id } }
     }
-    /// Contextual access request; successful dose logging never sets this flag.
-    private(set) var pendingPaywall: Bool = false
+    /// Central contextual paywall request used by locked features and deep links.
+    private(set) var pendingPaywall: PaywallReason?
     var error: String?
     let notifications = NotificationService()
     init(container: ModelContainer) {
@@ -76,21 +76,28 @@ import Observation
 
     /// Drag-and-drop reorder: the dragged entry lands just before or after the row
     /// it was dropped on, then the order persists to preferences.
-    func moveTodayEntry(_ draggedID: String, relativeTo anchorID: String, after: Bool) {
+    @discardableResult
+    func moveTodayEntry(_ draggedID: String, relativeTo anchorID: String, after: Bool) -> Bool {
         var ids = today.map(\.id)
-        guard let from = ids.firstIndex(of: draggedID), let anchor = ids.firstIndex(of: anchorID), from != anchor else { return }
+        guard let from = ids.firstIndex(of: draggedID),
+              let anchor = ids.firstIndex(of: anchorID),
+              from != anchor else { return false }
         let anchorIndex = anchor > from ? anchor - 1 : anchor
         let dragged = ids.remove(at: from)
         ids.insert(dragged, at: after ? anchorIndex + 1 : anchorIndex)
         setTodayOrder(ids)
+        return true
     }
 
     /// Accessibility equivalent: a one-step move up (-1) or down (+1).
-    func moveTodayEntry(_ id: String, by delta: Int) {
+    @discardableResult
+    func moveTodayEntry(_ id: String, by delta: Int) -> Bool {
         var ids = today.map(\.id)
-        guard let index = ids.firstIndex(of: id), ids.indices.contains(index + delta) else { return }
+        guard let index = ids.firstIndex(of: id),
+              ids.indices.contains(index + delta) else { return false }
         ids.swapAt(index, index + delta)
         setTodayOrder(ids)
+        return true
     }
 
     private func setTodayOrder(_ ids: [String]) {
@@ -383,7 +390,7 @@ import Observation
             protocolID.map(canEdit)
                 ?? canCreateProtocol
         else {
-            pendingPaywall = true
+            pendingPaywall = .secondProtocol
             return false
         }
 
@@ -494,7 +501,7 @@ import Observation
         return perform { try repository.deleteDose(log) }
     }
     func changeStatus(_ record: ProtocolRecord, status: String) {
-        if status == "Active", !isDemo, !ProtocolAccess.canActivate(isPro: isPremium, activeIDs: activeProtocolIDs, targetID: record.id) { pendingPaywall = true; return }
+        if status == "Active", !isDemo, !ProtocolAccess.canActivate(isPro: isPremium, activeIDs: activeProtocolIDs, targetID: record.id) { pendingPaywall = .secondProtocol; return }
         guard canEdit(record.id) else { error = "Choose this protocol for tracking or restore Pro before editing it."; return }
         _ = perform { try repository.changeStatus(record, to: status) }
     }
@@ -541,7 +548,13 @@ import Observation
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.disclaimerAccepted = true; prefs.onboarded = true } }
     }
     func setAISharing(_ enabled: Bool) { _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.aiSharing = enabled } } }
-    func dismissPaywall() { pendingPaywall = false }
+    func requestPaywall(_ reason: PaywallReason) {
+        pendingPaywall = reason
+    }
+
+    func dismissPaywall() {
+        pendingPaywall = nil
+    }
     func visitSummaryURL(protocolID: UUID? = nil, period: AnalysisPeriod? = nil) throws -> URL {
         guard isPremium else { throw TrackingError.invalidInput("Visit Summary requires Pro.") }
         let selectedProtocols = protocols.filter { protocolID == nil || $0.id == protocolID }
