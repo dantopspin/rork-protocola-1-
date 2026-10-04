@@ -9,11 +9,11 @@ struct ShareCardView: View {
             HStack {
                 Eyebrow(text: "Protocola")
                 Spacer()
-                Text(data.periodLabel.uppercased()).font(.caption2.weight(.semibold)).tracking(1.4).foregroundStyle(Theme.muted)
+                Text(data.periodLabel.uppercased()).font(Theme.micro).tracking(1.4).foregroundStyle(Theme.muted)
             }
             VStack(alignment: .leading, spacing: Theme.spaceXS) {
                 Text(data.percentage).font(.system(size: 64, weight: .semibold, design: .rounded)).tracking(-2).monospacedDigit()
-                Text("\(data.recorded) of \(data.scheduled) scheduled entries recorded").font(.headline).foregroundStyle(Theme.muted).monospacedDigit()
+                Text("\(data.recorded) of \(data.scheduled) scheduled entries recorded").font(Theme.sectionTitle).foregroundStyle(Theme.muted).monospacedDigit()
             }
             HStack(alignment: .bottom, spacing: Theme.spaceXXS) {
                 ForEach(data.bars) { bar in
@@ -28,7 +28,7 @@ struct ShareCardView: View {
                 }
             }
             Divider()
-            Text("Tracked with Protocola").font(.caption).foregroundStyle(Theme.muted)
+            Text("Tracked with Protocola").font(Theme.caption).foregroundStyle(Theme.muted)
         }
         .padding(32)
         .frame(width: 520, alignment: .leading)
