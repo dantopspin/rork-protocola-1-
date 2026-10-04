@@ -116,7 +116,7 @@ private extension SettingsView {
                         .foregroundStyle(Theme.ink)
 
                     Text(store.isPremium ? "Active" : "Free plan")
-                        .font(.subheadline)
+                        .font(Theme.body)
                         .foregroundStyle(Theme.muted)
                 }
 
@@ -206,7 +206,7 @@ private extension SettingsView {
                         .foregroundStyle(Theme.muted)
 
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(Theme.micro)
                         .foregroundStyle(Theme.muted)
                         .accessibilityHidden(true)
                 }
@@ -303,7 +303,7 @@ private extension SettingsView {
                 )
 
                 Text(appVersionText)
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(Theme.muted)
                     .padding(.top, Theme.spaceXXS)
             }
