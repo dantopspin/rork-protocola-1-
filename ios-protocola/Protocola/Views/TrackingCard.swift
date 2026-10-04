@@ -15,7 +15,7 @@ struct TrackingCard<Content: View>: View {
             maxWidth: .infinity,
             alignment: .leading
         )
-        .padding(Theme.spaceM)
+        .padding(Theme.cardInset)
         .background(
             Theme.surface,
             in: .rect(
@@ -47,7 +47,7 @@ struct TrackingHeroCard<Content: View>: View {
         )
         .padding(Theme.spaceM)
         .background(
-            Theme.ink,
+            Theme.darkSurface,
             in: .rect(
                 cornerRadius:
                     Theme.radiusCard
@@ -142,8 +142,8 @@ extension View {
     func quietElevation() -> some View {
         shadow(
             color: Theme.shadow,
-            radius: 8,
-            y: 3
+            radius: Theme.shadowRadius,
+            y: Theme.shadowY
         )
     }
 }
