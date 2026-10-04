@@ -20,7 +20,7 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
             .foregroundStyle(
                 inverted
                     ? Theme.ink
-                    : Color.white
+                    : Theme.onDarkPrimary
             )
             .background(
                 configuration.isPressed
@@ -82,7 +82,7 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
             )
             .background(
                 onDark
-                    ? Color.white.opacity(0.07)
+                    ? Theme.onDarkPrimary.opacity(0.07)
                     : Theme.surface,
                 in: .rect(
                     cornerRadius:
@@ -96,7 +96,7 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
                 )
                 .stroke(
                     onDark
-                        ? Color.white.opacity(0.18)
+                        ? Theme.onDarkPrimary.opacity(0.18)
                         : Theme.hairline,
                     lineWidth: 1
                 )
@@ -140,7 +140,7 @@ struct TrackingCompactButtonStyle: ButtonStyle {
             .font(Theme.label)
             .foregroundStyle(
                 prominent
-                    ? Color.white
+                    ? Theme.onDarkPrimary
                     : Theme.ink
             )
             .padding(
