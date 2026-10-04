@@ -25,15 +25,17 @@ final class ProtocolaUITests: XCTestCase {
         let continueButton =
             app.buttons["Continue"]
 
-        XCTAssertFalse(continueButton.isEnabled)
-
-        // Required steps cannot be bypassed by horizontal paging.
-        app.swipeLeft()
-
+        // Tapping before choosing an intent must not advance.
+        continueButton.tap()
         XCTAssertTrue(
             app.staticTexts["Make it yours."].exists
         )
-        XCTAssertFalse(continueButton.isEnabled)
+
+        // Required steps cannot be bypassed by horizontal paging either.
+        app.swipeLeft()
+        XCTAssertTrue(
+            app.staticTexts["Make it yours."].exists
+        )
 
         let scheduleChoice =
             app.buttons["onboarding.intent.schedule"]
@@ -63,7 +65,14 @@ final class ProtocolaUITests: XCTestCase {
         let setupButton =
             app.buttons["Set up my protocol"]
 
-        XCTAssertFalse(setupButton.isEnabled)
+        // The required acknowledgement must gate protocol setup.
+        setupButton.tap()
+        XCTAssertTrue(
+            app.staticTexts["Private by design."].exists
+        )
+        XCTAssertFalse(
+            app.navigationBars["Set up your protocol"].exists
+        )
 
         let acknowledgement =
             app.buttons["onboarding.acknowledgement"]
