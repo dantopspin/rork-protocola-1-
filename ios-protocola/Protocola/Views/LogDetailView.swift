@@ -256,7 +256,7 @@ private extension LogDetailView {
                     "No site, symptoms, or notes were recorded."
                 )
                 .font(Theme.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
             }
         }
     }
