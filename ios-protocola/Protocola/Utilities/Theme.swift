@@ -206,6 +206,13 @@ enum Theme {
             design: .serif
         )
 
+    static let shareMetric =
+        Font.system(
+            size: shareMetricSize,
+            weight: .medium,
+            design: .serif
+        )
+
 
     // MARK: - Spacing (4 pt base grid)
 
