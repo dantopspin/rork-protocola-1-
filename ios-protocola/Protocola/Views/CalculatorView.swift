@@ -210,7 +210,7 @@ private extension CalculatorView {
                 )
             }
             .buttonStyle(.borderedProminent)
-            .tint(Theme.teal)
+            .tint(Theme.ink)
 
         } header: {
             Text("Value to convert")
