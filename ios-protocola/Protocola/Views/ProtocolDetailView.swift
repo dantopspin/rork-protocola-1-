@@ -83,7 +83,7 @@ private extension ProtocolDetailView {
 
                 if !record.notes.isEmpty {
                     Text(record.notes)
-                        .font(.subheadline)
+                        .font(Theme.body)
                 }
             }
 
