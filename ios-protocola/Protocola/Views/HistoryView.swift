@@ -870,8 +870,8 @@ private struct TimelineRow: View {
                 .font(Theme.label)
                 .foregroundStyle(tint)
                 .frame(
-                    width: 24,
-                    height: 24
+                    width: Theme.iconColumn,
+                    height: Theme.iconColumn
                 )
 
             VStack(
