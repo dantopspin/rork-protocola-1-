@@ -22,7 +22,9 @@ struct ContentView: View {
                 }
             }
         }
-        .tint(Theme.teal).preferredColorScheme(.light)
+        .font(Theme.body)
+        .tint(Theme.ink)
+        .preferredColorScheme(.light)
         .onAppear { choosingProtocol = store.needsProtocolChoice }
         .onChange(of: store.needsProtocolChoice) { _, needs in choosingProtocol = needs }
         .sheet(isPresented: $choosingProtocol) { FreeProtocolChoiceView() }
