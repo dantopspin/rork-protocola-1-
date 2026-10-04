@@ -16,7 +16,7 @@ struct TrustRow: View {
                 .foregroundStyle(
                     Theme.muted
                 )
-                .frame(width: 24)
+                .frame(width: Theme.iconColumn)
 
             VStack(
                 alignment: .leading,
