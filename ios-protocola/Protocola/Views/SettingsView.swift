@@ -1,18 +1,15 @@
 import SwiftUI
-import LocalAuthentication
 
 /// Native Settings for Protocola.
 ///
-/// System navigation, lists, toggles, sheets, and destructive confirmation
-/// remain native. Protocola's visual identity stays in the content layer.
+/// Keep system navigation, lists, rows, sheets, and destructive confirmation
+/// native. Protocola's visual identity stays in the content layer through
+/// typography and the shared Theme tokens.
 struct SettingsView: View {
     @Environment(TrackingStore.self) private var store
     @Environment(StoreService.self) private var purchases
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-
-    @AppStorage("protocola.appLockEnabled")
-    private var appLockEnabled = false
 
     @State private var paywall: PaywallReason?
     @State private var document: LegalDocument?
@@ -21,8 +18,6 @@ struct SettingsView: View {
     @State private var shareCSV = false
 
     @State private var confirmClear = false
-    @State private var configuringAppLock = false
-    @State private var appLockMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -38,29 +33,21 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(
-                    placement: .confirmationAction
-                ) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()
                     }
                 }
             }
-            .fullScreenCover(item: $paywall) {
-                reason in
+            .fullScreenCover(item: $paywall) { reason in
                 PaywallView(reason: reason)
             }
-            .sheet(item: $document) {
-                document in
-                LegalDocumentView(
-                    document: document
-                )
+            .sheet(item: $document) { document in
+                LegalDocumentView(document: document)
             }
             .sheet(isPresented: $shareCSV) {
                 if let exportURL {
-                    ActivityView(
-                        items: [exportURL]
-                    )
+                    ActivityView(items: [exportURL])
                 }
             }
             .confirmationDialog(
@@ -68,46 +55,33 @@ struct SettingsView: View {
                 isPresented: $confirmClear,
                 titleVisibility: .visible
             ) {
-                Button(
-                    "Clear All Data",
-                    role: .destructive
-                ) {
+                Button("Clear All Data", role: .destructive) {
                     store.clearData()
                     dismiss()
                 }
 
-                Button(
-                    "Cancel",
-                    role: .cancel
-                ) {}
+                Button("Cancel", role: .cancel) {}
             } message: {
                 Text(
-                    "This permanently removes your protocols, recorded entries, "
-                    + "inventory, symptoms, and other local data from this iPhone. "
-                    + "This cannot be undone. Your Pro subscription, if active, "
-                    + "will not be cancelled."
+                    """
+                    This permanently removes your protocols, recorded entries,                     inventory, symptoms, and other local data from this iPhone.
+
+                    This cannot be undone. Your Pro subscription, if active,                     will not be cancelled.
+                    """
                 )
             }
             .alert(
                 "Purchase unavailable",
                 isPresented: Binding(
-                    get: {
-                        purchases.error != nil
-                    },
-                    set: {
-                        if !$0 {
-                            purchases.error = nil
-                        }
-                    }
+                    get: { purchases.error != nil },
+                    set: { if !$0 { purchases.error = nil } }
                 )
             ) {
                 Button("OK") {
                     purchases.error = nil
                 }
             } message: {
-                Text(
-                    purchases.error ?? ""
-                )
+                Text(purchases.error ?? "")
             }
             .trackingErrors()
         }
@@ -122,12 +96,9 @@ private extension SettingsView {
     @ViewBuilder
     var proSection: some View {
         Section {
-            HStack(
-                spacing: Theme.spaceS
-            ) {
+            HStack(spacing: Theme.spaceS) {
                 Image(
-                    systemName:
-                        store.isPremium
+                    systemName: store.isPremium
                         ? "checkmark.seal.fill"
                         : "sparkles"
                 )
@@ -142,19 +113,11 @@ private extension SettingsView {
                     spacing: Theme.spaceXXS
                 ) {
                     Text("Protocola Pro")
-                        .foregroundStyle(
-                            Theme.ink
-                        )
+                        .foregroundStyle(Theme.ink)
 
-                    Text(
-                        store.isPremium
-                            ? "Active"
-                            : "Free plan"
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(
-                        .secondary
-                    )
+                    Text(store.isPremium ? "Active" : "Free plan")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted)
                 }
 
                 Spacer()
@@ -186,8 +149,7 @@ private extension SettingsView {
                 HStack {
                     Label(
                         "Restore Purchases",
-                        systemImage:
-                            "arrow.clockwise"
+                        systemImage: "arrow.clockwise"
                     )
 
                     Spacer()
@@ -205,7 +167,6 @@ private extension SettingsView {
 
         } header: {
             Text("Protocola Pro")
-
         } footer: {
             VStack(
                 alignment: .leading,
@@ -219,12 +180,9 @@ private extension SettingsView {
                     )
                 }
 
-                if let notice =
-                    purchases.lastNotice {
+                if let notice = purchases.lastNotice {
                     Text(notice)
-                        .foregroundStyle(
-                            .secondary
-                        )
+                        .foregroundStyle(Theme.muted)
                 }
             }
         }
@@ -232,13 +190,11 @@ private extension SettingsView {
 
 
     var preferencesSection: some View {
-        Section {
+        Section("Preferences") {
             Button {
                 openNotificationSettings()
             } label: {
-                HStack(
-                    spacing: Theme.spaceS
-                ) {
+                HStack(spacing: Theme.spaceS) {
                     Label(
                         "Notifications",
                         systemImage: "bell"
@@ -246,74 +202,16 @@ private extension SettingsView {
 
                     Spacer()
 
-                    Text("System Settings")
-                        .font(.subheadline)
-                        .foregroundStyle(
-                            .secondary
-                        )
+                    Text(store.notifications.status)
+                        .foregroundStyle(Theme.muted)
 
-                    Image(
-                        systemName: "chevron.right"
-                    )
-                    .font(
-                        .caption.weight(
-                            .semibold
-                        )
-                    )
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                        .accessibilityHidden(true)
                 }
             }
             .foregroundStyle(Theme.ink)
-
-            Toggle(
-                isOn: Binding(
-                    get: {
-                        appLockEnabled
-                    },
-                    set: {
-                        updateAppLock($0)
-                    }
-                )
-            ) {
-                Label(
-                    "App Lock",
-                    systemImage: "faceid"
-                )
-            }
-            .disabled(
-                configuringAppLock
-                    || !canLockApp
-            )
-
-        } header: {
-            Text("Preferences")
-
-        } footer: {
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXS
-            ) {
-                Text(
-                    store.notifications.status
-                )
-
-                Text(
-                    canLockApp
-                        ? "App Lock uses Face ID or your device passcode to protect local Protocola records. Biometric data never leaves iOS."
-                        : "App Lock requires Face ID, Touch ID, or a device passcode."
-                )
-
-                if configuringAppLock {
-                    Text(
-                        "Confirm your identity to enable App Lock."
-                    )
-                }
-
-                if let appLockMessage {
-                    Text(appLockMessage)
-                }
-            }
         }
     }
 
@@ -321,8 +219,7 @@ private extension SettingsView {
     var dataPrivacySection: some View {
         Section {
             Button {
-                document =
-                    LegalContent.aiDataUse
+                document = LegalContent.aiDataUse
             } label: {
                 Label(
                     "AI & Data Use",
@@ -335,14 +232,12 @@ private extension SettingsView {
             } label: {
                 Label(
                     "Export My Data",
-                    systemImage:
-                        "square.and.arrow.up"
+                    systemImage: "square.and.arrow.up"
                 )
             }
 
         } header: {
             Text("Data & Privacy")
-
         } footer: {
             Text(
                 "Your core records are stored on this iPhone. "
@@ -370,19 +265,15 @@ private extension SettingsView {
     var legalSection: some View {
         Section("Legal") {
             Button("Privacy Policy") {
-                document =
-                    LegalContent.privacy
+                document = LegalContent.privacy
             }
 
             Button("Terms of Use") {
-                document =
-                    LegalContent.terms
+                document = LegalContent.terms
             }
 
             Button("Medical Disclaimer") {
-                document =
-                    LegalContent
-                        .medicalDisclaimer
+                document = LegalContent.medicalDisclaimer
             }
         }
     }
@@ -390,9 +281,7 @@ private extension SettingsView {
 
     var dangerZoneSection: some View {
         Section {
-            Button(
-                role: .destructive
-            ) {
+            Button(role: .destructive) {
                 confirmClear = true
             } label: {
                 Label(
@@ -403,7 +292,6 @@ private extension SettingsView {
 
         } header: {
             Text("Danger Zone")
-
         } footer: {
             VStack(
                 alignment: .leading,
@@ -416,103 +304,9 @@ private extension SettingsView {
 
                 Text(appVersionText)
                     .font(.caption)
-                    .foregroundStyle(
-                        .secondary
-                    )
-                    .padding(
-                        .top,
-                        Theme.spaceXXS
-                    )
+                    .foregroundStyle(Theme.muted)
+                    .padding(.top, Theme.spaceXXS)
             }
-        }
-    }
-}
-
-
-// MARK: - App Lock
-
-private extension SettingsView {
-
-    var canLockApp: Bool {
-        let context = LAContext()
-        var error: NSError?
-
-        return context.canEvaluatePolicy(
-            .deviceOwnerAuthentication,
-            error: &error
-        )
-    }
-
-
-    func updateAppLock(
-        _ enabled: Bool
-    ) {
-        appLockMessage = nil
-
-        guard enabled else {
-            appLockEnabled = false
-            return
-        }
-
-        guard !configuringAppLock else {
-            return
-        }
-
-        configuringAppLock = true
-
-        Task {
-            let context = LAContext()
-
-            var policyError: NSError?
-
-            guard context.canEvaluatePolicy(
-                .deviceOwnerAuthentication,
-                error: &policyError
-            ) else {
-                configuringAppLock = false
-                appLockEnabled = false
-                appLockMessage =
-                    "App Lock is unavailable on this device."
-                return
-            }
-
-            do {
-                let success =
-                    try await context
-                        .evaluatePolicy(
-                            .deviceOwnerAuthentication,
-                            localizedReason:
-                                "Confirm your identity to enable Protocola App Lock."
-                        )
-
-                appLockEnabled = success
-
-                if success {
-                    appLockMessage =
-                        "App Lock is enabled."
-                }
-
-            } catch let error as LAError {
-                appLockEnabled = false
-
-                switch error.code {
-                case .userCancel,
-                     .appCancel,
-                     .systemCancel:
-                    appLockMessage = nil
-
-                default:
-                    appLockMessage =
-                        "App Lock could not be enabled. Try again."
-                }
-
-            } catch {
-                appLockEnabled = false
-                appLockMessage =
-                    "App Lock could not be enabled. Try again."
-            }
-
-            configuringAppLock = false
         }
     }
 }
@@ -524,9 +318,7 @@ private extension SettingsView {
 
     func openNotificationSettings() {
         guard let url = URL(
-            string:
-                UIApplication
-                    .openSettingsURLString
+            string: UIApplication.openSettingsURLString
         ) else {
             return
         }
@@ -537,12 +329,8 @@ private extension SettingsView {
 
     func exportData() {
         do {
-            exportURL =
-                try ExportService
-                    .historyCSV(store.logs)
-
+            exportURL = try ExportService.historyCSV(store.logs)
             shareCSV = true
-
         } catch {
             store.error =
                 "Your export could not be prepared. Please try again."
@@ -551,18 +339,15 @@ private extension SettingsView {
 
 
     func contactSupport() {
-        var components =
-            URLComponents()
+        var components = URLComponents()
 
         components.scheme = "mailto"
-        components.path =
-            AppInfo.supportEmail
+        components.path = "taskalidaniyal@gmail.com"
 
         components.queryItems = [
             URLQueryItem(
                 name: "subject",
-                value:
-                    "Protocola Support"
+                value: "Protocola Support"
             ),
 
             URLQueryItem(
@@ -581,9 +366,7 @@ private extension SettingsView {
             )
         ]
 
-        guard let url =
-            components.url
-        else {
+        guard let url = components.url else {
             return
         }
 
@@ -592,18 +375,14 @@ private extension SettingsView {
 
 
     func manageSubscription() {
-        if let url =
-            purchases.managementURL {
+        if let url = purchases.managementURL {
             openURL(url)
             return
         }
 
-        guard let fallback =
-            URL(
-                string:
-                    "https://apps.apple.com/account/subscriptions"
-            )
-        else {
+        guard let fallback = URL(
+            string: "https://apps.apple.com/account/subscriptions"
+        ) else {
             return
         }
 
@@ -614,23 +393,14 @@ private extension SettingsView {
     var appVersionText: String {
         let version =
             Bundle.main.object(
-                forInfoDictionaryKey:
-                    "CFBundleShortVersionString"
-            ) as? String
-            ?? "1.0"
+                forInfoDictionaryKey: "CFBundleShortVersionString"
+            ) as? String ?? "1.0"
 
         let build =
             Bundle.main.object(
-                forInfoDictionaryKey:
-                    "CFBundleVersion"
-            ) as? String
-            ?? "1"
+                forInfoDictionaryKey: "CFBundleVersion"
+            ) as? String ?? "1"
 
-        return
-            "Protocola "
-            + version
-            + " ("
-            + build
-            + ")"
+        return "Protocola \(version) (\(build))"
     }
 }
