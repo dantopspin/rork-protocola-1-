@@ -470,7 +470,7 @@ private extension ProtocolsView {
                 .foregroundStyle(
                     Theme.teal
                 )
-                .frame(width: 24)
+                .frame(width: Theme.iconColumn)
 
             VStack(
                 alignment: .leading,
