@@ -274,7 +274,7 @@ private extension InsightsView {
             message:
                 "Record entries from Today. Consistency, changes, sites, and observations will appear as your history grows."
         )
-        .frame(minHeight: 260)
+        .frame(minHeight: Theme.emptyStateMinHeight)
     }
 }
 
@@ -396,7 +396,7 @@ private extension InsightsView {
                     Theme.teal
                 )
             }
-            .frame(height: 145)
+            .frame(height: Theme.chartHeight)
             .chartYAxis(.hidden)
             .chartXAxis {
                 AxisMarks(
@@ -527,13 +527,7 @@ private extension InsightsView {
             spacing: Theme.spaceXS
         ) {
             Text(value)
-                .font(
-                    .system(
-                        size: 26,
-                        weight: .medium,
-                        design: .serif
-                    )
-                )
+                .font(Theme.metricCompact)
                 .monospacedDigit()
                 .foregroundStyle(Theme.ink)
 
@@ -541,8 +535,8 @@ private extension InsightsView {
                 Circle()
                     .fill(dot)
                     .frame(
-                        width: 6,
-                        height: 6
+                        width: Theme.statusDot,
+                        height: Theme.statusDot
                     )
 
                 Text(label)
@@ -555,7 +549,7 @@ private extension InsightsView {
         .padding(Theme.spaceM)
         .frame(
             maxWidth: .infinity,
-            minHeight: 92,
+            minHeight: Theme.compactMetricTileHeight,
             alignment: .leading
         )
         .background(
@@ -597,7 +591,7 @@ private extension InsightsView {
                 )
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Color.white.opacity(0.76)
+                    Theme.onDarkPrimary.opacity(0.76)
                 )
 
                 VStack(
@@ -607,14 +601,14 @@ private extension InsightsView {
                     Text("Since last change")
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Color.white.opacity(0.58)
+                            Theme.onDarkPrimary.opacity(0.58)
                         )
 
                     Text(
                         changeSummary(change)
                     )
                     .font(Theme.sectionTitle)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onDarkPrimary)
                     .lineLimit(2)
 
                     Text(
@@ -625,7 +619,7 @@ private extension InsightsView {
                     )
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Color.white.opacity(0.58)
+                        Theme.onDarkPrimary.opacity(0.58)
                     )
                 }
 
@@ -636,7 +630,7 @@ private extension InsightsView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Color.white.opacity(0.52)
+                    Theme.onDarkPrimary.opacity(0.52)
                 )
             }
             .padding(Theme.spaceM)
@@ -645,7 +639,7 @@ private extension InsightsView {
                 alignment: .leading
             )
             .background(
-                Theme.ink,
+                Theme.darkSurface,
                 in: .rect(
                     cornerRadius:
                         Theme.radiusCard
@@ -756,8 +750,8 @@ private extension InsightsView {
                                 )
                             )
                             .frame(
-                                width: 8,
-                                height: 8
+                                width: Theme.siteDot,
+                                height: Theme.siteDot
                             )
 
                         Text(site.name)
