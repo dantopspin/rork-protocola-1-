@@ -105,7 +105,7 @@ private extension DoseEditorView {
                 ?? revision?.compoundName
                 ?? "Entry"
             )
-            .font(.title2.weight(.semibold))
+            .font(Theme.modalTitle)
 
             if let occurrence {
                 RecordRow(
@@ -197,7 +197,7 @@ private extension DoseEditorView {
                     "The original vial and concentration snapshot are retained when correcting this entry."
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             } else {
                 Picker(
@@ -294,7 +294,7 @@ private extension DoseEditorView {
                             Button(site) {
                                 draft.site = site
                             }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(TrackingCompactButtonStyle())
                             .tint(
                                 draft.site
                                     .caseInsensitiveCompare(site)
@@ -314,7 +314,7 @@ private extension DoseEditorView {
                     : "Tap a recently recorded site to fill it. Nothing is preselected or recommended."
             )
             .font(Theme.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.textSecondary)
         }
     }
 
@@ -348,8 +348,8 @@ private extension DoseEditorView {
             Text(
                 "Saving reconciles the vial balance with the corrected amount. Scheduled values remain the original historical snapshot."
             )
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+            .font(Theme.caption)
+            .foregroundStyle(Theme.textSecondary)
         }
     }
 }
