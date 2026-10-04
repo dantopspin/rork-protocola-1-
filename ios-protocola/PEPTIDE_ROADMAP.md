@@ -61,8 +61,8 @@ These are table stakes or near-table-stakes for a serious peptide tracker.
 
 ### P1 — features that make Protocola materially better than a notes app
 
-- [ ] Injection-site rotation history across the entire stack
-- [ ] Visual body map for site logging/history
+- [x] Injection-site rotation history across the entire stack
+- [x] Visual body map for site logging/history
 - [ ] Vial reconstitution/opened date
 - [ ] Active / reserve / sealed vial state
 - [ ] Vial photo/reference attachment

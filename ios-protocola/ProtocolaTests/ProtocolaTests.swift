@@ -481,3 +481,172 @@ struct PeptideProtocolMechanicsTests {
         )
     }
 }
+
+
+
+struct InjectionSiteTests {
+
+    @Test
+    func canonicalSiteMatchingNormalizesCaseWhitespaceAndHyphens() {
+        #expect(
+            InjectionSite.match(
+                "  LEFT   ABDOMEN "
+            ) == .leftAbdomen
+        )
+        #expect(
+            InjectionSite.match(
+                "right-upper-arm"
+            ) == .rightUpperArm
+        )
+        #expect(
+            InjectionSite.match(
+                "custom location"
+            ) == nil
+        )
+    }
+
+
+    @MainActor
+    @Test
+    func recentUsesAreCrossProtocolMostRecentAndIgnoreSkippedEntries() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+
+        var first =
+            ProtocolDraft()
+        first.name = "Protocol A"
+        first.compound = "Compound A"
+        first.amount = "1"
+        first.unit = .mg
+
+        try repository.saveProtocol(
+            first,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        var second =
+            ProtocolDraft()
+        second.name = "Protocol B"
+        second.compound = "Compound B"
+        second.amount = "1"
+        second.unit = .mg
+
+        try repository.saveProtocol(
+            second,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let revisions =
+            try repository
+                .all(
+                    ScheduleRevision.self
+                )
+
+        let revisionA =
+            try #require(
+                revisions.first {
+                    $0.protocolName
+                        == "Protocol A"
+                }
+            )
+
+        let revisionB =
+            try #require(
+                revisions.first {
+                    $0.protocolName
+                        == "Protocol B"
+                }
+            )
+
+        let now = Date.now
+
+        var older =
+            DoseDraft(
+                revision: revisionA
+            )
+        older.site =
+            InjectionSite
+                .leftAbdomen
+                .rawValue
+        older.loggedAt =
+            now.addingTimeInterval(
+                -86_400
+            )
+
+        try repository.saveDose(
+            older,
+            revision: revisionA,
+            occurrence: nil,
+            correcting: nil,
+            now: now
+        )
+
+        var newer =
+            DoseDraft(
+                revision: revisionB
+            )
+        newer.site =
+            InjectionSite
+                .leftAbdomen
+                .rawValue
+        newer.loggedAt =
+            now.addingTimeInterval(
+                -3_600
+            )
+
+        try repository.saveDose(
+            newer,
+            revision: revisionB,
+            occurrence: nil,
+            correcting: nil,
+            now: now
+        )
+
+        var skipped =
+            DoseDraft(
+                revision: revisionA
+            )
+        skipped.site =
+            InjectionSite
+                .rightThigh
+                .rawValue
+        skipped.status = "Skipped"
+        skipped.loggedAt = now
+
+        try repository.saveDose(
+            skipped,
+            revision: revisionA,
+            occurrence: nil,
+            correcting: nil,
+            now: now
+        )
+
+        let uses =
+            InjectionSite.recentUses(
+                from:
+                    try repository
+                        .all(
+                            DoseLog.self
+                        )
+            )
+
+        #expect(uses.count == 1)
+        #expect(
+            uses.first?.site
+                == .leftAbdomen
+        )
+        #expect(
+            uses.first?
+                .protocolName
+                == "Protocol B"
+        )
+    }
+}

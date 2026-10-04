@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct DoseEditorView: View {
     let revision: ScheduleRevision?
@@ -10,6 +11,7 @@ struct DoseEditorView: View {
 
     @State private var draft: DoseDraft
     @State private var addVial = false
+    @State private var showSiteMap = false
 
     init(
         revision: ScheduleRevision,
@@ -87,6 +89,12 @@ struct DoseEditorView: View {
             }
             .sheet(isPresented: $addVial) {
                 VialEditorView()
+            }
+            .sheet(isPresented: $showSiteMap) {
+                InjectionSitePickerView(
+                    selection: $draft.site,
+                    logs: store.logs
+                )
             }
             .trackingErrors()
         }
@@ -274,47 +282,120 @@ private extension DoseEditorView {
 
     var injectionSiteSection: some View {
         Section("Injection site") {
-            TextField(
-                "Site (optional)",
-                text: $draft.site
-            )
-
-            if !recentSites.isEmpty {
-                ScrollView(
-                    .horizontal,
-                    showsIndicators: false
+            if let selected =
+                InjectionSite.match(
+                    draft.site
                 ) {
-                    HStack(
-                        spacing: Theme.spaceXS
-                    ) {
-                        ForEach(
-                            recentSites,
-                            id: \.self
-                        ) { site in
-                            Button(site) {
-                                draft.site = site
+                RecordRow(
+                    label: "Selected",
+                    value: selected.rawValue
+                )
+
+            } else if !draft.site
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty {
+                RecordRow(
+                    label: "Selected",
+                    value: draft.site
+                )
+            }
+
+            Button {
+                showSiteMap = true
+            } label: {
+                Label(
+                    draft.site.isEmpty
+                        ? "Choose on body map"
+                        : "Change on body map",
+                    systemImage: "figure.stand"
+                )
+            }
+
+            if !recentSiteUses.isEmpty {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXS
+                ) {
+                    Text(
+                        "Recent across all protocols"
+                    )
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.ink)
+
+                    ForEach(
+                        recentSiteUses.prefix(4)
+                    ) { use in
+                        Button {
+                            draft.site =
+                                use.site.rawValue
+                        } label: {
+                            HStack(
+                                spacing: Theme.spaceS
+                            ) {
+                                VStack(
+                                    alignment: .leading,
+                                    spacing:
+                                        Theme.spaceXXS
+                                ) {
+                                    Text(
+                                        use.site.rawValue
+                                    )
+                                    .font(Theme.body)
+                                    .foregroundStyle(
+                                        Theme.ink
+                                    )
+
+                                    Text(
+                                        use.compoundName
+                                        + " · "
+                                        + relativeLabel(
+                                            use.lastUsedAt
+                                        )
+                                    )
+                                    .font(Theme.caption)
+                                    .foregroundStyle(
+                                        Theme.textSecondary
+                                    )
+                                }
+
+                                Spacer()
+
+                                if InjectionSite.match(
+                                    draft.site
+                                ) == use.site {
+                                    Image(
+                                        systemName:
+                                            "checkmark"
+                                    )
+                                    .font(Theme.micro)
+                                    .foregroundStyle(
+                                        Theme.teal
+                                    )
+                                }
                             }
-                            .buttonStyle(TrackingCompactButtonStyle())
-                            .tint(
-                                draft.site
-                                    .caseInsensitiveCompare(site)
-                                    == .orderedSame
-                                ? Theme.teal
-                                : Theme.ink
+                            .contentShape(
+                                Rectangle()
                             )
-                            .controlSize(.small)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }
 
+            TextField(
+                "Custom site label (optional)",
+                text: $draft.site
+            )
+
             Text(
-                recentSites.isEmpty
-                    ? "Record the site you used. Nothing is preselected or recommended."
-                    : "Tap a recently recorded site to fill it. Nothing is preselected or recommended."
+                "The map and recent history record locations you already used. They do not recommend where to inject."
             )
             .font(Theme.caption)
-            .foregroundStyle(Theme.textSecondary)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
         }
     }
 
@@ -452,26 +533,24 @@ private extension DoseEditorView {
     }
 
 
-    /// The user's own distinct recorded sites, most recent first.
-    /// Convenience fill only; nothing is recommended.
-    var recentSites: [String] {
-        var seen = Set<String>()
-        var sites: [String] = []
+    var recentSiteUses: [InjectionSiteUse] {
+        InjectionSite.recentUses(
+            from: store.logs
+        )
+    }
 
-        for log in store.logs
-            where !log.site.isEmpty {
-            if seen.insert(
-                log.site.lowercased()
-            ).inserted {
-                sites.append(log.site)
 
-                if sites.count == 6 {
-                    break
-                }
-            }
-        }
+    func relativeLabel(
+        _ date: Date
+    ) -> String {
+        let formatter =
+            RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
 
-        return sites
+        return formatter.localizedString(
+            for: date,
+            relativeTo: .now
+        )
     }
 }
 
@@ -497,4 +576,585 @@ private struct DoseConversionPreview {
     let concentration: String
     let volume: String
     let units: String
+}
+
+
+
+// MARK: - Injection site map
+
+struct InjectionSitePickerView: View {
+    @Binding var selection: String
+    let logs: [DoseLog]
+
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State
+    private var face:
+        InjectionBodyFace = .front
+
+    private var uses: [InjectionSiteUse] {
+        InjectionSite.recentUses(
+            from: logs
+        )
+    }
+
+    private var selectedSite:
+        InjectionSite? {
+        InjectionSite.match(selection)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceL
+                ) {
+                    Picker(
+                        "Body view",
+                        selection: $face
+                    ) {
+                        ForEach(
+                            InjectionBodyFace
+                                .allCases
+                        ) { face in
+                            Text(face.rawValue)
+                                .tag(face)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    TrackingCard {
+                        InjectionSiteMapCanvas(
+                            face: face,
+                            selection:
+                                selectedSite,
+                            uses: uses
+                        ) { site in
+                            selection =
+                                site.rawValue
+                        }
+                    }
+
+                    siteRecencyCard
+                }
+                .screenPadding()
+            }
+            .background(Theme.paper)
+            .navigationTitle(
+                "Injection site"
+            )
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+            .toolbar {
+                ToolbarItem(
+                    placement:
+                        .confirmationAction
+                ) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                if let selectedSite {
+                    face =
+                        selectedSite.bodyFace
+                }
+            }
+        }
+    }
+
+    private var siteRecencyCard:
+        some View {
+        TrackingCard {
+            Text("Recorded recency")
+                .font(Theme.sectionTitle)
+                .foregroundStyle(Theme.ink)
+
+            ForEach(
+                sites(for: face)
+            ) { site in
+                Button {
+                    selection = site.rawValue
+                } label: {
+                    HStack(
+                        spacing: Theme.spaceS
+                    ) {
+                        Text(site.rawValue)
+                            .font(Theme.body)
+                            .foregroundStyle(
+                                Theme.ink
+                            )
+
+                        Spacer()
+
+                        Text(
+                            recencyLabel(
+                                for: site
+                            )
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.textSecondary
+                        )
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text(
+                "Recency is calculated from your recorded entries across all protocols. It is descriptive only."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+    private func sites(
+        for face: InjectionBodyFace
+    ) -> [InjectionSite] {
+        InjectionSite.allCases.filter {
+            $0.bodyFace == face
+        }
+    }
+
+    private func recencyLabel(
+        for site: InjectionSite
+    ) -> String {
+        guard let use =
+            uses.first(
+                where: {
+                    $0.site == site
+                }
+            )
+        else {
+            return "Not recorded"
+        }
+
+        let formatter =
+            RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+
+        return formatter.localizedString(
+            for: use.lastUsedAt,
+            relativeTo: .now
+        )
+    }
+}
+
+
+struct InjectionSiteHistoryView: View {
+    let logs: [DoseLog]
+
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State
+    private var face:
+        InjectionBodyFace = .front
+
+    private var uses: [InjectionSiteUse] {
+        InjectionSite.recentUses(
+            from: logs
+        )
+    }
+
+    private var recordedLogs:
+        [DoseLog] {
+        logs
+            .filter {
+                $0.route.usesInjectionSite
+                && $0.status != "Skipped"
+                && !$0.site
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                    .isEmpty
+            }
+            .sorted {
+                $0.loggedAt
+                    > $1.loggedAt
+            }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceL
+                ) {
+                    Picker(
+                        "Body view",
+                        selection: $face
+                    ) {
+                        ForEach(
+                            InjectionBodyFace
+                                .allCases
+                        ) { face in
+                            Text(face.rawValue)
+                                .tag(face)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    TrackingCard {
+                        InjectionSiteMapCanvas(
+                            face: face,
+                            selection: nil,
+                            uses: uses,
+                            onSelect: nil
+                        )
+                    }
+
+                    TrackingCard {
+                        Text(
+                            "Most recent by site"
+                        )
+                        .font(Theme.sectionTitle)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                        ForEach(
+                            sites(for: face)
+                        ) { site in
+                            HStack(
+                                spacing: Theme.spaceS
+                            ) {
+                                Text(
+                                    site.rawValue
+                                )
+                                .font(Theme.body)
+                                .foregroundStyle(
+                                    Theme.ink
+                                )
+
+                                Spacer()
+
+                                Text(
+                                    recencyLabel(
+                                        for: site
+                                    )
+                                )
+                                .font(Theme.caption)
+                                .foregroundStyle(
+                                    Theme.textSecondary
+                                )
+                            }
+                        }
+
+                        Text(
+                            "This view summarizes your own recorded history and does not recommend an injection location."
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.textSecondary
+                        )
+                    }
+
+                    if !recordedLogs.isEmpty {
+                        TrackingCard {
+                            Text("Recent entries")
+                                .font(
+                                    Theme.sectionTitle
+                                )
+                                .foregroundStyle(
+                                    Theme.ink
+                                )
+
+                            ForEach(
+                                recordedLogs
+                            ) { log in
+                                VStack(
+                                    alignment: .leading,
+                                    spacing:
+                                        Theme.spaceXXS
+                                ) {
+                                    HStack(
+                                        spacing:
+                                            Theme.spaceS
+                                    ) {
+                                        Text(
+                                            log.site
+                                        )
+                                        .font(
+                                            Theme.body
+                                        )
+                                        .foregroundStyle(
+                                            Theme.ink
+                                        )
+
+                                        Spacer()
+
+                                        Text(
+                                            log.loggedAt
+                                                .formatted(
+                                                    date:
+                                                        .abbreviated,
+                                                    time:
+                                                        .omitted
+                                                )
+                                        )
+                                        .font(
+                                            Theme.caption
+                                        )
+                                        .foregroundStyle(
+                                            Theme.textSecondary
+                                        )
+                                    }
+
+                                    Text(
+                                        log.compoundName
+                                        + " · "
+                                        + log.protocolName
+                                    )
+                                    .font(
+                                        Theme.caption
+                                    )
+                                    .foregroundStyle(
+                                        Theme.textSecondary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                .screenPadding()
+            }
+            .background(Theme.paper)
+            .navigationTitle("Site history")
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+            .toolbar {
+                ToolbarItem(
+                    placement:
+                        .confirmationAction
+                ) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func sites(
+        for face: InjectionBodyFace
+    ) -> [InjectionSite] {
+        InjectionSite.allCases.filter {
+            $0.bodyFace == face
+        }
+    }
+
+    private func recencyLabel(
+        for site: InjectionSite
+    ) -> String {
+        guard let use =
+            uses.first(
+                where: {
+                    $0.site == site
+                }
+            )
+        else {
+            return "Not recorded"
+        }
+
+        let formatter =
+            RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+
+        return formatter.localizedString(
+            for: use.lastUsedAt,
+            relativeTo: .now
+        )
+    }
+}
+
+
+private struct InjectionSiteMapCanvas:
+    View {
+    let face: InjectionBodyFace
+    let selection: InjectionSite?
+    let uses: [InjectionSiteUse]
+    let onSelect:
+        ((InjectionSite) -> Void)?
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Image(
+                    systemName:
+                        "figure.stand"
+                )
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(
+                    Theme.subtleFill
+                )
+                .overlay {
+                    Image(
+                        systemName:
+                            "figure.stand"
+                    )
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(
+                        Theme.hairline
+                    )
+                }
+                .padding(Theme.spaceML)
+
+                ForEach(
+                    InjectionSite
+                        .allCases
+                        .filter {
+                            $0.bodyFace
+                                == face
+                        }
+                ) { site in
+                    marker(for: site)
+                        .position(
+                            x:
+                                geometry.size.width
+                                * CGFloat(
+                                    site.normalizedX
+                                ),
+                            y:
+                                geometry.size.height
+                                * CGFloat(
+                                    site.normalizedY
+                                )
+                        )
+                }
+            }
+        }
+        .frame(
+            height:
+                Theme.bodyMapHeight
+        )
+        .accessibilityElement(
+            children: .contain
+        )
+    }
+
+    @ViewBuilder
+    private func marker(
+        for site: InjectionSite
+    ) -> some View {
+        let recorded =
+            uses.contains {
+                $0.site == site
+            }
+        let selected =
+            selection == site
+
+        if let onSelect {
+            Button {
+                onSelect(site)
+            } label: {
+                markerVisual(
+                    recorded: recorded,
+                    selected: selected
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(
+                site.rawValue
+            )
+            .accessibilityValue(
+                markerAccessibilityValue(
+                    site: site
+                )
+            )
+        } else {
+            markerVisual(
+                recorded: recorded,
+                selected: selected
+            )
+            .accessibilityLabel(
+                site.rawValue
+            )
+            .accessibilityValue(
+                markerAccessibilityValue(
+                    site: site
+                )
+            )
+        }
+    }
+
+    private func markerVisual(
+        recorded: Bool,
+        selected: Bool
+    ) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    selected
+                        ? Theme.tealTint
+                        : Theme.surface
+                )
+                .overlay {
+                    Circle()
+                        .stroke(
+                            Theme.hairline,
+                            lineWidth: 1
+                        )
+                }
+
+            Circle()
+                .fill(
+                    selected
+                        ? Theme.teal
+                        : (
+                            recorded
+                            ? Theme.ink
+                            : Theme.textTertiary
+                        )
+                )
+                .frame(
+                    width:
+                        Theme.iconSmall,
+                    height:
+                        Theme.iconSmall
+                )
+        }
+        .frame(
+            width:
+                Theme.compactButtonHeight,
+            height:
+                Theme.compactButtonHeight
+        )
+    }
+
+    private func markerAccessibilityValue(
+        site: InjectionSite
+    ) -> String {
+        if selection == site {
+            return "Selected"
+        }
+
+        if let use =
+            uses.first(
+                where: {
+                    $0.site == site
+                }
+            ) {
+            return "Recorded "
+                + use.lastUsedAt
+                    .formatted(
+                        date: .abbreviated,
+                        time: .omitted
+                    )
+        }
+
+        return "No recorded entries"
+    }
 }

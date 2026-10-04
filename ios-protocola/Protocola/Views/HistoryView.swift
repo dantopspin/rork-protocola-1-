@@ -16,6 +16,7 @@ struct HistoryView: View {
     @State private var to = Date.now
     @State private var paywall = false
     @State private var summary = false
+    @State private var siteHistory = false
     @State private var filtersPresented = false
 
     init(protocolID: UUID? = nil) {
@@ -23,6 +24,18 @@ struct HistoryView: View {
             State(
                 initialValue: protocolID
             )
+    }
+
+    private var injectionSiteLogs: [DoseLog] {
+        store.logs.filter {
+            $0.route.usesInjectionSite
+            && $0.status != "Skipped"
+            && !$0.site
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty
+        }
     }
 
     private var records: [TimelineRecord] {
@@ -191,6 +204,18 @@ struct HistoryView: View {
                     )
                 }
 
+                if !injectionSiteLogs.isEmpty {
+                    Button {
+                        siteHistory = true
+                    } label: {
+                        Label(
+                            "Injection site history",
+                            systemImage:
+                                "figure.stand"
+                        )
+                    }
+                }
+
                 Button {
                     if store.isPremium {
                         summary = true
@@ -228,6 +253,13 @@ struct HistoryView: View {
         }
         .sheet(isPresented: $summary) {
             VisitSummaryView()
+        }
+        .sheet(
+            isPresented: $siteHistory
+        ) {
+            InjectionSiteHistoryView(
+                logs: injectionSiteLogs
+            )
         }
         .trackingRoutes()
         .trackingErrors()

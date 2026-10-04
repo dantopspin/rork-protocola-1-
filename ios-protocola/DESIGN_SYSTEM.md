@@ -237,6 +237,15 @@ Shadow is reserved for transient/floating surfaces:
 - supporting caption beneath
 - one dominant metric per screen
 
+### InjectionSiteMap
+- body map height: 360
+- canonical sites use 44 pt tappable markers
+- selected site uses teal semantic emphasis
+- previously recorded sites may use ink emphasis
+- never visually imply a recommended site
+- recency copy is descriptive history only
+- free-text historical/custom site labels remain supported
+
 ---
 
 ## Screen hierarchy
