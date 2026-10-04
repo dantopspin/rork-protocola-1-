@@ -40,10 +40,13 @@ struct VialDetailView: View {
                 }
 
             } else {
-                ContentUnavailableView(
-                    "Vial unavailable",
-                    systemImage: "shippingbox"
+                TrackingEmptyState(
+                    icon: "shippingbox",
+                    title: "Vial unavailable",
+                    message:
+                        "This vial record is no longer available."
                 )
+                .screenPadding()
             }
         }
         .trackingErrors()
