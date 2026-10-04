@@ -19,7 +19,7 @@ nonisolated enum SchedulingEngine {
             case .everyNDays: scheduled = difference >= 0 && difference % config.interval == 0
             case .asRecorded: scheduled = false
             }
-            if scheduled {
+            if scheduled && config.isCycleActive(at: day) {
                 for minute in config.minutes.sorted() {
                     // Use the next valid wall-clock time through DST gaps; only first repeated time.
                     if let at = calendar.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: day, matchingPolicy: .nextTime, repeatedTimePolicy: .first, direction: .forward), at >= start, at >= effectiveFrom, at < stop {
