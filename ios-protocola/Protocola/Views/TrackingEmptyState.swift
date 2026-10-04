@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Branded editorial empty/completion state.
-/// Use this instead of ContentUnavailableView inside product screens.
+/// Use this instead of the native unavailable placeholder inside product screens.
 struct TrackingEmptyState: View {
     let icon: String
     let title: String
