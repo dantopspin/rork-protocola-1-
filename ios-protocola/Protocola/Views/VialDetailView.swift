@@ -247,7 +247,7 @@ private extension VialDetailView {
                                 Text(log.status)
                                     .font(Theme.caption)
                                     .foregroundStyle(
-                                        .secondary
+                                        Theme.textSecondary
                                     )
                             }
 
