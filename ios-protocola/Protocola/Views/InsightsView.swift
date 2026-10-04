@@ -166,7 +166,7 @@ private extension InsightsView {
                 .pickerStyle(.segmented)
 
                 Text(periodLabel)
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
 
@@ -284,7 +284,7 @@ private extension InsightsView {
                 Image(
                     systemName: "chevron.down"
                 )
-                .font(.caption.weight(.semibold))
+                .font(Theme.micro)
                 .foregroundStyle(.tertiary)
             }
         }
@@ -375,7 +375,7 @@ private extension InsightsView {
             spacing: Theme.spaceS
         ) {
             Text("Overview")
-                .font(.headline)
+                .font(Theme.sectionTitle)
 
             LazyVGrid(
                 columns: [
@@ -528,7 +528,7 @@ private extension InsightsView {
             Text(
                 "Recorded means a scheduled entry has a non-skipped log."
             )
-            .font(.caption)
+            .font(Theme.caption)
             .foregroundStyle(.secondary)
         }
         .padding(Theme.spaceM)
@@ -569,7 +569,7 @@ private extension InsightsView {
                 )
 
             Text(title)
-                .font(.caption2)
+                .font(Theme.micro)
                 .foregroundStyle(.secondary)
         }
     }
@@ -615,7 +615,7 @@ private extension InsightsView {
                                 separator: "   "
                             )
                     )
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 }
@@ -625,7 +625,7 @@ private extension InsightsView {
                 Image(
                     systemName: "chevron.right"
                 )
-                .font(.caption.weight(.semibold))
+                .font(Theme.micro)
                 .foregroundStyle(.tertiary)
             }
             .padding(Theme.spaceM)
@@ -666,7 +666,7 @@ private extension InsightsView {
                         summary.symptoms.count
                     )
                 )
-                .font(.subheadline)
+                .font(Theme.body)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
             }
@@ -687,14 +687,14 @@ private extension InsightsView {
                     )
                     + "/10"
                 )
-                .font(.caption)
+                .font(Theme.caption)
                 .foregroundStyle(.secondary)
             }
 
             Text(
                 "Recorded observations only. Timing does not establish causation."
             )
-            .font(.caption)
+            .font(Theme.caption)
             .foregroundStyle(.secondary)
         }
         .padding(Theme.spaceM)
@@ -737,7 +737,7 @@ private extension InsightsView {
                 spacing: Theme.spaceS
             ) {
                 Text("Protocola Pro")
-                    .font(.caption.weight(.semibold))
+                    .font(Theme.micro)
                     .foregroundStyle(Theme.teal)
 
                 Text(
@@ -749,12 +749,12 @@ private extension InsightsView {
                     )
                     + " ready to compare"
                 )
-                .font(.headline)
+                .font(Theme.sectionTitle)
 
                 Text(
                     "Compare descriptive windows around your own recorded changes."
                 )
-                .font(.subheadline)
+                .font(Theme.body)
                 .foregroundStyle(.secondary)
 
                 Button("See comparison") {
@@ -867,7 +867,7 @@ private struct InsightStatTile: View {
                     )
 
                 Text(label)
-                    .font(.caption)
+                    .font(Theme.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -877,7 +877,7 @@ private struct InsightStatTile: View {
                 .foregroundStyle(Theme.ink)
 
             Text(detail)
-                .font(.caption2)
+                .font(Theme.micro)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -1015,7 +1015,7 @@ private struct ComparisonCard: View {
             spacing: Theme.spaceL
         ) {
             Text(change.detail)
-                .font(.subheadline)
+                .font(Theme.body)
 
             periodView(
                 "Before",
@@ -1031,7 +1031,7 @@ private struct ComparisonCard: View {
                 "Equal-duration windows, up to 30 days each. "
                 + "Differences do not establish causation or medical conclusions."
             )
-            .font(.caption)
+            .font(Theme.caption)
             .foregroundStyle(.secondary)
         }
     }
@@ -1046,7 +1046,7 @@ private struct ComparisonCard: View {
             spacing: Theme.spaceXS
         ) {
             Text(title)
-                .font(.headline)
+                .font(Theme.sectionTitle)
 
             Text(
                 period.start.formatted(
@@ -1059,7 +1059,7 @@ private struct ComparisonCard: View {
                     time: .omitted
                 )
             )
-            .font(.caption)
+            .font(Theme.caption)
             .foregroundStyle(.secondary)
             .monospacedDigit()
 
