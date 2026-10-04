@@ -400,7 +400,7 @@ private extension TodayView {
                 Image(systemName: "shippingbox")
                     .font(Theme.sectionTitle)
                     .foregroundStyle(Theme.teal)
-                    .frame(width: 28)
+                    .frame(width: Theme.iconLarge)
 
                 VStack(
                     alignment: .leading,
@@ -842,7 +842,7 @@ private extension TodayView {
 
             Text(next.revision.compoundName)
                 .font(Theme.sectionTitle)
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onDarkPrimary)
 
             if usesStackedHero {
                 VStack(
@@ -871,12 +871,12 @@ private extension TodayView {
             )
             .font(Theme.body)
             .foregroundStyle(
-                Color.white.opacity(0.72)
+                Theme.onDarkPrimary.opacity(0.72)
             )
 
             Divider()
                 .overlay(
-                    Color.white.opacity(0.14)
+                    Theme.onDarkPrimary.opacity(0.14)
                 )
 
             if next.revision.route
@@ -900,7 +900,7 @@ private extension TodayView {
                 }
                 .font(Theme.body)
                 .foregroundStyle(
-                    Color.white.opacity(0.72)
+                    Theme.onDarkPrimary.opacity(0.72)
                 )
             }
 
@@ -942,7 +942,7 @@ private extension TodayView {
             }
             .font(Theme.caption)
             .foregroundStyle(
-                Color.white.opacity(0.62)
+                Theme.onDarkPrimary.opacity(0.62)
             )
             .frame(
                 maxWidth: .infinity,
@@ -1057,15 +1057,11 @@ private extension TodayView {
                     Image(
                         systemName: "chevron.right"
                     )
-                    .font(
-                        .caption.weight(
-                            .semibold
-                        )
-                    )
+                    .font(Theme.micro)
                 }
                 .font(Theme.body)
                 .foregroundStyle(
-                    Color.white.opacity(0.82)
+                    Theme.onDarkPrimary.opacity(0.82)
                 )
                 .contentShape(Rectangle())
             }
@@ -1091,15 +1087,11 @@ private extension TodayView {
                     Image(
                         systemName: "chevron.right"
                     )
-                    .font(
-                        .caption.weight(
-                            .semibold
-                        )
-                    )
+                    .font(Theme.micro)
                 }
                 .font(Theme.label)
                 .foregroundStyle(
-                    Color.white.opacity(0.9)
+                    Theme.onDarkPrimary.opacity(0.9)
                 )
                 .contentShape(Rectangle())
             }
@@ -1118,12 +1110,12 @@ private extension TodayView {
             Text(next.revision.amountText)
                 .font(Theme.metric)
                 .monospacedDigit()
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onDarkPrimary)
 
             Text(next.revision.unitText)
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Color.white.opacity(0.68)
+                    Theme.onDarkPrimary.opacity(0.68)
                 )
         }
     }
@@ -1136,7 +1128,7 @@ private extension TodayView {
             .font(Theme.sectionTitle)
             .monospacedDigit()
             .foregroundStyle(
-                Color.white.opacity(0.94)
+                Theme.onDarkPrimary.opacity(0.94)
             )
     }
 
@@ -1154,7 +1146,7 @@ private extension TodayView {
         .foregroundStyle(
             text == "Overdue"
                 ? Theme.amber
-                : Color.white.opacity(0.76)
+                : Theme.onDarkPrimary.opacity(0.76)
         )
         .padding(
             .horizontal,
@@ -1165,7 +1157,7 @@ private extension TodayView {
             Theme.spaceXXS
         )
         .background(
-            Color.white.opacity(0.12),
+            Theme.onDarkPrimary.opacity(0.12),
             in: .capsule
         )
     }
@@ -1309,7 +1301,7 @@ private extension TodayView {
         if dropTarget == entry.id {
             Capsule()
                 .fill(Theme.teal)
-                .frame(height: 2)
+                .frame(height: Theme.insertionLineHeight)
                 .padding(
                     .horizontal,
                     Theme.spaceXS
@@ -1480,11 +1472,7 @@ private extension TodayView {
                 )
                 + log.compoundName
             )
-            .font(
-                .subheadline.weight(
-                    .medium
-                )
-            )
+            .font(Theme.label)
             .lineLimit(1)
 
             Spacer(
@@ -1496,13 +1484,9 @@ private extension TodayView {
                     undoLog = nil
                 }
             }
-            .font(
-                .subheadline.weight(
-                    .semibold
-                )
-            )
+            .font(Theme.label)
             .foregroundStyle(Theme.teal)
-            .frame(minHeight: 44)
+            .frame(minHeight: Theme.minimumTapTarget)
         }
         .padding(
             .horizontal,
