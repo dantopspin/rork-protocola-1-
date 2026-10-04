@@ -1,94 +1,149 @@
 import SwiftUI
 
+/// Fixed visual tokens for the entire app.
+///
+/// Product content must use these values instead of local font sizes, colors,
+/// radii, shadows, or spacing. Native iOS chrome may retain system material.
 enum Theme {
 
-    // MARK: - Palette
+    // MARK: - Foundation colors
 
-    /// Warm neutral canvas. This is the visual default for the app.
+    /// #F5F3EE — main app canvas.
     static let paper = Color(
-        red: 0.9569,
-        green: 0.9490,
+        red: 0.9608,
+        green: 0.9529,
         blue: 0.9333
     )
 
-    /// Warm-white content surface.
+    /// #FCFBF8 — standard content surface.
     static let surface = Color(
-        red: 0.9922,
-        green: 0.9882,
-        blue: 0.9765
+        red: 0.9882,
+        green: 0.9843,
+        blue: 0.9725
     )
 
-    /// Near-black primary ink and primary action color.
+    /// #FFFFFF — rare foreground/modal surface.
+    static let surfaceRaised = Color.white
+
+    /// #151513 — primary text, icons, and primary actions.
     static let ink = Color(
-        red: 0.0784,
-        green: 0.0784,
-        blue: 0.0706
+        red: 0.0824,
+        green: 0.0824,
+        blue: 0.0745
     )
 
-    /// Supporting text and quiet metadata.
-    static let muted = Color(
-        red: 0.4353,
-        green: 0.4235,
-        blue: 0.3961
+    /// #706D66 — supporting text.
+    static let textSecondary = Color(
+        red: 0.4392,
+        green: 0.4275,
+        blue: 0.4000
     )
 
-    /// Muted mineral teal. Use sparingly for active/recorded states,
-    /// links, chart emphasis, and intentional selection.
+    /// #96928A — dates, metadata, inactive states.
+    static let textTertiary = Color(
+        red: 0.5882,
+        green: 0.5725,
+        blue: 0.5412
+    )
+
+    /// Compatibility alias used throughout the existing codebase.
+    static let muted = textSecondary
+
+    /// #466C64 — semantic active/recorded/chart emphasis only.
     static let teal = Color(
         red: 0.2745,
         green: 0.4235,
         blue: 0.3922
     )
 
-    /// Attention only: low supply, delayed, partial, overdue.
+    /// #94763F — overdue, low inventory, attention only.
     static let amber = Color(
         red: 0.5804,
         green: 0.4627,
         blue: 0.2471
     )
 
-    /// Destructive semantics only.
+    /// #A6534D — destructive semantics only.
     static let danger = Color(
-        red: 0.6667,
-        green: 0.3216,
+        red: 0.6510,
+        green: 0.3255,
         blue: 0.3020
     )
 
+    /// #171715 — at most one high-value dark product surface per screen.
+    static let darkSurface = Color(
+        red: 0.0902,
+        green: 0.0902,
+        blue: 0.0824
+    )
 
-    // MARK: - Structural tones
+    static let onDarkPrimary = Color(
+        red: 0.9804,
+        green: 0.9765,
+        blue: 0.9608
+    )
 
-    static let border = ink.opacity(0.12)
-    static let line = ink.opacity(0.09)
-    static let neutralTint = ink.opacity(0.045)
-    static let tealTint = teal.opacity(0.09)
+    static let onDarkSecondary = onDarkPrimary.opacity(0.62)
+
+
+    // MARK: - Structural colors
+
+    static let hairline = ink.opacity(0.11)
+    static let border = hairline
+    static let line = hairline
+    static let subtleFill = ink.opacity(0.045)
+    static let neutralTint = subtleFill
+    static let tealTint = teal.opacity(0.10)
     static let amberTint = amber.opacity(0.10)
-    static let dangerTint = danger.opacity(0.09)
+    static let dangerTint = danger.opacity(0.10)
 
-    /// Rare elevation only. Spacing and borders do most of the work.
+    /// Reserved for transient/floating surfaces only.
     static let shadow = ink.opacity(0.055)
 
 
     // MARK: - Typography
 
-    /// Classical system serif keeps the app strict and editorial
-    /// without shipping or embedding a custom font.
-    static let pageTitle =
+    static let display =
         Font.system(
-            size: 32,
+            size: 38,
             weight: .semibold,
             design: .serif
         )
 
+    static let pageTitle =
+        Font.system(
+            size: 34,
+            weight: .semibold,
+            design: .serif
+        )
+
+    static let metricLarge =
+        Font.system(
+            size: 34,
+            weight: .medium,
+            design: .serif
+        )
+
+    /// Compatibility alias for existing metric call sites.
+    static let metric = metricLarge
+
     static let modalTitle =
         Font.system(
             size: 20,
-            weight: .semibold,
+            weight: .medium,
             design: .serif
         )
 
     static let sectionTitle =
         Font.system(
-            size: 17,
+            size: 18,
+            weight: .medium,
+            design: .serif
+        )
+
+    static let cardTitle =
+        Font.system(
+            size: 16,
             weight: .medium,
             design: .serif
         )
@@ -107,9 +162,16 @@ enum Theme {
             design: .serif
         )
 
+    static let buttonLabel =
+        Font.system(
+            size: 15,
+            weight: .medium,
+            design: .serif
+        )
+
     static let caption =
         Font.system(
-            size: 12,
+            size: 12.5,
             weight: .regular,
             design: .serif
         )
@@ -121,48 +183,48 @@ enum Theme {
             design: .serif
         )
 
-    static let buttonLabel =
-        Font.system(
-            size: 15,
-            weight: .medium,
-            design: .serif
-        )
 
-    static let metric =
-        Font.system(
-            size: 32,
-            weight: .medium,
-            design: .serif
-        )
-
-
-    // MARK: - Spacing
+    // MARK: - Spacing (4 pt base grid)
 
     static let spaceXXS: CGFloat = 4
     static let spaceXS: CGFloat = 8
     static let spaceS: CGFloat = 12
     static let spaceM: CGFloat = 16
-
-    /// Standard page horizontal inset.
+    static let spaceML: CGFloat = 20
     static let spaceL: CGFloat = 24
-
-    /// Major section rhythm.
     static let spaceXL: CGFloat = 32
-
     static let spaceXXL: CGFloat = 40
+    static let spaceXXXL: CGFloat = 48
 
 
     // MARK: - Geometry
 
-    /// Sharper than the previous system while still unmistakably iOS.
     static let radiusCard: CGFloat = 12
     static let radiusRow: CGFloat = 10
     static let radiusButton: CGFloat = 10
+    static let radiusField: CGFloat = 8
     static let radiusBadge: CGFloat = 6
+
+    static let buttonHeight: CGFloat = 46
+    static let compactButtonHeight: CGFloat = 44
+    static let rowHeight: CGFloat = 54
+    static let dataRowHeight: CGFloat = 48
+    static let badgeHeight: CGFloat = 20
+    static let iconColumn: CGFloat = 24
+    static let iconSmall: CGFloat = 16
+    static let iconMedium: CGFloat = 18
+    static let iconLarge: CGFloat = 28
+
+    static let chartHeight: CGFloat = 145
+    static let shareCardWidth: CGFloat = 520
+    static let shareBarHeight: CGFloat = 64
 
 
     // MARK: - Layout
 
+    static let pageInset: CGFloat = 24
+    static let cardInset: CGFloat = 16
+    static let heroInset: CGFloat = 20
     static let maxContent: CGFloat = 680
     static let minimumTapTarget: CGFloat = 44
 }
