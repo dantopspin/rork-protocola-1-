@@ -178,6 +178,7 @@ struct TodayView: View {
         ) {
             InventoryView()
         }
+        .trackingRoutes()
         .trackingErrors()
     }
 }
