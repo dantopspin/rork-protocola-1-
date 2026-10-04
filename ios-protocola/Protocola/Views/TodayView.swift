@@ -76,12 +76,13 @@ struct TodayView: View {
                     addFirstVialCard
                 }
 
-                if !remainingTodayEntries.isEmpty {
-                    todayEntriesSection
+                if lastRecordedLog != nil
+                    || activeVial != nil {
+                    summaryTiles
                 }
 
-                if !store.vials.isEmpty {
-                    inventoryRow
+                if !remainingTodayEntries.isEmpty {
+                    todayEntriesSection
                 }
 
                 Text(
@@ -433,6 +434,191 @@ private extension TodayView {
                 value: dropTarget
             )
         }
+    }
+
+
+    var summaryTiles: some View {
+        HStack(
+            alignment: .top,
+            spacing: Theme.spaceXS
+        ) {
+            if let log = lastRecordedLog {
+                NavigationLink(
+                    value:
+                        TrackingRoute
+                            .logDetail(log.id)
+                ) {
+                    summaryTile(
+                        title: "Last entry",
+                        value: relativeDate(log.loggedAt),
+                        detail:
+                            log.actualAmountText
+                            + " "
+                            + log.unitText
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if let vial = activeVial {
+                NavigationLink {
+                    InventoryView()
+                } label: {
+                    let balance =
+                        store.balances[
+                            vial.id
+                        ] ?? 0
+
+                    let remaining =
+                        store
+                            .scheduledEntriesRemaining(
+                                in: vial
+                            )
+
+                    summaryTile(
+                        title: "Vial inventory",
+                        value:
+                            DoseCalculator.text(
+                                balance
+                            )
+                            + " mg",
+                        detail:
+                            remaining.map {
+                                "~\($0) entries"
+                            }
+                            ?? "Open inventory"
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+
+    func summaryTile(
+        title: String,
+        value: String,
+        detail: String
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXXS
+        ) {
+            Text(title)
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.muted
+                )
+
+            HStack(
+                alignment: .firstTextBaseline
+            ) {
+                Text(value)
+                    .font(Theme.sectionTitle)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .lineLimit(1)
+
+                Spacer(
+                    minLength:
+                        Theme.spaceXXS
+                )
+
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+                .font(Theme.micro)
+                .foregroundStyle(
+                    Theme.muted
+                )
+            }
+
+            Text(detail)
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.muted
+                )
+                .lineLimit(1)
+        }
+        .padding(Theme.spaceM)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusRow
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusRow
+        )
+    }
+
+
+    var lastRecordedLog: DoseLog? {
+        store.logs
+            .filter {
+                !$0.isDeleted
+            }
+            .sorted {
+                $0.loggedAt
+                    > $1.loggedAt
+            }
+            .first
+    }
+
+
+    var activeVial: VialRecord? {
+        store.vials.first {
+            !$0.isArchived
+        }
+    }
+
+
+    func relativeDate(
+        _ date: Date
+    ) -> String {
+        let calendar =
+            Calendar.current
+
+        if calendar.isDateInToday(date) {
+            return "Today"
+        }
+
+        if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        }
+
+        let days =
+            calendar.dateComponents(
+                [.day],
+                from:
+                    calendar
+                        .startOfDay(
+                            for: date
+                        ),
+                to:
+                    calendar
+                        .startOfDay(
+                            for: .now
+                        )
+            ).day ?? 0
+
+        if days > 0,
+           days < 30 {
+            return "\(days) days ago"
+        }
+
+        return date.formatted(
+            date: .abbreviated,
+            time: .omitted
+        )
     }
 
 
