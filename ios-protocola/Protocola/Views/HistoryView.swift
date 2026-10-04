@@ -14,7 +14,6 @@ struct HistoryView: View {
             to: .now
         ) ?? .now
     @State private var to = Date.now
-    @State private var paywall = false
     @State private var summary = false
     @State private var filtersPresented = false
 
@@ -199,7 +198,7 @@ struct HistoryView: View {
                     if store.isPremium {
                         summary = true
                     } else {
-                        paywall = true
+                        store.requestPaywall(.summary)
                     }
                 } label: {
                     Label(
@@ -224,11 +223,6 @@ struct HistoryView: View {
                 $filtersPresented
         ) {
             dateFilterSheet
-        }
-        .sheet(
-            isPresented: $paywall
-        ) {
-            PaywallView(reason: .summary)
         }
         .sheet(isPresented: $summary) {
             VisitSummaryView()

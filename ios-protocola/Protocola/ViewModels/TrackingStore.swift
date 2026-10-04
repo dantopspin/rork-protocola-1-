@@ -35,8 +35,11 @@ import Observation
         guard activeProtocolIDs.contains(id), !isPremium else { return }
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.selectedFreeProtocolID = id } }
     }
-    /// Contextual access request; successful dose logging never sets this flag.
-    private(set) var pendingPaywall: Bool = false
+    /// Deep-link target for locked features: any view (or an opened
+    /// `protocola://paywall/<reason>` URL) requests a specific reason, and
+    /// ContentView presents the matching paywall. Successful dose logging
+    /// never sets this.
+    private(set) var pendingPaywall: PaywallReason?
     var error: String?
     let notifications = NotificationService()
     init(container: ModelContainer) {
@@ -134,7 +137,7 @@ import Observation
         catch { self.error = (error as? TrackingError)?.errorDescription ?? "Changes could not be saved. Please try again."; refresh(); return false }
     }
     func saveProtocol(_ draft: ProtocolDraft, protocolID: UUID?, compoundID: UUID?) -> Bool {
-        guard protocolID.map(canEdit) ?? canCreateProtocol else { pendingPaywall = true; return false }
+        guard protocolID.map(canEdit) ?? canCreateProtocol else { pendingPaywall = .secondProtocol; return false }
         return perform { try repository.saveProtocol(draft, protocolID: protocolID, compoundID: compoundID) }
     }
     func saveVial(_ draft: VialDraft, id: UUID?) -> Bool { perform { try repository.saveVial(draft, id: id) } }
@@ -147,7 +150,7 @@ import Observation
         return perform { try repository.deleteDose(log) }
     }
     func changeStatus(_ record: ProtocolRecord, status: String) {
-        if status == "Active", !isDemo, !ProtocolAccess.canActivate(isPro: isPremium, activeIDs: activeProtocolIDs, targetID: record.id) { pendingPaywall = true; return }
+        if status == "Active", !isDemo, !ProtocolAccess.canActivate(isPro: isPremium, activeIDs: activeProtocolIDs, targetID: record.id) { pendingPaywall = .secondProtocol; return }
         guard canEdit(record.id) else { error = "Choose this protocol for tracking or restore Pro before editing it."; return }
         _ = perform { try repository.changeStatus(record, to: status) }
     }
@@ -164,7 +167,8 @@ import Observation
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.disclaimerAccepted = true; prefs.onboarded = true } }
     }
     func setAISharing(_ enabled: Bool) { _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.aiSharing = enabled } } }
-    func dismissPaywall() { pendingPaywall = false }
+    func requestPaywall(_ reason: PaywallReason) { pendingPaywall = reason }
+    func dismissPaywall() { pendingPaywall = nil }
     func visitSummaryURL(protocolID: UUID? = nil, period: AnalysisPeriod? = nil) throws -> URL {
         guard isPremium else { throw TrackingError.invalidInput("Visit Summary requires Pro.") }
         let selectedProtocols = protocols.filter { protocolID == nil || $0.id == protocolID }

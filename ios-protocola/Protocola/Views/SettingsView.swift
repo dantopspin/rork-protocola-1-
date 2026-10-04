@@ -11,7 +11,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
-    @State private var paywall: PaywallReason?
     @State private var document: LegalDocument?
 
     @State private var exportURL: URL?
@@ -38,9 +37,6 @@ struct SettingsView: View {
                         dismiss()
                     }
                 }
-            }
-            .sheet(item: $paywall) { reason in
-                PaywallView(reason: reason)
             }
             .sheet(item: $document) { document in
                 LegalDocumentView(document: document)
@@ -125,7 +121,7 @@ private extension SettingsView {
 
                 if !store.isPremium {
                     Button("Upgrade") {
-                        paywall = .pro
+                        store.requestPaywall(.pro)
                     }
                     .font(Theme.label)
                     .foregroundStyle(Theme.ink)

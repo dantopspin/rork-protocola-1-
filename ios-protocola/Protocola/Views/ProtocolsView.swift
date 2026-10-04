@@ -5,7 +5,6 @@ struct ProtocolsView: View {
 
     @State private var create = false
     @State private var choice = false
-    @State private var paywall = false
     @State private var calculator = false
 
     private var activeProtocols: [ProtocolRecord] {
@@ -83,7 +82,7 @@ struct ProtocolsView: View {
                     if store.canCreateProtocol {
                         create = true
                     } else {
-                        paywall = true
+                        store.requestPaywall(.secondProtocol)
                     }
                 }
             }
@@ -96,13 +95,6 @@ struct ProtocolsView: View {
         }
         .sheet(isPresented: $calculator) {
             CalculatorView()
-        }
-        .sheet(
-            isPresented: $paywall
-        ) {
-            PaywallView(
-                reason: .secondProtocol
-            )
         }
         .trackingRoutes()
         .trackingErrors()

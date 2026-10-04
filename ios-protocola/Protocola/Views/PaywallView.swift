@@ -262,13 +262,20 @@ struct PaywallView: View {
                     }
                 }
 
-                Text(
-                    "\(package.storeProduct.localizedPriceString) "
-                    + periodSuffix(package)
-                )
-                .font(Theme.caption)
-                .foregroundStyle(Theme.muted)
-                .monospacedDigit()
+                HStack(alignment: .firstTextBaseline, spacing: Theme.spaceXS) {
+                    Text(
+                        "\(package.storeProduct.localizedPriceString) "
+                        + periodSuffix(package)
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.muted)
+                    .monospacedDigit()
+
+                    if package.packageType == .annual,
+                       let savings = annualSavingsPercent {
+                        rectTag("Save \(savings)%")
+                    }
+                }
             }
 
             Spacer(minLength: Theme.spaceXS)
@@ -302,7 +309,13 @@ struct PaywallView: View {
 
 
     private var bestValue: some View {
-        Text("Best value")
+        rectTag("Best value")
+    }
+
+
+    /// Rectangular editorial tag used for plan badges (Best value, Save N%).
+    private func rectTag(_ text: String) -> some View {
+        Text(text)
             .font(Theme.micro)
             .foregroundStyle(Theme.ink)
             .padding(
@@ -330,6 +343,25 @@ struct PaywallView: View {
                     lineWidth: 1
                 )
             }
+    }
+
+
+    /// Savings of the annual plan versus twelve months at the monthly price,
+    /// computed from live store prices; hidden when it cannot be computed.
+    private var annualSavingsPercent: Int? {
+        guard
+            let annual = purchases.offerings.first(where: { $0.packageType == .annual }),
+            let monthly = purchases.offerings.first(where: { $0.packageType == .monthly })
+        else { return nil }
+
+        let monthlyPrice = NSDecimalNumber(decimal: monthly.storeProduct.price).doubleValue
+        let annualPrice = NSDecimalNumber(decimal: annual.storeProduct.price).doubleValue
+        guard monthlyPrice * 12 > 0 else { return nil }
+
+        let savings = 1 - (annualPrice / (monthlyPrice * 12))
+        guard savings > 0 else { return nil }
+
+        return Int((savings * 100).rounded())
     }
 
 

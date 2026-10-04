@@ -40,9 +40,13 @@ struct AssistantView: View {
                 Section {
                     Button("View shared data") { viewData = true }
                     Button {
-                        model.send(records: records, sharingAllowed: store.aiSharing, isPro: store.isPremium)
+                        if store.isPremium {
+                            model.send(records: records, sharingAllowed: store.aiSharing, isPro: true)
+                        } else {
+                            store.requestPaywall(.ask)
+                        }
                     } label: { if model.isSending { ProgressView("Reading timeline…") } else { Label("Ask Protocola", systemImage: "text.bubble") } }
-                        .disabled(!store.isPremium || !store.aiSharing || model.isSending || records.isEmpty || model.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(!store.aiSharing || model.isSending || records.isEmpty || model.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 } footer: { Text("Sharing remains enabled until you turn it off in Settings. No per-question confirmation; nothing is sent in the background.") }
                 if let answer = model.answer {
                     Section("Timeline summary · AI-generated") { Text(answer).textSelection(.enabled); Text("Verify against the cited records. AI may be incorrect.").font(Theme.caption).foregroundStyle(Theme.muted) }
