@@ -18,7 +18,7 @@ struct VisitSummaryView: View {
                     if !fullHistory { DatePicker("From", selection: $from, displayedComponents: .date); DatePicker("Through", selection: $to, displayedComponents: .date) }
                 }
                 Section {
-                    Text("Current protocol, key changes, entries, symptoms, consistency, and a chronological timeline. Built on this iPhone from retained records, not medical interpretation.").font(.subheadline).foregroundStyle(Theme.muted)
+                    Text("Current protocol, key changes, entries, symptoms, consistency, and a chronological timeline. Built on this iPhone from retained records, not medical interpretation.").font(Theme.body).foregroundStyle(Theme.muted)
                     Button("Prepare and share PDF") {
                         guard store.isPremium, let protocolID else { return }
                         let record = store.protocols.first { $0.id == protocolID }
