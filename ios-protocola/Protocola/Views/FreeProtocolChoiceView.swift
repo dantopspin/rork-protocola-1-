@@ -76,7 +76,7 @@ struct FreeProtocolChoiceView: View {
                                     )
                                 }
                             }
-                            .frame(minHeight: 44)
+                            .frame(minHeight: Theme.minimumTapTarget)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
