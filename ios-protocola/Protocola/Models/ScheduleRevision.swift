@@ -12,7 +12,7 @@ import SwiftData
 
     /// Added as a persisted snapshot so every revision keeps the administration
     /// route that was recorded at that point in history.
-    var routeText: String = AdministrationRoute.injection.rawValue
+    var routeRawValue: String?
 
     var vialID: UUID?
     var configuredSite: String?
@@ -43,7 +43,7 @@ import SwiftData
         amountText =
             DoseCalculator.text(amount)
         unitText = unit.rawValue
-        routeText = route.rawValue
+        routeRawValue = route.rawValue
         self.vialID = vialID
         self.configuredSite =
             configuredSite
@@ -75,9 +75,14 @@ import SwiftData
         ) ?? .mg
     }
 
+    var routeText: String {
+        route.rawValue
+    }
+
     var route: AdministrationRoute {
         AdministrationRoute(
-            rawValue: routeText
+            rawValue: routeRawValue
+                ?? ""
         ) ?? .injection
     }
 }
