@@ -46,7 +46,7 @@ struct PaywallView: View {
                     .foregroundStyle(Theme.muted)
                     .frame(
                         maxWidth: .infinity,
-                        minHeight: 44
+                        minHeight: Theme.minimumTapTarget
                     )
                     .buttonStyle(.plain)
 
@@ -308,13 +308,13 @@ struct PaywallView: View {
             .background(
                 Theme.neutralTint,
                 in: RoundedRectangle(
-                    cornerRadius: 5,
+                    cornerRadius: Theme.radiusBadge,
                     style: .continuous
                 )
             )
             .overlay {
                 RoundedRectangle(
-                    cornerRadius: 5,
+                    cornerRadius: Theme.radiusBadge,
                     style: .continuous
                 )
                 .strokeBorder(
