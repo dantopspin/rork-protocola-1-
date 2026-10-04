@@ -51,9 +51,14 @@ struct ContentView: View {
         .onChange(
             of: appLockEnabled
         ) { _, enabled in
+            // Enabling App Lock is already authenticated in Settings.
+            // Keep the current session open, then lock the next time
+            // the app leaves the active state.
+            unlocked = true
+            authenticationError = nil
+
             if !enabled {
-                unlocked = true
-                authenticationError = nil
+                authenticating = false
             }
         }
         .onChange(
