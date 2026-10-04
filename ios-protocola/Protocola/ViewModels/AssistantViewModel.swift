@@ -15,8 +15,8 @@ import Observation
     static func automaticContext(_ logs: [DoseLog], limit: Int = recordLimit) -> AIRecordContext {
         let lines = logs.prefix(limit).enumerated().map { index, log -> String in
             var line = "[D\(index + 1)] \(log.loggedAt.ISO8601Format()) · \(log.compoundName) · \(log.status)"
-            line += " · actual \(log.actualAmountText) \(log.unitText) · scheduled \(log.scheduledAmountText) \(log.scheduledUnitText)"
-            if !log.site.isEmpty { line += " · site: \(log.site)" }
+            line += " · route \(log.routeText) · actual \(log.actualAmountText) \(log.unitText) · scheduled \(log.scheduledAmountText) \(log.scheduledUnitText)"
+            if log.route.usesInjectionSite, !log.site.isEmpty { line += " · site: \(log.site)" }
             if !log.symptoms.isEmpty { line += " · symptoms: \(log.symptoms.prefix(300)) · severity \(log.symptomSeverity)/10" }
             return line
         }
