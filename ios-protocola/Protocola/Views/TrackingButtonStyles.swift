@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Primary action. Near-black on light surfaces; white on the dark hero.
-/// Keep one dominant action per screen whenever possible.
+/// Primary action. Near-black on light surfaces; light on the dark hero.
+/// Keep one dominant primary action per screen/context.
 struct TrackingPrimaryButtonStyle: ButtonStyle {
     var inverted: Bool = false
 
@@ -15,7 +15,7 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
             .font(Theme.buttonLabel)
             .frame(
                 maxWidth: .infinity,
-                minHeight: Theme.minimumTapTarget
+                minHeight: Theme.buttonHeight
             )
             .foregroundStyle(
                 inverted
@@ -26,12 +26,12 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
                 configuration.isPressed
                     ? (
                         inverted
-                        ? Color.white.opacity(0.82)
+                        ? Theme.onDarkPrimary.opacity(0.82)
                         : Theme.ink.opacity(0.82)
                     )
                     : (
                         inverted
-                        ? Color.white
+                        ? Theme.onDarkPrimary
                         : Theme.ink
                     ),
                 in: .rect(
@@ -58,8 +58,7 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
 }
 
 
-/// Quiet secondary action. Borders and hierarchy do the work;
-/// color is reserved for semantics rather than decoration.
+/// Quiet full-width secondary action.
 struct TrackingSecondaryButtonStyle: ButtonStyle {
     var onDark: Bool = false
 
@@ -73,11 +72,12 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
             .font(Theme.buttonLabel)
             .frame(
                 maxWidth: .infinity,
-                minHeight: Theme.minimumTapTarget
+                minHeight:
+                    Theme.compactButtonHeight
             )
             .foregroundStyle(
                 onDark
-                    ? Color.white.opacity(0.9)
+                    ? Theme.onDarkPrimary
                     : Theme.ink
             )
             .background(
@@ -97,9 +97,80 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
                 .stroke(
                     onDark
                         ? Color.white.opacity(0.18)
-                        : Theme.border,
+                        : Theme.hairline,
                     lineWidth: 1
                 )
+            }
+            .opacity(
+                configuration.isPressed
+                    ? 0.72
+                    : 1
+            )
+            .scaleEffect(
+                configuration.isPressed
+                    && !reduceMotion
+                    ? 0.985
+                    : 1
+            )
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .spring(
+                        response: 0.22,
+                        dampingFraction: 0.86
+                    ),
+                value: configuration.isPressed
+            )
+    }
+}
+
+
+/// Inline action used inside rows and compact modules.
+/// It preserves the 44 pt tap target without expanding to full width.
+struct TrackingCompactButtonStyle: ButtonStyle {
+    var prominent: Bool = false
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+        configuration.label
+            .font(Theme.label)
+            .foregroundStyle(
+                prominent
+                    ? Color.white
+                    : Theme.ink
+            )
+            .padding(
+                .horizontal,
+                Theme.spaceS
+            )
+            .frame(
+                minHeight:
+                    Theme.compactButtonHeight
+            )
+            .background(
+                prominent
+                    ? Theme.ink
+                    : Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusButton
+                )
+            )
+            .overlay {
+                if !prominent {
+                    RoundedRectangle(
+                        cornerRadius:
+                            Theme.radiusButton
+                    )
+                    .stroke(
+                        Theme.hairline,
+                        lineWidth: 1
+                    )
+                }
             }
             .opacity(
                 configuration.isPressed
