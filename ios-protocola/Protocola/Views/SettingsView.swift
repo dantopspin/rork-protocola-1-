@@ -1,17 +1,13 @@
 import SwiftUI
-import RevenueCat
 
-/// Release-ready Settings for Protocola.
+/// Native Settings for Protocola.
 ///
-/// Structure:
-/// Protocola Pro
-/// Preferences
-/// Data & Privacy
-/// Support
-/// Legal
-/// Danger Zone
+/// Keep system navigation, lists, rows, sheets, and destructive confirmation
+/// native. Protocola's visual identity stays in the content layer through
+/// typography and the shared Theme tokens.
 struct SettingsView: View {
     @Environment(TrackingStore.self) private var store
+    @Environment(StoreService.self) private var purchases
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -23,24 +19,14 @@ struct SettingsView: View {
 
     @State private var confirmClear = false
 
-    @State private var isRestoring = false
-    @State private var restoreMessage: String?
-    @State private var showRestoreAlert = false
-
     var body: some View {
         NavigationStack {
             List {
                 proSection
-                .listRowBackground(Color.white)
-
                 preferencesSection
-
                 dataPrivacySection
-
                 supportSection
-
                 legalSection
-
                 dangerZoneSection
             }
             .paperList()
@@ -53,29 +39,17 @@ struct SettingsView: View {
                     }
                 }
             }
-
-            // MARK: - Paywall
-
             .fullScreenCover(item: $paywall) { reason in
                 PaywallView(reason: reason)
             }
-
-            // MARK: - Legal
-
             .sheet(item: $document) { document in
                 LegalDocumentView(document: document)
             }
-
-            // MARK: - Export
-
             .sheet(isPresented: $shareCSV) {
                 if let exportURL {
                     ActivityView(items: [exportURL])
                 }
             }
-
-            // MARK: - Clear Data
-
             .confirmationDialog(
                 "Clear all Protocola data?",
                 isPresented: $confirmClear,
@@ -90,26 +64,25 @@ struct SettingsView: View {
             } message: {
                 Text(
                     """
-                    This permanently removes your protocols, recorded entries, \
-                    inventory, symptoms, and other local data from this iPhone.
+                    This permanently removes your protocols, recorded entries,                     inventory, symptoms, and other local data from this iPhone.
 
-                    This cannot be undone. Your Pro subscription, if active, \
-                    will not be cancelled.
+                    This cannot be undone. Your Pro subscription, if active,                     will not be cancelled.
                     """
                 )
             }
-
-            // MARK: - Restore Purchases Result
-
             .alert(
-                "Restore Purchases",
-                isPresented: $showRestoreAlert
+                "Purchase unavailable",
+                isPresented: Binding(
+                    get: { purchases.error != nil },
+                    set: { if !$0 { purchases.error = nil } }
+                )
             ) {
-                Button("OK", role: .cancel) {}
+                Button("OK") {
+                    purchases.error = nil
+                }
             } message: {
-                Text(restoreMessage ?? "")
+                Text(purchases.error ?? "")
             }
-
             .trackingErrors()
         }
     }
@@ -120,12 +93,10 @@ struct SettingsView: View {
 
 private extension SettingsView {
 
-    // MARK: Pro
-
     @ViewBuilder
     var proSection: some View {
         Section {
-            HStack(spacing: 12) {
+            HStack(spacing: Theme.spaceS) {
                 Image(
                     systemName: store.isPremium
                         ? "checkmark.seal.fill"
@@ -137,7 +108,10 @@ private extension SettingsView {
                         : Theme.ink
                 )
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
                     Text("Protocola Pro")
                         .foregroundStyle(Theme.ink)
 
@@ -168,7 +142,9 @@ private extension SettingsView {
             }
 
             Button {
-                restorePurchases()
+                Task {
+                    await purchases.restore()
+                }
             } label: {
                 HStack {
                     Label(
@@ -178,36 +154,47 @@ private extension SettingsView {
 
                     Spacer()
 
-                    if isRestoring {
+                    if purchases.isRestoring {
                         ProgressView()
                             .controlSize(.small)
                     }
                 }
             }
-            .disabled(isRestoring)
+            .disabled(
+                purchases.isRestoring
+                    || purchases.isPurchasing
+            )
 
         } header: {
             Text("Protocola Pro")
         } footer: {
-            if !store.isPremium {
-                Text(
-                    "Free includes core tracking for one active protocol. "
-                    + "Pro unlocks unlimited active protocols, Ask Protocola, "
-                    + "advanced comparisons, and Visit Summaries."
-                )
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXS
+            ) {
+                if !store.isPremium {
+                    Text(
+                        "Free includes core tracking for one active protocol. "
+                        + "Pro unlocks unlimited active protocols, Ask Protocola, "
+                        + "advanced comparisons, and Visit Summaries."
+                    )
+                }
+
+                if let notice = purchases.lastNotice {
+                    Text(notice)
+                        .foregroundStyle(Theme.muted)
+                }
             }
         }
     }
 
-
-    // MARK: Preferences
 
     var preferencesSection: some View {
         Section("Preferences") {
             Button {
                 openNotificationSettings()
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: Theme.spaceS) {
                     Label(
                         "Notifications",
                         systemImage: "bell"
@@ -221,14 +208,13 @@ private extension SettingsView {
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Theme.muted)
+                        .accessibilityHidden(true)
                 }
             }
             .foregroundStyle(Theme.ink)
         }
     }
 
-
-    // MARK: Data & Privacy
 
     var dataPrivacySection: some View {
         Section {
@@ -262,8 +248,6 @@ private extension SettingsView {
     }
 
 
-    // MARK: Support
-
     var supportSection: some View {
         Section("Support") {
             Button {
@@ -277,8 +261,6 @@ private extension SettingsView {
         }
     }
 
-
-    // MARK: Legal
 
     var legalSection: some View {
         Section("Legal") {
@@ -297,8 +279,6 @@ private extension SettingsView {
     }
 
 
-    // MARK: Danger Zone
-
     var dangerZoneSection: some View {
         Section {
             Button(role: .destructive) {
@@ -313,7 +293,10 @@ private extension SettingsView {
         } header: {
             Text("Danger Zone")
         } footer: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceS
+            ) {
                 Text(
                     "Permanently removes all local Protocola records from "
                     + "this iPhone. This does not cancel an active subscription."
@@ -322,7 +305,7 @@ private extension SettingsView {
                 Text(appVersionText)
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
-                    .padding(.top, 6)
+                    .padding(.top, Theme.spaceXXS)
             }
         }
     }
@@ -392,53 +375,18 @@ private extension SettingsView {
 
 
     func manageSubscription() {
-        guard let url = URL(
+        if let url = purchases.managementURL {
+            openURL(url)
+            return
+        }
+
+        guard let fallback = URL(
             string: "https://apps.apple.com/account/subscriptions"
         ) else {
             return
         }
 
-        openURL(url)
-    }
-
-
-    func restorePurchases() {
-        guard !isRestoring else {
-            return
-        }
-
-        isRestoring = true
-
-        Purchases.shared.restorePurchases { customerInfo, error in
-            DispatchQueue.main.async {
-                isRestoring = false
-
-                if let error {
-                    restoreMessage =
-                        "Purchases could not be restored. "
-                        + error.localizedDescription
-
-                    showRestoreAlert = true
-                    return
-                }
-
-                let hasPro =
-                    customerInfo?
-                        .entitlements["pro"]?
-                        .isActive == true
-
-                if hasPro {
-                    restoreMessage =
-                        "Your Protocola Pro subscription was restored."
-                } else {
-                    restoreMessage =
-                        "No active Protocola Pro subscription was found "
-                        + "for this Apple ID."
-                }
-
-                showRestoreAlert = true
-            }
-        }
+        openURL(fallback)
     }
 
 
