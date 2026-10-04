@@ -1,0 +1,14 @@
+{
+  "$schema": "https://rork.com/schema/rork.json",
+  "apps": [
+    {
+      "name": "Protocola",
+      "path": "ios-protocola",
+      "framework": "swift",
+      "settings": {
+        "swiftSibling": false,
+        "iosBundleId": "app.rork.protocola"
+      }
+    }
+  ]
+}

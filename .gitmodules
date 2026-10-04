@@ -1,0 +1,4 @@
+[submodule "protocol-pulse-19"]
+	path = protocol-pulse-19
+	url = https://github.com/dantopspin/protocol-pulse-19.git
+	branch = main
