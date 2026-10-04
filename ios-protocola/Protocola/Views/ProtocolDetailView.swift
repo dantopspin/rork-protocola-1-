@@ -290,7 +290,7 @@ private extension ProtocolDetailView {
         _ revisions: [ScheduleRevision],
         record: ProtocolRecord
     ) -> some View {
-        Section("Planned changes") {
+        Section {
             ForEach(revisions) {
                 revision in
 
@@ -389,6 +389,8 @@ private extension ProtocolDetailView {
                 )
             }
 
+        } header: {
+            Text("Planned changes")
         } footer: {
             Text(
                 "Planned revisions do not change past records and take effect only on their recorded date."
@@ -559,7 +561,7 @@ struct ProtocolEvolutionView: View {
                 != nil
                 || !summary.cycleRuns
                     .isEmpty {
-                Section("Evolution analysis") {
+                Section {
                     Button {
                         paywall = true
                     } label: {
@@ -570,6 +572,8 @@ struct ProtocolEvolutionView: View {
                         )
                     }
 
+                } header: {
+                    Text("Evolution analysis")
                 } footer: {
                     Text(
                         "Pro adds deterministic before/after, since-change, and cycle-history analysis."
@@ -620,7 +624,7 @@ private extension ProtocolEvolutionView {
         some View {
         if let since =
             summary.sinceLastChange {
-            Section("Since last change") {
+            Section {
                 Text(
                     since.change.detail
                 )
@@ -700,6 +704,8 @@ private extension ProtocolEvolutionView {
                     )
                 }
 
+            } header: {
+                Text("Since last change")
             } footer: {
                 Text(
                     "Descriptive record summary only. Changes in consistency or observations do not establish medical effect or causation."
@@ -714,7 +720,7 @@ private extension ProtocolEvolutionView {
         some View {
         if let comparison =
             summary.comparison {
-            Section("Before / after") {
+            Section {
                 Text(
                     comparison
                         .change
@@ -827,6 +833,8 @@ private extension ProtocolEvolutionView {
                 )
                 .monospacedDigit()
 
+            } header: {
+                Text("Before / after")
             } footer: {
                 Text(
                     "Equal-duration windows, up to 30 days each. Differences are descriptive and do not establish causation."
@@ -838,7 +846,7 @@ private extension ProtocolEvolutionView {
 
     var cycleHistorySection:
         some View {
-        Section("Cycle history") {
+        Section {
             ForEach(
                 summary.cycleRuns
             ) { run in
@@ -920,6 +928,8 @@ private extension ProtocolEvolutionView {
                 )
             }
 
+        } header: {
+            Text("Cycle history")
         } footer: {
             Text(
                 "Cycle history reflects the ON/OFF schedule you recorded and entries logged against it. It does not recommend a cycle."

@@ -179,6 +179,17 @@ import Observation
             return nil
         }
 
+        let calendar = Calendar.current
+        guard let horizon =
+            calendar.date(
+                byAdding: .year,
+                value: 2,
+                to: now
+            )
+        else {
+            return nil
+        }
+
         let linked =
             revisions.filter {
                 $0.enabled
@@ -190,17 +201,6 @@ import Observation
             }
 
         guard !linked.isEmpty else {
-            return nil
-        }
-
-        let calendar = Calendar.current
-        guard let horizon =
-            calendar.date(
-                byAdding: .year,
-                value: 2,
-                to: now
-            )
-        else {
             return nil
         }
 
