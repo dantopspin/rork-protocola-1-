@@ -247,10 +247,10 @@ private extension HistoryView {
                     Divider()
 
                     ForEach(store.protocols) {
-                        protocol in
-                        Button(protocol.name) {
+                        record in
+                        Button(record.name) {
                             protocolID =
-                                protocol.id
+                                record.id
                         }
                     }
                 } label: {
