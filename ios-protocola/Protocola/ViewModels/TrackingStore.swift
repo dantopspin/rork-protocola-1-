@@ -126,11 +126,13 @@ import Observation
     }
 
     func scheduledEntriesRemaining(
-        in vial: VialRecord
+        in vial: VialRecord,
+        at date: Date = .now
     ) -> Int? {
         guard let mass =
             singleScheduledMassMg(
-                for: vial
+                for: vial,
+                at: date
             ),
               mass > 0
         else {
@@ -148,11 +150,13 @@ import Observation
     }
 
     func dosesPerVial(
-        _ vial: VialRecord
+        _ vial: VialRecord,
+        at date: Date = .now
     ) -> Int? {
         guard let mass =
             singleScheduledMassMg(
-                for: vial
+                for: vial,
+                at: date
             ),
               mass > 0
         else {
@@ -263,13 +267,16 @@ import Observation
     }
 
     private func singleScheduledMassMg(
-        for vial: VialRecord
+        for vial: VialRecord,
+        at date: Date
     ) -> Decimal? {
         let linked =
             revisions.filter {
                 $0.enabled
                 && $0.vialID == vial.id
-                && $0.isEffective()
+                && $0.isEffective(
+                    at: date
+                )
             }
 
         guard linked.count == 1,
