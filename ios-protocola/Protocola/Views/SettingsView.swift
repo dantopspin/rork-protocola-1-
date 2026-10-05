@@ -146,9 +146,6 @@ private extension SettingsView {
             Button {
                 Task {
                     await purchases.restore()
-                    if store.isPremium {
-                        Haptics.success()
-                    }
                 }
             } label: {
                 HStack {
