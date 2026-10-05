@@ -190,9 +190,10 @@ private extension VisitSummaryView {
 
         let start =
             fullHistory
-            ? (
-                record?.createdAt
-                ?? from
+            ? fullHistoryStart(
+                record: record,
+                protocolID:
+                    protocolID
             )
             : Calendar.current
                 .startOfDay(
@@ -220,6 +221,30 @@ private extension VisitSummaryView {
             && $0.collectedAt >= start
             && $0.collectedAt < end
         }.count
+    }
+
+
+    func fullHistoryStart(
+        record: ProtocolRecord?,
+        protocolID: UUID
+    ) -> Date {
+        let protocolStart =
+            record?.createdAt
+            ?? from
+        let firstLinkedLab =
+            store.labs
+                .filter {
+                    $0.protocolID
+                        == protocolID
+                }
+                .map(\.collectedAt)
+                .min()
+
+        return min(
+            protocolStart,
+            firstLinkedLab
+                ?? protocolStart
+        )
     }
 
 
@@ -276,9 +301,10 @@ private extension VisitSummaryView {
 
         let start =
             fullHistory
-            ? (
-                record?.createdAt
-                ?? from
+            ? fullHistoryStart(
+                record: record,
+                protocolID:
+                    protocolID
             )
             : Calendar.current
                 .startOfDay(
