@@ -12,6 +12,7 @@ import Observation
     private(set) var vials: [VialRecord] = []
     private(set) var logs: [DoseLog] = []
     private(set) var events: [ProtocolEvent] = []
+    private(set) var labs: [LabRecord] = []
     private(set) var today: [ScheduledEntry] = []
     private(set) var balances: [UUID: Decimal] = [:]
     private(set) var insights: [Int: InsightsSummary] = [:]
@@ -52,6 +53,7 @@ import Observation
             vials = try repository.all(VialRecord.self).sorted { $0.createdAt > $1.createdAt }
             logs = try repository.all(DoseLog.self).sorted { $0.loggedAt > $1.loggedAt }
             events = try repository.all(ProtocolEvent.self).sorted { $0.at > $1.at }
+            labs = try repository.all(LabRecord.self).sorted { $0.collectedAt > $1.collectedAt }
             let prefs = try repository.preferences(); onboarded = prefs.onboarded; aiSharing = prefs.aiSharing; inventoryAlerts = prefs.inventoryAlerts; selectedFreeProtocolID = prefs.selectedFreeProtocolID
             balances = try Dictionary(uniqueKeysWithValues: vials.map { ($0.id, try repository.balance($0)) })
             refreshDay(now: now)
@@ -493,6 +495,44 @@ import Observation
             )
         }
     }
+    func saveLab(
+        _ draft: LabDraft,
+        id: UUID? = nil
+    ) -> Bool {
+        perform {
+            try repository.saveLab(
+                draft,
+                id: id
+            )
+        }
+    }
+
+    func deleteLab(
+        _ lab: LabRecord
+    ) -> Bool {
+        perform {
+            try repository
+                .deleteLab(lab)
+        }
+    }
+
+    func lab(
+        _ id: UUID
+    ) -> LabRecord? {
+        labs.first {
+            $0.id == id
+        }
+    }
+
+    func labs(
+        protocolID: UUID
+    ) -> [LabRecord] {
+        labs.filter {
+            $0.protocolID
+                == protocolID
+        }
+    }
+
     func saveDose(_ draft: DoseDraft, revision: ScheduleRevision?, occurrence: ScheduledEntry?, correcting: DoseLog?) -> Bool {
         guard let id = correcting?.protocolID ?? revision?.protocolID, correcting == nil ? canTrack(id) : canEdit(id) else { error = "This protocol is read-only on Free. Choose it for tracking or restore Pro."; return false }
         return perform { try repository.saveDose(draft, revision: revision, occurrence: occurrence, correcting: correcting) }
