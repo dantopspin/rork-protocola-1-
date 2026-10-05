@@ -5,6 +5,8 @@ struct InsightsView: View {
     let onGoToday: () -> Void
 
     @Environment(TrackingStore.self) private var store
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
 
     init(
         onGoToday:
@@ -184,31 +186,51 @@ private extension InsightsView {
                         .monospacedDigit()
                 }
 
-                if periodLogs.isEmpty {
-                    emptyInsightsState
-                } else {
-                    if summary.scheduled > 0 {
-                        consistencyHero(summary)
+                Group {
+                    if periodLogs.isEmpty {
+                        emptyInsightsState
                     } else {
-                        activityHero(summary)
-                    }
+                        if summary.scheduled > 0 {
+                            consistencyHero(summary)
+                        } else {
+                            activityHero(summary)
+                        }
 
-                    supportingStats(summary)
+                        supportingStats(summary)
 
-                    if let latest {
-                        changeContext(latest)
-                    }
+                        if let latest {
+                            changeContext(latest)
+                        }
 
-                    estimatedLevelsEntry
+                        estimatedLevelsEntry
 
-                    if !summary.sites.isEmpty {
-                        sitesCard(summary)
-                    }
+                        if !summary.sites.isEmpty {
+                            sitesCard(summary)
+                        }
 
-                    if !summary.symptoms.isEmpty {
-                        symptomsCard(summary)
+                        if !summary.symptoms.isEmpty {
+                            symptomsCard(summary)
+                        }
                     }
                 }
+                .id(
+                    String(window)
+                    + "-"
+                    + (
+                        selected?.id
+                            .uuidString
+                        ?? "none"
+                    )
+                )
+                .transition(
+                    reduceMotion
+                    ? .opacity
+                    : .opacity.combined(
+                        with: .move(
+                            edge: .top
+                        )
+                    )
+                )
 
                 if let selected,
                    !store.labs(
@@ -241,6 +263,20 @@ private extension InsightsView {
             )
         }
         .scrollIndicators(.hidden)
+        .trackingStateAnimation(
+            value:
+                String(window)
+                + "-"
+                + (
+                    selected?.id
+                        .uuidString
+                    ?? "none"
+                )
+        )
+        .sensoryFeedback(
+            .selection,
+            trigger: window
+        )
         .onAppear {
             if protocolID == nil {
                 protocolID = selected?.id

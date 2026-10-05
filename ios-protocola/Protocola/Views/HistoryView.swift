@@ -179,9 +179,16 @@ struct HistoryView: View {
                             : "Recorded entries and protocol changes appear here."
                     )
                 } else {
-                    ForEach(groupedDays) {
-                        day in
+                    ForEach(
+                        Array(
+                            groupedDays.enumerated()
+                        ),
+                        id: \.element.id
+                    ) { index, day in
                         dayGroup(day)
+                            .trackingStagger(
+                                index: index
+                            )
                     }
                 }
             }
@@ -511,6 +518,9 @@ private extension HistoryView {
                     tint: tint(for: record)
                 )
             }
+            .buttonStyle(
+                TrackingRowButtonStyle()
+            )
 
         } else if let event = record.event {
             NavigationLink {
@@ -524,6 +534,9 @@ private extension HistoryView {
                     tint: tint(for: record)
                 )
             }
+            .buttonStyle(
+                TrackingRowButtonStyle()
+            )
 
         } else if let lab = record.lab {
             NavigationLink {
@@ -539,6 +552,9 @@ private extension HistoryView {
                     tint: tint(for: record)
                 )
             }
+            .buttonStyle(
+                TrackingRowButtonStyle()
+            )
         }
     }
 

@@ -112,6 +112,13 @@ enum Theme {
     static let motionFeedbackDuration = 0.15
     static let motionStateDuration = 0.25
     static let motionTransitionDuration = 0.30
+    static let motionStaggerDelay = 0.035
+    static let motionEntranceOpacity = 0.0
+    static let pressedPrimaryScale: CGFloat = 0.985
+    static let pressedSecondaryScale: CGFloat = 0.99
+    static let pressedRowScale: CGFloat = 0.995
+    static let motionEntranceOffset: CGFloat = 8
+    static let motionStaggerMaxIndex = 5
     static let springQuickResponse = 0.24
     static let springQuickDamping = 0.82
     static let springStandardResponse = 0.26

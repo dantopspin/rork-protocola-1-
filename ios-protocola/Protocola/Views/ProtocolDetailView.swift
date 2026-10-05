@@ -646,6 +646,9 @@ private extension ProtocolDetailView {
                     .vertical,
                     Theme.spaceS
                 )
+                .trackingStagger(
+                    index: index
+                )
 
                 if index
                     < revisions.count - 1 {
@@ -729,7 +732,7 @@ private extension ProtocolDetailView {
                     "Protocol evolution"
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingRowButtonStyle())
 
             Rectangle()
                 .fill(Theme.hairline)
@@ -745,7 +748,7 @@ private extension ProtocolDetailView {
                     "Vial inventory"
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingRowButtonStyle())
 
             Rectangle()
                 .fill(Theme.hairline)
@@ -763,7 +766,7 @@ private extension ProtocolDetailView {
                     "Labs"
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingRowButtonStyle())
 
             Rectangle()
                 .fill(Theme.hairline)
@@ -779,7 +782,7 @@ private extension ProtocolDetailView {
                     "Calculator"
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingRowButtonStyle())
 
 
         }

@@ -74,14 +74,31 @@ struct TodayView: View {
                         )
                 )
 
-                if let next = nextUnloggedEntry {
-                    nextEntryHero(next)
-                } else if store.today.isEmpty,
-                          let cycle = offCycleContext {
-                    offCycleCard(cycle)
-                } else {
-                    todayEmptyState
+                Group {
+                    if let next = nextUnloggedEntry {
+                        nextEntryHero(next)
+                            .transition(
+                                reduceMotion
+                                ? .opacity
+                                : .opacity.combined(
+                                    with: .move(
+                                        edge: .top
+                                    )
+                                )
+                            )
+                    } else if store.today.isEmpty,
+                              let cycle = offCycleContext {
+                        offCycleCard(cycle)
+                            .transition(.opacity)
+                    } else {
+                        todayEmptyState
+                            .transition(.opacity)
+                    }
                 }
+                .trackingStateAnimation(
+                    value:
+                        nextUnloggedEntry?.id
+                )
 
                 if !asNeededRevisions.isEmpty {
                     asNeededSection

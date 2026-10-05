@@ -61,5 +61,9 @@ struct StatusBadge: View {
                         Theme.ruleThickness
                 )
             }
+            .contentTransition(.opacity)
+            .trackingStateAnimation(
+                value: text
+            )
     }
 }

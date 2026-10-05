@@ -231,7 +231,9 @@ struct TrackingNavLink<
                     Theme.minimumTapTarget
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            TrackingRowButtonStyle()
+        )
         .overlay(
             alignment: .bottom
         ) {
