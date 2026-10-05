@@ -534,6 +534,9 @@ private extension HistoryView {
                     tint: tint(for: record)
                 )
             }
+            .buttonStyle(
+                TrackingRowButtonStyle()
+            )
 
         } else if let lab = record.lab {
             NavigationLink {
