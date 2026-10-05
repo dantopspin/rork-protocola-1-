@@ -3,13 +3,19 @@ import SwiftUI
 struct ProtocolDetailView: View {
     let protocolID: UUID
 
-    @Environment(TrackingStore.self) private var store
+    @Environment(TrackingStore.self)
+    private var store
 
-    @State private var editing: ScheduleRevision?
-    @State private var planning: ScheduleRevision?
-    @State private var editingPlanned: ScheduleRevision?
-    @State private var cancellingPlanned: ScheduleRevision?
-    @State private var logging: ScheduleRevision?
+    @State private var editing:
+        ScheduleRevision?
+    @State private var planning:
+        ScheduleRevision?
+    @State private var editingPlanned:
+        ScheduleRevision?
+    @State private var cancellingPlanned:
+        ScheduleRevision?
+    @State private var logging:
+        ScheduleRevision?
     @State private var addCompound = false
     @State private var calculator = false
     @State private var choice = false
@@ -22,23 +28,28 @@ struct ProtocolDetailView: View {
                         $0.id == protocolID
                     }
                 ) {
-                protocolList(record)
+                protocolContent(record)
 
             } else {
                 TrackingEmptyState(
                     icon:
                         "list.bullet.rectangle",
-                    title: "Protocol unavailable",
+                    title:
+                        "Protocol unavailable",
                     message:
                         "This protocol is no longer available."
                 )
                 .screenPadding()
             }
         }
-        .sheet(isPresented: $choice) {
+        .sheet(
+            isPresented: $choice
+        ) {
             FreeProtocolChoiceView()
         }
-        .sheet(isPresented: $calculator) {
+        .sheet(
+            isPresented: $calculator
+        ) {
             CalculatorView()
         }
         .trackingErrors()
@@ -50,159 +61,62 @@ struct ProtocolDetailView: View {
 
 private extension ProtocolDetailView {
 
-    func protocolList(
+    func protocolContent(
         _ record: ProtocolRecord
     ) -> some View {
-        List {
-            if !store.canEdit(record.id) {
-                Section {
-                    Label(
-                        "Read-only on Free",
-                        systemImage: "lock"
-                    )
-                    .foregroundStyle(Theme.textSecondary)
-
-                    Button(
-                        "Choose protocol for Free tracking"
-                    ) {
-                        choice = true
-                    }
-
-                } footer: {
-                    Text(
-                        "Your full history is preserved. Choose one active protocol to continue editing and logging on Free."
-                    )
-                }
-            }
-
-            Section("Recorded instructions") {
-                RecordRow(
-                    label: "Source",
-                    value:
-                        record.instructionSource
-                )
-
-                RecordRow(
-                    label: "Status",
-                    value: record.status
-                )
-
-                if !record.notes.isEmpty {
-                    Text(record.notes)
-                        .font(Theme.body)
-                }
-            }
-
-            ForEach(
-                store.currentRevisions(
+        ScrollView {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXL
+            ) {
+                if !store.canEdit(
                     record.id
+                ) {
+                    readOnlyBlock(record)
+                }
+
+                recordedInstructions(
+                    record
                 )
-            ) { revision in
-                scheduleSection(
-                    revision,
-                    record: record
-                )
+
+                ForEach(
+                    store.currentRevisions(
+                        record.id
+                    )
+                ) { revision in
+                    scheduleBlock(
+                        revision,
+                        record: record
+                    )
+                }
+
+                let planned =
+                    store.plannedRevisions(
+                        record.id
+                    )
+
+                if !planned.isEmpty {
+                    plannedChangesBlock(
+                        planned,
+                        record: record
+                    )
+                }
+
+                toolsBlock(record)
+                protocolActions(record)
             }
-
-            let planned =
-                store.plannedRevisions(
-                    record.id
-                )
-
-            if !planned.isEmpty {
-                plannedChangesSection(
-                    planned,
-                    record: record
-                )
-            }
-
-            Section("Tools") {
-                NavigationLink {
-                    ProtocolEvolutionView(
-                        protocolID: record.id
-                    )
-                } label: {
-                    Label(
-                        "Protocol evolution",
-                        systemImage:
-                            "clock.arrow.circlepath"
-                    )
-                }
-
-                NavigationLink {
-                    InventoryView()
-                } label: {
-                    Label(
-                        "Vial inventory",
-                        systemImage: "shippingbox"
-                    )
-                }
-
-                Button {
-                    calculator = true
-                } label: {
-                    Label(
-                        "Calculator",
-                        systemImage: "function"
-                    )
-                }
-
-                Button {
-                    addCompound = true
-                } label: {
-                    Label(
-                        "Add compound",
-                        systemImage: "plus"
-                    )
-                }
-                .disabled(
-                    !store.canEdit(record.id)
-                )
-            }
-
-            Section {
-                Button {
-                    store.changeStatus(
-                        record,
-                        status:
-                            record.status == "Active"
-                            ? "Paused"
-                            : "Active"
-                    )
-                } label: {
-                    Text(
-                        record.status == "Active"
-                            ? "Pause protocol"
-                            : "Resume protocol"
-                    )
-                }
-
-                if record.status != "Archived" {
-                    Button(
-                        "Archive protocol",
-                        role: .destructive
-                    ) {
-                        store.changeStatus(
-                            record,
-                            status: "Archived"
-                        )
-                    }
-                }
-
-            } footer: {
-                Text(
-                    "Changes apply from now onward. Past schedules and entry snapshots remain unchanged."
-                )
-            }
-            .disabled(
-                !store.canEdit(record.id)
+            .screenPadding()
+            .padding(
+                .bottom,
+                Theme.spaceXL
             )
         }
-        .listStyle(.plain)
-        .paperList()
-            .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
+        .background(Theme.paper)
         .navigationTitle(record.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(
+            .inline
+        )
         .sheet(item: $editing) {
             revision in
             ProtocolEditorView(
@@ -248,7 +162,8 @@ private extension ProtocolDetailView {
                 "Keep plan",
                 role: .cancel
             ) {
-                cancellingPlanned = nil
+                cancellingPlanned =
+                    nil
             }
 
             Button(
@@ -264,7 +179,8 @@ private extension ProtocolDetailView {
                             )
                 }
 
-                cancellingPlanned = nil
+                cancellingPlanned =
+                    nil
             }
         } message: {
             Text(
@@ -278,7 +194,8 @@ private extension ProtocolDetailView {
             )
         }
         .sheet(
-            isPresented: $addCompound
+            isPresented:
+                $addCompound
         ) {
             ProtocolEditorView(
                 record: record
@@ -287,154 +204,132 @@ private extension ProtocolDetailView {
     }
 
 
-    func plannedChangesSection(
-        _ revisions: [ScheduleRevision],
-        record: ProtocolRecord
+    func readOnlyBlock(
+        _ record: ProtocolRecord
     ) -> some View {
-        Section {
-            ForEach(revisions) {
-                revision in
+        editorialSection(
+            "Free tracking"
+        ) {
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                Image(
+                    systemName: "lock"
+                )
+                .foregroundStyle(
+                    Theme.muted
+                )
 
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXS
-                ) {
-                    HStack(
-                        alignment:
-                            .firstTextBaseline,
-                        spacing: Theme.spaceS
-                    ) {
-                        VStack(
-                            alignment: .leading,
-                            spacing:
-                                Theme.spaceXXS
-                        ) {
-                            Text(
-                                revision
-                                    .compoundName
-                            )
-                            .font(
-                                Theme.sectionTitle
-                            )
-                            .foregroundStyle(
-                                Theme.ink
-                            )
-
-                            Text(
-                                "Effective "
-                                + revision
-                                    .effectiveFrom
-                                    .formatted(
-                                        date:
-                                            .abbreviated,
-                                        time:
-                                            .omitted
-                                    )
-                            )
-                            .font(
-                                Theme.caption
-                            )
-                            .foregroundStyle(
-                                Theme.textSecondary
-                            )
-                        }
-
-                        Spacer()
-
-                        StatusBadge(
-                            text: "Planned"
-                        )
-                    }
-
-                    RecordRow(
-                        label: "Amount",
-                        value:
-                            revision.amountText
-                            + " "
-                            + revision.unitText
-                    )
-
-                    RecordRow(
-                        label: "Schedule",
-                        value:
-                            revision.config.map(
-                                ScheduleDisplay
-                                    .summary
-                            )
-                            ?? "Not available"
-                    )
-
-                    HStack(
-                        spacing: Theme.spaceS
-                    ) {
-                        Button(
-                            "Edit plan"
-                        ) {
-                            editingPlanned =
-                                revision
-                        }
-
-                        Button(
-                            "Cancel plan",
-                            role: .destructive
-                        ) {
-                            cancellingPlanned =
-                                revision
-                        }
-                    }
-                    .font(Theme.label)
-                }
-                .padding(
-                    .vertical,
-                    Theme.spaceXXS
+                Text(
+                    "Read-only on Free"
+                )
+                .font(Theme.label)
+                .foregroundStyle(
+                    Theme.ink
                 )
             }
 
-        } header: {
-            Text("Planned changes")
-        } footer: {
             Text(
-                "Planned revisions do not change past records and take effect only on their recorded date."
+                "Your full history is preserved. Choose one active protocol to continue editing and logging on Free."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+
+            Button(
+                "Choose protocol for Free tracking"
+            ) {
+                choice = true
+            }
+            .buttonStyle(
+                TrackingSecondaryButtonStyle()
             )
         }
-        .disabled(
-            !store.canEdit(record.id)
-        )
     }
 
 
-    func scheduleSection(
-        _ revision: ScheduleRevision,
-        record: ProtocolRecord
+    func recordedInstructions(
+        _ record: ProtocolRecord
     ) -> some View {
-        Section(revision.compoundName) {
+        editorialSection(
+            "Recorded instructions"
+        ) {
             RecordRow(
-                label:
-                    revision.config?.kind
-                        == .asRecorded
-                    ? "Recorded amount"
-                    : "Scheduled amount",
+                label: "Source",
                 value:
-                    revision.amountText
-                    + " "
-                    + revision.unitText
+                    record
+                        .instructionSource
             )
 
             RecordRow(
+                label: "Status",
+                value: record.status
+            )
+
+            if !record.notes.isEmpty {
+                Text(record.notes)
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+            }
+        }
+    }
+
+
+    func scheduleBlock(
+        _ revision: ScheduleRevision,
+        record: ProtocolRecord
+    ) -> some View {
+        editorialSection(
+            revision.compoundName
+        ) {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Eyebrow(
+                    text:
+                        revision.config?
+                            .kind
+                            == .asRecorded
+                        ? "Recorded amount"
+                        : "Scheduled amount"
+                )
+
+                Text(
+                    revision.amountText
+                    + " "
+                    + revision.unitText
+                )
+                .font(
+                    Theme.metricLarge
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+                .monospacedDigit()
+            }
+
+            RecordRow(
                 label: "Route",
-                value: revision.routeText
+                value:
+                    revision.routeText
             )
 
             RecordRow(
                 label: "Schedule",
                 value:
                     revision.config.map(
-                        ScheduleDisplay.summary
+                        ScheduleDisplay
+                            .summary
                     )
                     ?? "Not available"
             )
 
-            if let config = revision.config,
+            if let config =
+                revision.config,
                let cycle =
                     CycleDisplay.status(
                         config
@@ -460,57 +355,408 @@ private extension ProtocolDetailView {
             if revision.route
                 .usesInjectionSite,
                let site =
-                revision.configuredSite {
+                    revision
+                        .configuredSite {
                 RecordRow(
-                    label: "Configured site",
+                    label:
+                        "Configured site",
                     value: site
                 )
             }
 
             Button {
-                editing = revision
-            } label: {
-                Label(
-                    "Edit recorded schedule",
-                    systemImage: "pencil"
-                )
-            }
-            .disabled(
-                !store.canEdit(record.id)
-            )
-
-            Button {
-                planning = revision
-            } label: {
-                Label(
-                    "Plan future change",
-                    systemImage:
-                        "calendar.badge.plus"
-                )
-            }
-            .disabled(
-                !store.canEdit(record.id)
-            )
-
-            Button {
                 logging = revision
             } label: {
-                Label(
+                Text(
                     revision.config?.kind
                         == .asRecorded
                     ? "Log entry"
-                    : "Log unscheduled entry",
-                    systemImage:
-                        "plus.circle"
+                    : "Log unscheduled entry"
                 )
             }
+            .buttonStyle(
+                TrackingPrimaryButtonStyle()
+            )
             .disabled(
-                !store.canTrack(record.id)
+                !store.canTrack(
+                    record.id
+                )
+            )
+
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                Button(
+                    "Edit schedule"
+                ) {
+                    editing = revision
+                }
+                .buttonStyle(
+                    TrackingSecondaryButtonStyle()
+                )
+                .disabled(
+                    !store.canEdit(
+                        record.id
+                    )
+                )
+
+                Button(
+                    "Plan change"
+                ) {
+                    planning = revision
+                }
+                .buttonStyle(
+                    TrackingSecondaryButtonStyle()
+                )
+                .disabled(
+                    !store.canEdit(
+                        record.id
+                    )
+                )
+            }
+        }
+    }
+
+
+    func plannedChangesBlock(
+        _ revisions:
+            [ScheduleRevision],
+        record: ProtocolRecord
+    ) -> some View {
+        editorialSection(
+            "Planned changes"
+        ) {
+            ForEach(
+                Array(
+                    revisions
+                        .enumerated()
+                ),
+                id: \.element.id
+            ) { index, revision in
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceS
+                ) {
+                    HStack(
+                        alignment:
+                            .firstTextBaseline,
+                        spacing:
+                            Theme.spaceS
+                    ) {
+                        VStack(
+                            alignment: .leading,
+                            spacing:
+                                Theme.spaceXXS
+                        ) {
+                            Text(
+                                revision
+                                    .compoundName
+                            )
+                            .font(
+                                Theme
+                                    .sectionTitle
+                            )
+                            .foregroundStyle(
+                                Theme.ink
+                            )
+
+                            Text(
+                                "Effective "
+                                + revision
+                                    .effectiveFrom
+                                    .formatted(
+                                        date:
+                                            .abbreviated,
+                                        time:
+                                            .omitted
+                                    )
+                            )
+                            .font(
+                                Theme.caption
+                            )
+                            .foregroundStyle(
+                                Theme
+                                    .textSecondary
+                            )
+                        }
+
+                        Spacer()
+
+                        StatusBadge(
+                            text: "Planned"
+                        )
+                    }
+
+                    Text(
+                        revision.amountText
+                        + " "
+                        + revision.unitText
+                    )
+                    .font(
+                        Theme.metricCompact
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .monospacedDigit()
+
+                    RecordRow(
+                        label: "Schedule",
+                        value:
+                            revision.config.map(
+                                ScheduleDisplay
+                                    .summary
+                            )
+                            ?? "Not available"
+                    )
+
+                    HStack(
+                        spacing:
+                            Theme.spaceS
+                    ) {
+                        Button(
+                            "Edit plan"
+                        ) {
+                            editingPlanned =
+                                revision
+                        }
+
+                        Button(
+                            "Cancel plan",
+                            role: .destructive
+                        ) {
+                            cancellingPlanned =
+                                revision
+                        }
+                    }
+                    .font(Theme.label)
+                }
+                .padding(
+                    .vertical,
+                    Theme.spaceS
+                )
+
+                if index
+                    < revisions.count - 1 {
+                    Rectangle()
+                        .fill(
+                            Theme.hairline
+                        )
+                        .frame(
+                            height:
+                                Theme
+                                    .ruleThickness
+                        )
+                }
+            }
+
+            Text(
+                "Planned revisions do not change past records and take effect only on their recorded date."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+        .disabled(
+            !store.canEdit(record.id)
+        )
+    }
+
+
+    func toolsBlock(
+        _ record: ProtocolRecord
+    ) -> some View {
+        editorialSection("Tools") {
+            NavigationLink {
+                ProtocolEvolutionView(
+                    protocolID: record.id
+                )
+            } label: {
+                navigationRow(
+                    "Protocol evolution"
+                )
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
+            NavigationLink {
+                InventoryView()
+            } label: {
+                navigationRow(
+                    "Vial inventory"
+                )
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
+            Button {
+                calculator = true
+            } label: {
+                navigationRow(
+                    "Calculator"
+                )
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
+            Button {
+                addCompound = true
+            } label: {
+                navigationRow(
+                    "Add compound"
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(
+                !store.canEdit(
+                    record.id
+                )
             )
         }
     }
-}
 
+
+    func protocolActions(
+        _ record: ProtocolRecord
+    ) -> some View {
+        editorialSection(
+            "Protocol status"
+        ) {
+            Button {
+                store.changeStatus(
+                    record,
+                    status:
+                        record.status
+                            == "Active"
+                        ? "Paused"
+                        : "Active"
+                )
+            } label: {
+                Text(
+                    record.status
+                        == "Active"
+                    ? "Pause protocol"
+                    : "Resume protocol"
+                )
+            }
+            .buttonStyle(
+                TrackingSecondaryButtonStyle()
+            )
+
+            if record.status
+                != "Archived" {
+                Button(
+                    "Archive protocol",
+                    role: .destructive
+                ) {
+                    store.changeStatus(
+                        record,
+                        status: "Archived"
+                    )
+                }
+                .font(Theme.label)
+                .frame(
+                    minHeight:
+                        Theme
+                            .minimumTapTarget
+                )
+            }
+
+            Text(
+                "Changes apply from now onward. Past schedules and entry snapshots remain unchanged."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+        .disabled(
+            !store.canEdit(record.id)
+        )
+    }
+
+
+    func navigationRow(
+        _ title: String
+    ) -> some View {
+        HStack(
+            spacing: Theme.spaceM
+        ) {
+            Text(title)
+                .font(Theme.body)
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            Spacer()
+
+            Image(
+                systemName:
+                    "chevron.right"
+            )
+            .font(Theme.micro)
+            .foregroundStyle(
+                Theme.muted
+            )
+        }
+        .padding(
+            .vertical,
+            Theme.spaceS
+        )
+        .contentShape(Rectangle())
+    }
+
+
+    func editorialSection<
+        Content: View
+    >(
+        _ title: String,
+        @ViewBuilder content:
+            () -> Content
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            Eyebrow(text: title)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
+            content()
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+        }
+    }
+}
 
 
 // MARK: - Protocol evolution
