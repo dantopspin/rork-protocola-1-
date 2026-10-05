@@ -12,8 +12,8 @@ struct TimelineRecord: Identifiable {
     let event: ProtocolEvent?
     static func build(logs: [DoseLog], events: [ProtocolEvent], includeMetadata: Bool = false) -> [TimelineRecord] {
         let doses = logs.map { log in
-            var detail = "\(log.actualAmountText) \(log.unitText) · \(log.status)"
-            if !log.site.isEmpty { detail += "\nSite: \(log.site)" }
+            var detail = "\(log.actualAmountText) \(log.unitText) · \(log.routeText) · \(log.status)"
+            if log.route.usesInjectionSite, !log.site.isEmpty { detail += "\nSite: \(log.site)" }
             if !log.symptoms.isEmpty { detail += "\nSymptoms: \(log.symptoms) · \(log.symptomSeverity)/10" }
             if !log.notes.isEmpty { detail += "\nNotes: \(log.notes)" }
             return TimelineRecord(id: log.id, at: log.loggedAt, protocolID: log.protocolID, title: log.compoundName, detail: detail, category: "Dose", log: log, event: nil)

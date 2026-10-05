@@ -35,12 +35,14 @@ struct ContentView: View {
         )) { reason in
             PaywallView(reason: reason)
         }
-        // Deep links: protocola://paywall/<reason> opens the matching paywall.
         .onOpenURL { url in
             guard url.scheme == "protocola",
                   url.host == "paywall",
-                  let reason = PaywallReason(rawValue: url.lastPathComponent)
+                  let reason = PaywallReason(
+                    rawValue: url.lastPathComponent
+                  )
             else { return }
+
             store.requestPaywall(reason)
         }
     }

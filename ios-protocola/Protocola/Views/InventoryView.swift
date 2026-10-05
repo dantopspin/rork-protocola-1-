@@ -1,87 +1,114 @@
 import SwiftUI
 
 struct InventoryView: View {
-    @Environment(TrackingStore.self) private var store
+    @Environment(TrackingStore.self)
+    private var store
 
     @State private var add = false
     @State private var showArchived = false
 
-    private var activeVials: [VialRecord] {
-        store.vials.filter {
-            !$0.isArchived
-        }
+    private var activeVials:
+        [VialRecord] {
+        vials(in: .active)
     }
 
-    private var archivedVials: [VialRecord] {
-        store.vials.filter {
-            $0.isArchived
-        }
+    private var reserveVials:
+        [VialRecord] {
+        vials(in: .reserve)
+    }
+
+    private var sealedVials:
+        [VialRecord] {
+        vials(in: .sealed)
+    }
+
+    private var archivedVials:
+        [VialRecord] {
+        vials(in: .archived)
+    }
+
+    private var availableVials:
+        [VialRecord] {
+        activeVials
+        + reserveVials
+        + sealedVials
     }
 
     var body: some View {
-        List {
-            if activeVials.isEmpty,
-               (!showArchived || archivedVials.isEmpty) {
-                Section {
-                    ContentUnavailableView {
-                        Label(
+        ScrollView {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXL
+            ) {
+                if availableVials.isEmpty,
+                   (
+                        !showArchived
+                        || archivedVials
+                            .isEmpty
+                   ) {
+                    TrackingEmptyState(
+                        icon: "shippingbox",
+                        title:
                             "No vials recorded",
-                            systemImage: "shippingbox"
-                        )
-                    } description: {
-                        Text(
-                            "Add the vial details from your own label or instructions."
-                        )
-                    } actions: {
-                        Button("Add vial") {
-                            add = true
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Theme.ink)
+                        message:
+                            "Add the vial details from your own label or instructions.",
+                        actionTitle:
+                            "Add vial"
+                    ) {
+                        add = true
                     }
                 }
-            }
 
-            if !activeVials.isEmpty {
-                Section("Active") {
-                    ForEach(activeVials) {
-                        vial in
-                        vialLink(vial)
-                    }
-                }
-            }
-
-            if showArchived,
-               !archivedVials.isEmpty {
-                Section("Archived") {
-                    ForEach(archivedVials) {
-                        vial in
-                        vialLink(vial)
-                    }
-                }
-            }
-
-            Section {
-                Text(
-                    "Balances are estimates from your recorded entries and manual corrections. "
-                    + "Scheduled-entry estimates appear only when the vial is linked to a compatible fixed-mass schedule."
+                vialSection(
+                    "Active",
+                    vials: activeVials
                 )
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                vialSection(
+                    "Reserve",
+                    vials: reserveVials
+                )
+                vialSection(
+                    "Sealed",
+                    vials: sealedVials
+                )
+
+                if showArchived {
+                    vialSection(
+                        "Archived",
+                        vials:
+                            archivedVials
+                    )
+                }
+
+                Text(
+                    "Balances are estimates from your recorded entries and manual corrections. Runway appears only when linked schedules can be represented as fixed mass."
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
             }
+            .screenPadding()
+            .padding(
+                .bottom,
+                Theme.spaceXL
+            )
         }
-        .listStyle(.insetGrouped)
-        .paperList()
+        .scrollIndicators(.hidden)
+        .background(Theme.paper)
         .navigationTitle("Inventory")
         .toolbar {
             ToolbarItemGroup(
-                placement: .topBarTrailing
+                placement:
+                    .topBarTrailing
             ) {
-                if !archivedVials.isEmpty {
+                if !archivedVials
+                    .isEmpty {
                     Menu {
                         Toggle(
                             "Show archived",
-                            isOn: $showArchived
+                            isOn:
+                                $showArchived
                         )
                     } label: {
                         Label(
@@ -109,9 +136,75 @@ struct InventoryView: View {
 }
 
 
-// MARK: - Rows
-
 private extension InventoryView {
+
+    func vials(
+        in state:
+            VialLifecycleState
+    ) -> [VialRecord] {
+        store.vials.filter {
+            $0.lifecycleState
+                == state
+        }
+    }
+
+
+    @ViewBuilder
+    func vialSection(
+        _ title: String,
+        vials: [VialRecord]
+    ) -> some View {
+        if !vials.isEmpty {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceS
+            ) {
+                Eyebrow(text: title)
+
+                VStack(spacing: 0) {
+                    ForEach(
+                        Array(
+                            vials.enumerated()
+                        ),
+                        id:
+                            \.element.id
+                    ) { index, vial in
+                        vialLink(vial)
+
+                        if index
+                            < vials.count - 1 {
+                            Rectangle()
+                                .fill(
+                                    Theme.hairline
+                                )
+                                .frame(
+                                    height: Theme.ruleThickness
+                                )
+                        }
+                    }
+                }
+                .overlay(
+                    alignment: .top
+                ) {
+                    Rectangle()
+                        .fill(
+                            Theme.hairline
+                        )
+                        .frame(height: Theme.ruleThickness)
+                }
+                .overlay(
+                    alignment: .bottom
+                ) {
+                    Rectangle()
+                        .fill(
+                            Theme.hairline
+                        )
+                        .frame(height: Theme.ruleThickness)
+                }
+            }
+        }
+    }
+
 
     func vialLink(
         _ vial: VialRecord
@@ -123,40 +216,75 @@ private extension InventoryView {
         ) {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXS
+                spacing: Theme.spaceS
             ) {
                 HStack(
-                    alignment: .firstTextBaseline
+                    alignment:
+                        .firstTextBaseline,
+                    spacing: Theme.spaceS
                 ) {
-                    Text(vial.name)
-                        .font(Theme.sectionTitle)
-                        .foregroundStyle(Theme.ink)
-                        .lineLimit(2)
+                    VStack(
+                        alignment: .leading,
+                        spacing:
+                            Theme.spaceXXS
+                    ) {
+                        Text(vial.name)
+                            .font(
+                                Theme
+                                    .sectionTitle
+                            )
+                            .foregroundStyle(
+                                Theme.ink
+                            )
+                            .lineLimit(2)
 
-                    Spacer(
-                        minLength: Theme.spaceS
-                    )
+                        Text(
+                            vial.compoundName
+                        )
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme
+                                .textSecondary
+                        )
+                    }
 
-                    Text(
-                        DoseCalculator.text(
-                            store.balances[
-                                vial.id
-                            ] ?? 0
+                    Spacer()
+
+                    VStack(
+                        alignment: .trailing,
+                        spacing:
+                            Theme.spaceXXS
+                    ) {
+                        Eyebrow(
+                            text: "Remaining"
                         )
-                        + " mg"
-                    )
-                    .font(
-                        .subheadline.weight(
-                            .medium
+
+                        Text(
+                            DoseCalculator
+                                .text(
+                                    store.balances[
+                                        vial.id
+                                    ] ?? 0
+                                )
+                            + " mg"
                         )
+                        .font(
+                            Theme.metricCompact
+                        )
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+                    }
+
+                    Image(
+                        systemName:
+                            "chevron.right"
                     )
-                    .foregroundStyle(Theme.ink)
-                    .monospacedDigit()
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
                 }
-
-                Text(vial.compoundName)
-                    .font(Theme.body)
-                    .foregroundStyle(.secondary)
 
                 HStack(
                     spacing: Theme.spaceS
@@ -167,29 +295,44 @@ private extension InventoryView {
                                 in: vial
                             ),
                        entries > 0 {
-                        Label(
-                            "~\(entries) "
+                        Text(
+                            "~"
+                            + String(entries)
+                            + " "
                             + (
                                 entries == 1
                                 ? "entry"
                                 : "entries"
-                            ),
-                            systemImage:
-                                "calendar"
+                            )
+                        )
+                    }
+
+                    if let depletion =
+                        store
+                            .estimatedDepletionDate(
+                                in: vial
+                            ) {
+                        Text(
+                            "Depletes "
+                            + depletion
+                                .formatted(
+                                    date:
+                                        .abbreviated,
+                                    time:
+                                        .omitted
+                                )
                         )
                     }
 
                     if let expiryText =
                         expiryText(vial) {
-                        Label(
-                            expiryText,
-                            systemImage:
-                                "calendar.badge.exclamationmark"
-                        )
+                        Text(expiryText)
                     }
                 }
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
 
                 let status =
                     store.vialStatus(vial)
@@ -199,39 +342,42 @@ private extension InventoryView {
                     "Depleted"
                 ]
                 .contains(status) {
-                    Label(
-                        status,
-                        systemImage:
-                            "exclamationmark.circle"
-                    )
-                    .font(Theme.micro)
-                    .foregroundStyle(Theme.amber)
+                    Text(status)
+                        .font(Theme.micro)
+                        .foregroundStyle(
+                            Theme.amber
+                        )
                 }
             }
             .padding(
                 .vertical,
-                Theme.spaceXXS
+                Theme.spaceM
             )
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
 
     func expiryText(
         _ vial: VialRecord
     ) -> String? {
-        guard let expiry = vial.expiry else {
+        guard let expiry =
+            vial.expiry
+        else {
             return nil
         }
 
-        let calendar = Calendar.current
+        let calendar =
+            Calendar.current
         let today =
-            calendar.startOfDay(for: .now)
-
+            calendar.startOfDay(
+                for: .now
+            )
         let expiryDay =
             calendar.startOfDay(
                 for: expiry
             )
-
         let days =
             calendar.dateComponents(
                 [.day],

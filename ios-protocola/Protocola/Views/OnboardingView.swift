@@ -251,7 +251,7 @@ private extension OnboardingView {
             Text("Next entry")
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Color.white.opacity(0.56)
+                    Theme.onDarkPrimary.opacity(0.56)
                 )
 
             HStack(
@@ -263,12 +263,12 @@ private extension OnboardingView {
                 ) {
                     Text("Monday")
                         .font(Theme.sectionTitle)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.onDarkPrimary)
 
                     Text("8:00 PM")
                         .font(Theme.metric)
                         .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.onDarkPrimary)
                 }
 
                 Spacer()
@@ -279,13 +279,13 @@ private extension OnboardingView {
                 )
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Color.white.opacity(0.56)
+                    Theme.onDarkPrimary.opacity(0.56)
                 )
             }
 
             Divider()
                 .overlay(
-                    Color.white.opacity(0.12)
+                    Theme.onDarkPrimary.opacity(0.12)
                 )
 
             Label(
@@ -295,12 +295,12 @@ private extension OnboardingView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Color.white.opacity(0.68)
+                Theme.onDarkPrimary.opacity(0.68)
             )
         }
         .padding(Theme.spaceM)
         .background(
-            Theme.ink,
+            Theme.darkSurface,
             in: .rect(
                 cornerRadius:
                     Theme.radiusCard
@@ -419,7 +419,7 @@ private extension OnboardingView {
                         ? Theme.ink
                         : Theme.muted
                 )
-                .frame(width: 24)
+                .frame(width: Theme.iconColumn)
 
                 Text(item.title)
                     .font(Theme.label)
@@ -447,7 +447,7 @@ private extension OnboardingView {
                 Theme.spaceM
             )
             .frame(
-                minHeight: 58
+                minHeight: Theme.onboardingRowHeight
             )
             .background(
                 selected
@@ -641,7 +641,7 @@ private extension OnboardingView {
                 .font(Theme.caption)
                 .foregroundStyle(
                     dark
-                        ? Color.white.opacity(0.56)
+                        ? Theme.onDarkPrimary.opacity(0.56)
                         : Theme.muted
                 )
 
@@ -650,7 +650,7 @@ private extension OnboardingView {
                 .monospacedDigit()
                 .foregroundStyle(
                     dark
-                        ? Color.white
+                        ? Theme.onDarkPrimary
                         : Theme.ink
                 )
 
@@ -658,7 +658,7 @@ private extension OnboardingView {
                 .font(Theme.caption)
                 .foregroundStyle(
                     dark
-                        ? Color.white.opacity(0.66)
+                        ? Theme.onDarkPrimary.opacity(0.66)
                         : Theme.muted
                 )
         }
@@ -790,7 +790,7 @@ private extension OnboardingView {
                 .foregroundStyle(
                     Theme.muted
                 )
-                .frame(width: 24)
+                .frame(width: Theme.iconColumn)
 
             VStack(
                 alignment: .leading,
@@ -848,7 +848,10 @@ private extension OnboardingView {
                     )
                 }
 
-                VStack(spacing: 0) {
+                VStack(
+                    alignment: .leading,
+                    spacing: 0
+                ) {
                     trustRow(
                         icon: "iphone",
                         title: "Stored locally",
@@ -856,7 +859,12 @@ private extension OnboardingView {
                             "Your core records stay on this iPhone."
                     )
 
-                    Divider()
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
 
                     trustRow(
                         icon:
@@ -867,7 +875,12 @@ private extension OnboardingView {
                             "Start tracking without creating an account."
                     )
 
-                    Divider()
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
 
                     trustRow(
                         icon: "text.bubble",
@@ -877,21 +890,30 @@ private extension OnboardingView {
                             "Relevant records are used only when you invoke Ask Protocola."
                     )
                 }
-                .padding(
-                    .horizontal,
-                    Theme.spaceM
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
                 )
-                .background(
-                    Theme.surface,
-                    in: .rect(
-                        cornerRadius:
-                            Theme.radiusCard
-                    )
-                )
-                .inkBorder(
-                    cornerRadius:
-                        Theme.radiusCard
-                )
+                .overlay(
+                    alignment: .top
+                ) {
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
+                }
+                .overlay(
+                    alignment: .bottom
+                ) {
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
+                }
             }
             .screenPadding()
             .padding(
@@ -1155,9 +1177,9 @@ private extension OnboardingView {
                     .frame(
                         width:
                             index == step
-                            ? 18
-                            : 6,
-                        height: 4
+                            ? Theme.onboardingProgressActiveWidth
+                            : Theme.onboardingProgressInactiveWidth,
+                        height: Theme.onboardingProgressHeight
                     )
                     .animation(
                         reduceMotion
@@ -1242,8 +1264,8 @@ private extension OnboardingView {
             Circle()
                 .fill(Theme.teal)
                 .frame(
-                    width: 7,
-                    height: 7
+                    width: Theme.siteDot,
+                    height: Theme.siteDot
                 )
                 .padding(
                     .top,

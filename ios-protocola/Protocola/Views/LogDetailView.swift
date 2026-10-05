@@ -3,8 +3,11 @@ import SwiftUI
 struct LogDetailView: View {
     let logID: UUID
 
-    @Environment(TrackingStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
+    @Environment(TrackingStore.self)
+    private var store
+
+    @Environment(\.dismiss)
+    private var dismiss
 
     @State private var edit = false
     @State private var confirm = false
@@ -17,19 +20,34 @@ struct LogDetailView: View {
                         $0.id == logID
                     }
                 ) {
-                List {
-                    entrySection(log)
-                    recordedContextSection(log)
-                    observationsSection(log)
-                    actionsSection(log)
+                ScrollView {
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceXL
+                    ) {
+                        recordedEntry(log)
+                        historicalSnapshot(log)
+                        observations(log)
+                        actions(log)
+                    }
+                    .screenPadding()
+                    .padding(
+                        .bottom,
+                        Theme.spaceXL
+                    )
                 }
-                .listStyle(.insetGrouped)
-                .paperList()
-                .navigationTitle("Entry details")
-                .navigationBarTitleDisplayMode(.inline)
+                .scrollIndicators(.hidden)
+                .background(Theme.paper)
+                .navigationTitle(
+                    "Entry details"
+                )
+                .navigationBarTitleDisplayMode(
+                    .inline
+                )
                 .toolbar {
                     ToolbarItem(
-                        placement: .topBarTrailing
+                        placement:
+                            .topBarTrailing
                     ) {
                         Button(
                             "Correct entry",
@@ -44,7 +62,9 @@ struct LogDetailView: View {
                         )
                     }
                 }
-                .sheet(isPresented: $edit) {
+                .sheet(
+                    isPresented: $edit
+                ) {
                     DoseEditorView(
                         correcting: log
                     )
@@ -58,7 +78,9 @@ struct LogDetailView: View {
                         "Delete and reconcile",
                         role: .destructive
                     ) {
-                        if store.deleteDose(log) {
+                        if store
+                            .deleteDose(log) {
+                            Haptics.impact()
                             dismiss()
                         }
                     }
@@ -74,10 +96,14 @@ struct LogDetailView: View {
                 }
 
             } else {
-                ContentUnavailableView(
-                    "Entry unavailable",
-                    systemImage: "clock"
+                TrackingEmptyState(
+                    icon: "clock",
+                    title:
+                        "Entry unavailable",
+                    message:
+                        "This recorded entry is no longer available."
                 )
+                .screenPadding()
             }
         }
         .trackingErrors()
@@ -85,14 +111,54 @@ struct LogDetailView: View {
 }
 
 
-// MARK: - Sections
-
 private extension LogDetailView {
 
-    func entrySection(
+    func recordedEntry(
         _ log: DoseLog
     ) -> some View {
-        Section("Recorded entry") {
+        editorialSection(
+            "Recorded entry"
+        ) {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Eyebrow(text: "Actual amount")
+
+                Text(
+                    log.actualAmountText
+                    + " "
+                    + log.unitText
+                )
+                .font(Theme.metricLarge)
+                .foregroundStyle(
+                    Theme.ink
+                )
+                .monospacedDigit()
+
+                HStack(
+                    spacing: Theme.spaceS
+                ) {
+                    StatusBadge(
+                        text: log.status
+                    )
+
+                    Text(
+                        log.loggedAt.formatted(
+                            date:
+                                .abbreviated,
+                            time:
+                                .shortened
+                        )
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                    .monospacedDigit()
+                }
+            }
+
             RecordRow(
                 label: "Compound",
                 value: log.compoundName
@@ -104,36 +170,22 @@ private extension LogDetailView {
             )
 
             RecordRow(
-                label: "Actual amount",
-                value:
-                    log.actualAmountText
-                    + " "
-                    + log.unitText
-            )
-
-            RecordRow(
-                label: "Recorded time",
-                value:
-                    log.loggedAt.formatted(
-                        date: .abbreviated,
-                        time: .shortened
-                    )
-            )
-
-            RecordRow(
-                label: "Status",
-                value: log.status
+                label: "Route",
+                value: log.routeText
             )
         }
     }
 
 
-    func recordedContextSection(
+    func historicalSnapshot(
         _ log: DoseLog
     ) -> some View {
-        Section("Historical snapshot") {
+        editorialSection(
+            "Historical snapshot"
+        ) {
             RecordRow(
-                label: "Scheduled amount",
+                label:
+                    "Scheduled amount",
                 value:
                     log.scheduledAmountText
                     + " "
@@ -143,22 +195,31 @@ private extension LogDetailView {
             if let scheduled =
                 log.scheduledAt {
                 RecordRow(
-                    label: "Scheduled time",
+                    label:
+                        "Scheduled time",
                     value:
                         scheduled.formatted(
-                            date: .abbreviated,
-                            time: .shortened
+                            date:
+                                .abbreviated,
+                            time:
+                                .shortened
                         )
                 )
             }
 
-            RecordRow(
-                label: "Vial",
-                value: log.vialName
-            )
+            if log.route
+                .usesInjectionSite {
+                RecordRow(
+                    label: "Vial",
+                    value:
+                        log.vialName
+                )
+            }
 
-            if let concentration =
-                log.concentrationText {
+            if log.route
+                .usesInjectionSite,
+               let concentration =
+                    log.concentrationText {
                 RecordRow(
                     label:
                         "Recorded concentration",
@@ -168,23 +229,31 @@ private extension LogDetailView {
                 )
             }
 
-            if let volume =
-                log.volumeMlText {
+            if log.route
+                .usesInjectionSite,
+               let volume =
+                    log.volumeMlText {
                 RecordRow(
                     label: "Volume",
                     value:
-                        volume + " mL"
+                        volume
+                        + " mL"
                 )
 
                 if let volumeDecimal =
-                    Decimal(string: volume) {
+                    Decimal(
+                        string: volume
+                    ) {
                     RecordRow(
-                        label: "Syringe units",
+                        label:
+                            "Syringe units",
                         value:
-                            DoseCalculator.text(
-                                volumeDecimal
-                                * log.unitsPerMl
-                            )
+                            DoseCalculator
+                                .text(
+                                    volumeDecimal
+                                    * log
+                                        .unitsPerMl
+                                )
                     )
                 }
             }
@@ -195,26 +264,41 @@ private extension LogDetailView {
                     label: "Corrected",
                     value:
                         corrected.formatted(
-                            date: .abbreviated,
-                            time: .shortened
+                            date:
+                                .abbreviated,
+                            time:
+                                .shortened
                         )
                 )
             }
+
+            Text(
+                "This snapshot is retained exactly as recorded. Later protocol changes do not rewrite it."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
         }
     }
 
 
-    func observationsSection(
+    func observations(
         _ log: DoseLog
     ) -> some View {
-        Section("Observations") {
-            RecordRow(
-                label: "Site",
-                value:
-                    log.site.isEmpty
-                    ? "Not recorded"
-                    : log.site
-            )
+        editorialSection(
+            "Observations"
+        ) {
+            if log.route
+                .usesInjectionSite {
+                RecordRow(
+                    label: "Site",
+                    value:
+                        log.site.isEmpty
+                        ? "Not recorded"
+                        : log.site
+                )
+            }
 
             if !log.symptoms.isEmpty {
                 RecordRow(
@@ -232,41 +316,93 @@ private extension LogDetailView {
             if !log.notes.isEmpty {
                 Text(log.notes)
                     .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
             }
 
             if log.symptoms.isEmpty,
                log.notes.isEmpty,
-               log.site.isEmpty {
+               (
+                    !log.route
+                        .usesInjectionSite
+                    || log.site.isEmpty
+               ) {
                 Text(
                     "No site, symptoms, or notes were recorded."
                 )
                 .font(Theme.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
             }
         }
     }
 
 
-    func actionsSection(
+    func actions(
         _ log: DoseLog
     ) -> some View {
-        Section {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
+        ) {
             Button(
                 "Delete entry",
                 role: .destructive
             ) {
                 confirm = true
             }
+            .font(Theme.label)
+            .frame(
+                minHeight:
+                    Theme.minimumTapTarget
+            )
             .disabled(
                 !store.canEdit(
                     log.protocolID
                 )
             )
 
-        } footer: {
             Text(
-                "Corrections and deletions automatically reconcile inventory. Protocol edits never rewrite this historical snapshot."
+                "Corrections and deletions automatically reconcile inventory."
             )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+
+    func editorialSection<
+        Content: View
+    >(
+        _ title: String,
+        @ViewBuilder content:
+            () -> Content
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            Eyebrow(text: title)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
+            content()
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
         }
     }
 }

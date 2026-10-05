@@ -4,6 +4,8 @@ struct ProtocolEditorView: View {
     let record: ProtocolRecord?
     let revision: ScheduleRevision?
     let onboarding: Bool
+    let planningFuture: Bool
+    let editingPlanned: Bool
 
     @Environment(TrackingStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -11,16 +13,49 @@ struct ProtocolEditorView: View {
     @State private var draft: ProtocolDraft
     @State private var addVial = false
     @State private var saving = false
+    @State private var effectiveDate: Date
 
     init(
         record: ProtocolRecord? = nil,
         revision: ScheduleRevision? = nil,
         onboarding: Bool = false,
-        prefersReminders: Bool = false
+        prefersReminders: Bool = false,
+        planningFuture: Bool = false,
+        editingPlanned: Bool = false
     ) {
         self.record = record
         self.revision = revision
         self.onboarding = onboarding
+        self.planningFuture =
+            planningFuture
+        self.editingPlanned =
+            editingPlanned
+
+        let tomorrow =
+            Calendar.current.date(
+                byAdding: .day,
+                value: 1,
+                to:
+                    Calendar.current
+                        .startOfDay(
+                            for: .now
+                        )
+            ) ?? Date.now
+                .addingTimeInterval(
+                    86_400
+                )
+
+        _effectiveDate =
+            State(
+                initialValue:
+                    editingPlanned
+                    ? (
+                        revision?
+                            .effectiveFrom
+                        ?? tomorrow
+                    )
+                    : tomorrow
+            )
 
         if let record,
            let revision {
@@ -34,7 +69,8 @@ struct ProtocolEditorView: View {
 
         } else {
             var value = ProtocolDraft()
-            value.reminders = prefersReminders
+            value.reminders =
+                prefersReminders
 
             if let record {
                 value.name = record.name
@@ -52,27 +88,53 @@ struct ProtocolEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if planningFuture {
+                    futureChangeSection
+                }
+
                 instructionsSection
                 scheduleSection
-                vialAndSiteSection
 
-                if revision != nil {
+                if draft.route
+                    .usesInjectionSite {
+                    vialAndSiteSection
+                }
+
+                if planningFuture {
                     Section {
                         Text(
-                            "Changes apply from now onward. Past scheduled entries and logs remain unchanged."
+                            "This planned revision takes effect on the selected date. Existing history remains unchanged, and you can edit or cancel the plan before it becomes effective."
                         )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                    }
+
+                } else if revision != nil {
+                    Section {
+                        Text(
+                            "Changes apply from now onward. Past schedules and recorded entries remain unchanged."
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
                     }
                 }
             }
+            .listStyle(.plain)
             .paperList()
+            .scrollContentBackground(.hidden)
             .doneKeyboard()
             .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
             .toolbar {
                 ToolbarItem(
-                    placement: .cancellationAction
+                    placement:
+                        .cancellationAction
                 ) {
                     Button("Cancel") {
                         dismiss()
@@ -81,7 +143,8 @@ struct ProtocolEditorView: View {
                 }
 
                 ToolbarItem(
-                    placement: .confirmationAction
+                    placement:
+                        .confirmationAction
                 ) {
                     if saving {
                         ProgressView()
@@ -105,6 +168,30 @@ struct ProtocolEditorView: View {
 
 private extension ProtocolEditorView {
 
+    var futureChangeSection:
+        some View {
+        Section {
+            DatePicker(
+                "Effective date",
+                selection:
+                    $effectiveDate,
+                in:
+                    minimumFutureDate...,
+                displayedComponents:
+                    .date
+            )
+
+        } header: {
+            Text("Future change")
+
+        } footer: {
+            Text(
+                "Choose when these recorded instructions should become effective. This is scheduling of your own record, not a recommendation."
+            )
+        }
+    }
+
+
     var instructionsSection: some View {
         Section {
             TextField(
@@ -114,6 +201,7 @@ private extension ProtocolEditorView {
             .accessibilityIdentifier(
                 "protocolName"
             )
+            .disabled(planningFuture)
 
             TextField(
                 "Compound name",
@@ -122,10 +210,11 @@ private extension ProtocolEditorView {
             .accessibilityIdentifier(
                 "compoundName"
             )
+            .disabled(planningFuture)
 
             HStack {
                 TextField(
-                    "Scheduled amount",
+                    "Recorded amount",
                     text: $draft.amount
                 )
                 .keyboardType(.decimalPad)
@@ -134,12 +223,27 @@ private extension ProtocolEditorView {
                     "Unit",
                     selection: $draft.unit
                 ) {
-                    ForEach(AmountUnit.allCases) {
+                    ForEach(
+                        AmountUnit.allCases
+                    ) {
                         Text($0.rawValue)
                             .tag($0)
                     }
                 }
                 .labelsHidden()
+            }
+
+            Picker(
+                "Route",
+                selection: $draft.route
+            ) {
+                ForEach(
+                    AdministrationRoute
+                        .allCases
+                ) {
+                    Text($0.rawValue)
+                        .tag($0)
+                }
             }
 
             Picker(
@@ -154,28 +258,32 @@ private extension ProtocolEditorView {
                         .tag($0)
                 }
             }
+            .disabled(planningFuture)
 
             TextField(
                 "Notes (optional)",
                 text: $draft.notes,
                 axis: .vertical
             )
+            .disabled(planningFuture)
 
         } header: {
             Text("Recorded instructions")
 
         } footer: {
             Text(
-                "Enter values from instructions you already have. Protocola does not generate a dose or schedule."
+                "Enter values from instructions you already have. Protocola records them; it does not generate a dose, route, or schedule."
             )
         }
     }
 
 
     var scheduleSection: some View {
-        Section("Recorded schedule") {
+        Section {
             DatePicker(
-                "Start date",
+                planningFuture
+                    ? "Schedule anchor"
+                    : "Start date",
                 selection: $draft.start,
                 displayedComponents: .date
             )
@@ -185,7 +293,8 @@ private extension ProtocolEditorView {
                 selection: $draft.kind
             ) {
                 ForEach(
-                    ScheduleConfig.Kind.allCases
+                    ScheduleConfig.Kind
+                        .allCases
                 ) {
                     Text(
                         ScheduleDisplay
@@ -195,7 +304,8 @@ private extension ProtocolEditorView {
                 }
             }
 
-            if draft.kind == .everyNDays {
+            if draft.kind
+                == .everyNDays {
                 Stepper(
                     "Every \(draft.interval) "
                     + (
@@ -215,28 +325,67 @@ private extension ProtocolEditorView {
             ]
             .contains(draft.kind) {
                 weekdayControls
-
-                Text(
-                    "Choose the days already present in your instructions. Protocola does not distribute entries across the week."
-                )
-                .font(Theme.caption)
-                .foregroundStyle(.secondary)
             }
 
-            if draft.kind != .asRecorded {
+            if draft.kind
+                != .asRecorded {
                 scheduledTimes
+
+                Toggle(
+                    "Use ON / OFF cycle",
+                    isOn:
+                        $draft.cycleEnabled
+                )
+
+                if draft.cycleEnabled {
+                    Stepper(
+                        "ON · \(draft.cycleOnDays) "
+                        + (
+                            draft.cycleOnDays == 1
+                            ? "day"
+                            : "days"
+                        ),
+                        value:
+                            $draft.cycleOnDays,
+                        in: 1...3650
+                    )
+
+                    Stepper(
+                        "OFF · \(draft.cycleOffDays) "
+                        + (
+                            draft.cycleOffDays == 1
+                            ? "day"
+                            : "days"
+                        ),
+                        value:
+                            $draft.cycleOffDays,
+                        in: 1...3650
+                    )
+                }
 
                 Toggle(
                     "Local reminders",
                     isOn: $draft.reminders
                 )
                 .disabled(store.isDemo)
+            }
 
+        } header: {
+            Text("Recorded schedule")
+
+        } footer: {
+            if draft.kind == .asRecorded {
+                Text(
+                    "As needed creates no automatic scheduled entries. Log an entry whenever you need to record one."
+                )
+            } else if draft.cycleEnabled {
+                Text(
+                    "The cycle starts on the recorded start date. Scheduled entries are created only during ON days and resume automatically after each OFF period."
+                )
+            } else {
                 Text(
                     "Times use this iPhone's current time zone."
                 )
-                .font(Theme.caption)
-                .foregroundStyle(.secondary)
             }
         }
     }
@@ -363,16 +512,16 @@ private extension ProtocolEditorView {
             }
 
             TextField(
-                "Configured site (optional)",
+                "Default site (optional)",
                 text: $draft.site
             )
 
         } header: {
-            Text("Vial and site")
+            Text("Injection context")
 
         } footer: {
             Text(
-                "A vial is optional. Leave the site blank to choose and record it only when logging."
+                "A vial is optional. Leave the site blank to record the actual site only when logging."
             )
         }
     }
@@ -384,6 +533,13 @@ private extension ProtocolEditorView {
 private extension ProtocolEditorView {
 
     var title: String {
+        if planningFuture {
+            return
+                editingPlanned
+                ? "Edit planned change"
+                : "Plan future change"
+        }
+
         if revision != nil {
             return "Edit protocol"
         }
@@ -392,6 +548,22 @@ private extension ProtocolEditorView {
             onboarding
             ? "Set up your protocol"
             : "Record protocol"
+    }
+
+
+    var minimumFutureDate: Date {
+        Calendar.current.date(
+            byAdding: .day,
+            value: 1,
+            to:
+                Calendar.current
+                    .startOfDay(
+                        for: .now
+                    )
+        ) ?? Date.now
+            .addingTimeInterval(
+                86_400
+            )
     }
 
 
@@ -417,7 +589,8 @@ private extension ProtocolEditorView {
         let compound =
             draft.compound
                 .trimmingCharacters(
-                    in: .whitespacesAndNewlines
+                    in:
+                        .whitespacesAndNewlines
                 )
 
         guard !compound.isEmpty else {
@@ -442,7 +615,9 @@ private extension ProtocolEditorView {
     func removeTime(
         _ id: UUID
     ) {
-        guard draft.times.count > 1 else {
+        guard
+            draft.times.count > 1
+        else {
             return
         }
 
@@ -453,10 +628,11 @@ private extension ProtocolEditorView {
 
 
     func save() {
-        guard record.map({
-            store.canEdit($0.id)
-        })
-        ?? store.canCreateProtocol
+        guard
+            record.map({
+                store.canEdit($0.id)
+            })
+            ?? store.canCreateProtocol
         else {
             store.requestPaywall(.secondProtocol)
             return
@@ -466,6 +642,7 @@ private extension ProtocolEditorView {
 
         Task {
             if draft.reminders,
+               draft.kind != .asRecorded,
                !store.isDemo {
                 _ =
                     await store
@@ -473,17 +650,46 @@ private extension ProtocolEditorView {
                         .requestPermission()
             }
 
-            if store.saveProtocol(
-                draft,
-                protocolID: record?.id,
-                compoundID:
-                    revision?.compoundID
-            ) {
+            let saved: Bool
+
+            if planningFuture,
+               let record,
+               let revision {
+                saved =
+                    store
+                        .savePlannedProtocolChange(
+                            draft,
+                            protocolID:
+                                record.id,
+                            compoundID:
+                                revision
+                                    .compoundID,
+                            plannedRevisionID:
+                                editingPlanned
+                                ? revision.id
+                                : nil,
+                            effectiveFrom:
+                                effectiveDate
+                        )
+
+            } else {
+                saved =
+                    store.saveProtocol(
+                        draft,
+                        protocolID:
+                            record?.id,
+                        compoundID:
+                            revision?
+                                .compoundID
+                    )
+            }
+
+            if saved {
                 if onboarding {
-                    store.completeOnboarding()
+                    store
+                        .completeOnboarding()
                 }
 
-                Haptics.success()
                 dismiss()
             }
 

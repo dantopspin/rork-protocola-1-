@@ -7,20 +7,33 @@ struct TodayView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var target: ScheduledEntry?
+    @State private var manualRevision: ScheduleRevision?
     @State private var prefill: DoseDraft?
     @State private var create = false
     @State private var settings = false
     @State private var inventory = false
     @State private var addVial = false
     @State private var calculator = false
+    @State private var stackCalendar = false
     @State private var shareCard = false
     @State private var undoLog: DoseLog?
     @State private var undoTask: Task<Void, Never>?
     @State private var dropTarget: String?
     @State private var dropAfter = false
 
-    private var recordedCount: Int {
-        store.today.filter { $0.log != nil }.count
+    private var resolvedCount: Int {
+        store.today.filter {
+            $0.log != nil
+        }.count
+    }
+
+    private var asNeededRevisions: [ScheduleRevision] {
+        store.revisions.filter {
+            $0.enabled
+            && $0.effectiveUntil == nil
+            && $0.config?.kind == .asRecorded
+            && store.canTrack($0.protocolID)
+        }
     }
 
     private var nextUnloggedEntry: ScheduledEntry? {
@@ -62,8 +75,15 @@ struct TodayView: View {
 
                 if let next = nextUnloggedEntry {
                     nextEntryHero(next)
+                } else if store.today.isEmpty,
+                          let cycle = offCycleContext {
+                    offCycleCard(cycle)
                 } else {
                     todayEmptyState
+                }
+
+                if !asNeededRevisions.isEmpty {
+                    asNeededSection
                 }
 
                 if store.isDemo {
@@ -90,7 +110,7 @@ struct TodayView: View {
                     + "what, when, or where to administer."
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
             }
             .screenPadding()
             .padding(.bottom, Theme.spaceXL + Theme.spaceL)
@@ -115,7 +135,7 @@ struct TodayView: View {
         }
         .sensoryFeedback(
             .success,
-            trigger: recordedCount
+            trigger: resolvedCount
         ) { old, new in
             new > old
         }
@@ -129,6 +149,13 @@ struct TodayView: View {
             ToolbarItemGroup(
                 placement: .topBarTrailing
             ) {
+                Button(
+                    "Stack calendar",
+                    systemImage: "calendar"
+                ) {
+                    stackCalendar = true
+                }
+
                 Button(
                     "Calculator",
                     systemImage: "function"
@@ -155,6 +182,13 @@ struct TodayView: View {
                 prefill: prefill
             )
         }
+        .sheet(item: $manualRevision) {
+            revision in
+
+            DoseEditorView(
+                revision: revision
+            )
+        }
         .sheet(isPresented: $create) {
             ProtocolEditorView()
         }
@@ -166,6 +200,11 @@ struct TodayView: View {
         }
         .sheet(isPresented: $calculator) {
             CalculatorView()
+        }
+        .sheet(
+            isPresented: $stackCalendar
+        ) {
+            StackCalendarView()
         }
         .sheet(isPresented: $shareCard) {
             ShareCardPreviewView(
@@ -196,30 +235,32 @@ private extension TodayView {
 
     var todayEmptyState: some View {
         VStack(spacing: Theme.spaceM) {
-            ContentUnavailableView {
-                Label(
-                    store.today.isEmpty
-                        ? "Nothing scheduled today"
-                        : "Today's entries are recorded",
-                    systemImage:
+            if store.protocols.isEmpty {
+                TrackingEmptyState(
+                    icon: "calendar",
+                    title: "Nothing scheduled today",
+                    message:
+                        "Add an existing protocol to populate Today.",
+                    actionTitle: "Add protocol"
+                ) {
+                    create = true
+                }
+
+            } else {
+                TrackingEmptyState(
+                    icon:
                         store.today.isEmpty
                         ? "calendar"
-                        : "checkmark.circle"
-                )
-            } description: {
-                Text(
-                    store.protocols.isEmpty
-                        ? "Add an existing protocol to populate Today."
+                        : "checkmark.circle",
+                    title:
+                        store.today.isEmpty
+                        ? "Nothing scheduled today"
+                        : "Today's entries are recorded",
+                    message:
+                        !asNeededRevisions.isEmpty
+                        ? "No scheduled entries. As-needed protocols are available below."
                         : "Your recorded schedule is clear for today."
                 )
-            } actions: {
-                if store.protocols.isEmpty {
-                    Button("Add protocol") {
-                        create = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.ink)
-                }
             }
 
             if !store.today.isEmpty,
@@ -232,7 +273,7 @@ private extension TodayView {
                         systemImage: "square.and.arrow.up"
                     )
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(TrackingCompactButtonStyle())
                 .tint(Theme.ink)
             }
         }
@@ -241,42 +282,134 @@ private extension TodayView {
     }
 
 
+    var asNeededSection: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
+        ) {
+            Eyebrow(text: "As needed")
+
+            VStack(spacing: 0) {
+                ForEach(
+                    Array(
+                        asNeededRevisions
+                            .enumerated()
+                    ),
+                    id: \.element.id
+                ) { index, revision in
+                    HStack(
+                        spacing: Theme.spaceS
+                    ) {
+                        VStack(
+                            alignment: .leading,
+                            spacing:
+                                Theme.spaceXXS
+                        ) {
+                            Text(
+                                revision
+                                    .compoundName
+                            )
+                            .font(Theme.label)
+                            .foregroundStyle(
+                                Theme.ink
+                            )
+
+                            Text(
+                                revision.amountText
+                                + " "
+                                + revision.unitText
+                                + " · "
+                                + revision.routeText
+                            )
+                            .font(Theme.caption)
+                            .foregroundStyle(
+                                Theme.muted
+                            )
+                        }
+
+                        Spacer()
+
+                        Button("Log") {
+                            manualRevision =
+                                revision
+                        }
+                        .buttonStyle(TrackingCompactButtonStyle())
+                        .tint(Theme.ink)
+                        .controlSize(.small)
+                    }
+                    .padding(
+                        .vertical,
+                        Theme.spaceS
+                    )
+
+                    if index
+                        < asNeededRevisions
+                            .count - 1 {
+                        Divider()
+                    }
+                }
+            }
+            .overlay(
+                alignment: .top
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
+        }
+    }
+
+
     var demoCard: some View {
         VStack(
             alignment: .leading,
             spacing: Theme.spaceS
         ) {
-            Label(
-                "Sample records",
-                systemImage: "eye"
-            )
-            .font(Theme.sectionTitle)
+            Eyebrow(text: "Sample records")
 
             Text(
                 "Sample records stay isolated and are never saved "
                 + "to your history."
             )
             .font(Theme.body)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.textSecondary)
 
             Button("Set up your protocol") {
                 store.exitDemo()
                 create = true
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(TrackingCompactButtonStyle(prominent: true))
             .tint(Theme.ink)
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius: Theme.radiusCard
-            )
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 
 
@@ -288,7 +421,7 @@ private extension TodayView {
                 Image(systemName: "shippingbox")
                     .font(Theme.sectionTitle)
                     .foregroundStyle(Theme.teal)
-                    .frame(width: 28)
+                    .frame(width: Theme.iconLarge)
 
                 VStack(
                     alignment: .leading,
@@ -302,25 +435,36 @@ private extension TodayView {
                         "Track inventory and get low-balance context."
                     )
                     .font(Theme.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 }
 
                 Spacer(minLength: Theme.spaceS)
 
                 Image(systemName: "chevron.right")
                     .font(Theme.micro)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
-            .padding(Theme.spaceM)
+            .padding(
+                .vertical,
+                Theme.spaceM
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius: Theme.radiusCard
-            )
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 
 
@@ -330,16 +474,15 @@ private extension TodayView {
             spacing: Theme.spaceS
         ) {
             HStack {
-                Text("Today")
-                    .font(Theme.sectionTitle)
+                Eyebrow(text: "Today")
 
                 Spacer()
 
                 Text(
-                    "\(recordedCount) / \(store.today.count) logged"
+                    "\(resolvedCount) / \(store.today.count) resolved"
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .monospacedDigit()
             }
 
@@ -422,18 +565,26 @@ private extension TodayView {
                         }
 
                     if index < remainingTodayEntries.count - 1 {
-                        Divider()
-                            .padding(.leading, 48)
+                        Rectangle()
+                            .fill(Theme.hairline)
+                            .frame(height: Theme.ruleThickness)
                     }
                 }
             }
-            .padding(.horizontal, Theme.spaceM)
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius: Theme.radiusCard
-                )
-            )
+            .overlay(
+                alignment: .top
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
             .animation(
                 reduceMotion
                     ? nil
@@ -511,21 +662,18 @@ private extension TodayView {
             alignment: .leading,
             spacing: Theme.spaceXXS
         ) {
-            Text(title)
-                .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.muted
-                )
+            Eyebrow(text: title)
 
             HStack(
                 alignment: .firstTextBaseline
             ) {
                 Text(value)
-                    .font(Theme.sectionTitle)
+                    .font(Theme.metricCompact)
                     .foregroundStyle(
                         Theme.ink
                     )
                     .lineLimit(1)
+                    .monospacedDigit()
 
                 Spacer(
                     minLength:
@@ -549,22 +697,21 @@ private extension TodayView {
                 )
                 .lineLimit(1)
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusRow
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusRow
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 
 
@@ -647,14 +794,14 @@ private extension TodayView {
 
                     Text(inventorySummary)
                         .font(Theme.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(Theme.micro)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
             .padding(Theme.spaceM)
             .contentShape(Rectangle())
@@ -715,12 +862,13 @@ private extension TodayView {
     ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.spaceM
         ) {
-            HStack {
+            HStack(
+                alignment: .firstTextBaseline
+            ) {
                 Eyebrow(
-                    text: "Next entry",
-                    onDark: true
+                    text: "Next entry"
                 )
 
                 Spacer()
@@ -729,8 +877,8 @@ private extension TodayView {
             }
 
             Text(next.revision.compoundName)
-                .font(Theme.sectionTitle)
-                .foregroundStyle(.white)
+                .font(Theme.modalTitle)
+                .foregroundStyle(Theme.ink)
 
             if usesStackedHero {
                 VStack(
@@ -743,7 +891,7 @@ private extension TodayView {
             } else {
                 HStack(
                     alignment: .firstTextBaseline,
-                    spacing: Theme.spaceXS
+                    spacing: Theme.spaceM
                 ) {
                     heroDose(next)
 
@@ -753,65 +901,247 @@ private extension TodayView {
                 }
             }
 
-            Label(
-                next.revision.protocolName,
-                systemImage: "list.bullet.rectangle"
-            )
-            .font(Theme.body)
-            .foregroundStyle(
-                Color.white.opacity(0.72)
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+
+            RecordRow(
+                label: "Protocol",
+                value:
+                    next.revision
+                        .protocolName
             )
 
-            Divider()
-                .overlay(
-                    Color.white.opacity(0.14)
+            if next.revision.route
+                .usesInjectionSite {
+                vialActionLight(next)
+            } else {
+                RecordRow(
+                    label: "Route",
+                    value:
+                        next.revision
+                            .routeText
                 )
-
-            vialAction(next)
+            }
 
             Button {
                 logAsScheduled(next)
             } label: {
-                Label(
-                    "Log entry",
-                    systemImage: "checkmark"
-                )
+                Text("Log entry")
             }
             .buttonStyle(
-                TrackingPrimaryButtonStyle(
-                    inverted: true
-                )
+                TrackingPrimaryButtonStyle()
             )
 
-            Button {
-                open(
-                    next,
-                    prefill:
-                        repeatDraft(for: next)
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                Button {
+                    open(
+                        next,
+                        prefill:
+                            repeatDraft(
+                                for: next
+                            )
+                    )
+                } label: {
+                    Text("Adjust details")
+                }
+                .buttonStyle(
+                    TrackingSecondaryButtonStyle()
                 )
-            } label: {
-                Label(
-                    "Adjust details",
-                    systemImage:
-                        "slider.horizontal.3"
+
+                Button(
+                    "Skip",
+                    role: .destructive
+                ) {
+                    skipEntry(next)
+                }
+                .font(Theme.label)
+                .frame(
+                    minHeight:
+                        Theme.minimumTapTarget
                 )
             }
-            .buttonStyle(
-                TrackingSecondaryButtonStyle(
-                    onDark: true
+        }
+        .padding(
+            .vertical,
+            Theme.spaceL
+        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.teal)
+                .frame(
+                    height:
+                        Theme.insertionLineHeight
                 )
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+    }
+
+
+    @ViewBuilder
+    func vialActionLight(
+        _ next: ScheduledEntry
+    ) -> some View {
+        if let vial =
+            store.vial(
+                next.revision.vialID
+            ) {
+            Button {
+                open(next)
+            } label: {
+                HStack(
+                    alignment:
+                        .firstTextBaseline,
+                    spacing: Theme.spaceM
+                ) {
+                    Text("Vial")
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+
+                    Spacer()
+
+                    Text(vial.name)
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+                        .lineLimit(1)
+
+                    Image(
+                        systemName:
+                            "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+        } else {
+            Button {
+                if store.vials.isEmpty {
+                    addVial = true
+                } else {
+                    open(next)
+                }
+            } label: {
+                HStack(
+                    alignment:
+                        .firstTextBaseline,
+                    spacing: Theme.spaceM
+                ) {
+                    Text("Vial")
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+
+                    Spacer()
+
+                    Text(
+                        store.vials.isEmpty
+                        ? "Add vial"
+                        : "Choose vial"
+                    )
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.teal
+                    )
+
+                    Image(
+                        systemName:
+                            "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    func offCycleCard(
+        _ context: CycleOffContext
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            HStack {
+                Text("Off period")
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+
+                Spacer()
+
+                StatusBadge(
+                    text: "OFF"
+                )
+            }
+
+            Text(
+                context.revision
+                    .compoundName
+            )
+            .font(Theme.sectionTitle)
+            .foregroundStyle(
+                Theme.ink
+            )
+
+            Text(
+                CycleDisplay.status(
+                    context.config
+                )
+                ?? "Cycle is paused"
+            )
+            .font(Theme.body)
+            .foregroundStyle(
+                Theme.muted
+            )
+
+            Text(
+                "No scheduled entries are generated during the recorded OFF period."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.muted
             )
         }
-        .padding(Theme.spaceL)
+        .padding(Theme.spaceM)
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
         .background(
-            Theme.ink,
+            Theme.surface,
             in: .rect(
-                cornerRadius: Theme.radiusCard
+                cornerRadius:
+                    Theme.radiusCard
             )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
         )
     }
 
@@ -840,15 +1170,11 @@ private extension TodayView {
                     Image(
                         systemName: "chevron.right"
                     )
-                    .font(
-                        .caption.weight(
-                            .semibold
-                        )
-                    )
+                    .font(Theme.micro)
                 }
                 .font(Theme.body)
                 .foregroundStyle(
-                    Color.white.opacity(0.82)
+                    Theme.onDarkPrimary.opacity(0.82)
                 )
                 .contentShape(Rectangle())
             }
@@ -874,15 +1200,11 @@ private extension TodayView {
                     Image(
                         systemName: "chevron.right"
                     )
-                    .font(
-                        .caption.weight(
-                            .semibold
-                        )
-                    )
+                    .font(Theme.micro)
                 }
                 .font(Theme.label)
                 .foregroundStyle(
-                    Color.white.opacity(0.9)
+                    Theme.onDarkPrimary.opacity(0.9)
                 )
                 .contentShape(Rectangle())
             }
@@ -901,12 +1223,12 @@ private extension TodayView {
             Text(next.revision.amountText)
                 .font(Theme.metric)
                 .monospacedDigit()
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onDarkPrimary)
 
             Text(next.revision.unitText)
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Color.white.opacity(0.68)
+                    Theme.onDarkPrimary.opacity(0.68)
                 )
         }
     }
@@ -919,7 +1241,7 @@ private extension TodayView {
             .font(Theme.sectionTitle)
             .monospacedDigit()
             .foregroundStyle(
-                Color.white.opacity(0.94)
+                Theme.onDarkPrimary.opacity(0.94)
             )
     }
 
@@ -937,7 +1259,7 @@ private extension TodayView {
         .foregroundStyle(
             text == "Overdue"
                 ? Theme.amber
-                : Color.white.opacity(0.76)
+                : Theme.onDarkPrimary.opacity(0.76)
         )
         .padding(
             .horizontal,
@@ -948,7 +1270,7 @@ private extension TodayView {
             Theme.spaceXXS
         )
         .background(
-            Color.white.opacity(0.12),
+            Theme.onDarkPrimary.opacity(0.12),
             in: .capsule
         )
     }
@@ -1037,7 +1359,7 @@ private extension TodayView {
                     + entry.revision.protocolName
                 )
                 .font(Theme.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .monospacedDigit()
             }
 
@@ -1049,7 +1371,7 @@ private extension TodayView {
                 Button("Log") {
                     open(entry)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(TrackingCompactButtonStyle())
                 .tint(Theme.ink)
                 .controlSize(.small)
             }
@@ -1092,7 +1414,7 @@ private extension TodayView {
         if dropTarget == entry.id {
             Capsule()
                 .fill(Theme.teal)
-                .frame(height: 2)
+                .frame(height: Theme.insertionLineHeight)
                 .padding(
                     .horizontal,
                     Theme.spaceXS
@@ -1206,25 +1528,69 @@ private extension TodayView {
     }
 
 
+    func skipEntry(
+        _ entry: ScheduledEntry
+    ) {
+        guard entry.log == nil else {
+            return
+        }
+
+        var draft =
+            DoseDraft(
+                revision:
+                    entry.revision
+            )
+
+        draft.status = "Skipped"
+        draft.vialID = nil
+        draft.site = ""
+        draft.symptoms = ""
+        draft.notes = ""
+
+        if store.saveDose(
+            draft,
+            revision:
+                entry.revision,
+            occurrence: entry,
+            correcting: nil
+        ),
+           let log =
+                store.logs.first(
+                    where: {
+                        $0.occurrenceID
+                            == entry.id
+                    }
+                ) {
+            undoLog = log
+        }
+    }
+
+
     func undoBanner(
         _ log: DoseLog
     ) -> some View {
         HStack(spacing: Theme.spaceS) {
             Image(
                 systemName:
-                    "checkmark.circle.fill"
+                    log.status == "Skipped"
+                    ? "xmark.circle.fill"
+                    : "checkmark.circle.fill"
             )
-            .foregroundStyle(Theme.teal)
+            .foregroundStyle(
+                log.status == "Skipped"
+                    ? Theme.muted
+                    : Theme.teal
+            )
 
             Text(
-                "Logged · "
+                (
+                    log.status == "Skipped"
+                    ? "Skipped · "
+                    : "Logged · "
+                )
                 + log.compoundName
             )
-            .font(
-                .subheadline.weight(
-                    .medium
-                )
-            )
+            .font(Theme.label)
             .lineLimit(1)
 
             Spacer(
@@ -1237,13 +1603,9 @@ private extension TodayView {
                     Haptics.impact()
                 }
             }
-            .font(
-                .subheadline.weight(
-                    .semibold
-                )
-            )
+            .font(Theme.label)
             .foregroundStyle(Theme.teal)
-            .frame(minHeight: 44)
+            .frame(minHeight: Theme.minimumTapTarget)
         }
         .padding(
             .horizontal,
@@ -1301,6 +1663,41 @@ private extension TodayView {
     }
 
 
+    var offCycleContext: CycleOffContext? {
+        let candidates =
+            store.revisions
+                .filter {
+                    $0.enabled
+                    && $0.effectiveUntil
+                        == nil
+                    && store.canTrack(
+                        $0.protocolID
+                    )
+                }
+
+        for revision in candidates {
+            guard
+                let config =
+                    revision.config,
+                let phase =
+                    config.cyclePhase(
+                        at: .now
+                    ),
+                phase.state == .off
+            else {
+                continue
+            }
+
+            return CycleOffContext(
+                revision: revision,
+                config: config
+            )
+        }
+
+        return nil
+    }
+
+
     func repeatDraft(
         for entry: ScheduledEntry
     ) -> DoseDraft? {
@@ -1334,5 +1731,489 @@ private extension TodayView {
             draft.vialID == nil
             ? nil
             : draft
+    }
+}
+
+
+private struct CycleOffContext {
+    let revision: ScheduleRevision
+    let config: ScheduleConfig
+}
+
+
+
+// MARK: - Combined stack calendar
+
+struct StackCalendarView: View {
+    @Environment(TrackingStore.self)
+    private var store
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State
+    private var anchor = Date.now
+
+    @State
+    private var selectedDay =
+        Calendar.current
+            .startOfDay(for: .now)
+
+    private var calendar:
+        Calendar {
+        Calendar.current
+    }
+
+    private var weekStart: Date {
+        calendar
+            .dateInterval(
+                of: .weekOfYear,
+                for: anchor
+            )?
+            .start
+        ?? calendar
+            .startOfDay(for: anchor)
+    }
+
+    private var weekEnd: Date {
+        calendar.date(
+            byAdding: .day,
+            value: 7,
+            to: weekStart
+        ) ?? weekStart
+    }
+
+    private var weekDays: [Date] {
+        (0..<7).compactMap {
+            calendar.date(
+                byAdding: .day,
+                value: $0,
+                to: weekStart
+            )
+        }
+    }
+
+    private var weekEntries:
+        [ScheduledEntry] {
+        store.entries(
+            start: weekStart,
+            end: weekEnd
+        )
+        .filter {
+            store.canTrack(
+                $0.revision.protocolID
+            )
+        }
+    }
+
+    private var selectedEntries:
+        [ScheduledEntry] {
+        weekEntries.filter {
+            calendar.isDate(
+                $0.at,
+                inSameDayAs:
+                    selectedDay
+            )
+        }
+        .sorted {
+            $0.at < $1.at
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceL
+                ) {
+                    weekNavigation
+                    dayStrip
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceM
+                    ) {
+                        Text(
+                            selectedDay.formatted(
+                                .dateTime
+                                    .weekday(.wide)
+                                    .month(.wide)
+                                    .day()
+                            )
+                        )
+                        .font(Theme.sectionTitle)
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                        if selectedEntries
+                            .isEmpty {
+                            TrackingEmptyState(
+                                icon: "calendar",
+                                title:
+                                    "No scheduled entries",
+                                message:
+                                    "No recorded schedules create an entry on this day."
+                            )
+                        } else {
+                            ForEach(
+                                selectedEntries
+                            ) { entry in
+                                stackEntryCard(
+                                    entry
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        "Combined calendar of your recorded schedules. It shows what you entered and does not recommend what or when to administer."
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                }
+                .screenPadding()
+            }
+            .background(Theme.paper)
+            .navigationTitle(
+                "Stack calendar"
+            )
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+            .toolbar {
+                ToolbarItem(
+                    placement:
+                        .topBarLeading
+                ) {
+                    Button("Today") {
+                        anchor = .now
+                        selectedDay =
+                            calendar
+                                .startOfDay(
+                                    for: .now
+                                )
+                    }
+                }
+
+                ToolbarItem(
+                    placement:
+                        .confirmationAction
+                ) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var weekNavigation:
+        some View {
+        HStack(
+            spacing: Theme.spaceM
+        ) {
+            Button {
+                moveWeek(-1)
+            } label: {
+                Image(
+                    systemName:
+                        "chevron.left"
+                )
+            }
+            .accessibilityLabel(
+                "Previous week"
+            )
+
+            Spacer()
+
+            Text(weekRangeLabel)
+                .font(Theme.label)
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            Spacer()
+
+            Button {
+                moveWeek(1)
+            } label: {
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+            }
+            .accessibilityLabel(
+                "Next week"
+            )
+        }
+    }
+
+    private var dayStrip: some View {
+        ScrollView(
+            .horizontal,
+            showsIndicators: false
+        ) {
+            HStack(
+                spacing: Theme.spaceXS
+            ) {
+                ForEach(
+                    weekDays,
+                    id: \.self
+                ) { day in
+                    dayButton(day)
+                }
+            }
+        }
+    }
+
+    private func dayButton(
+        _ day: Date
+    ) -> some View {
+        let selected =
+            calendar.isDate(
+                day,
+                inSameDayAs:
+                    selectedDay
+            )
+        let count =
+            entries(on: day).count
+
+        return Button {
+            selectedDay = day
+        } label: {
+            VStack(
+                spacing: Theme.spaceXXS
+            ) {
+                Text(
+                    day.formatted(
+                        .dateTime
+                            .weekday(
+                                .abbreviated
+                            )
+                    )
+                )
+                .font(Theme.micro)
+
+                Text(
+                    day.formatted(
+                        .dateTime.day()
+                    )
+                )
+                .font(Theme.sectionTitle)
+                .monospacedDigit()
+
+                Text(
+                    count == 0
+                        ? "—"
+                        : String(count)
+                )
+                .font(Theme.caption)
+                .monospacedDigit()
+            }
+            .foregroundStyle(
+                selected
+                    ? Theme.onDarkPrimary
+                    : Theme.ink
+            )
+            .frame(
+                minWidth:
+                    Theme.calendarDayWidth,
+                minHeight:
+                    Theme.rowHeight
+            )
+            .padding(
+                .vertical,
+                Theme.spaceXS
+            )
+            .background(
+                selected
+                    ? Theme.ink
+                    : Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusRow
+                )
+            )
+            .overlay {
+                if !selected {
+                    RoundedRectangle(
+                        cornerRadius:
+                            Theme.radiusRow
+                    )
+                    .stroke(
+                        Theme.hairline,
+                        lineWidth: 1
+                    )
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            day.formatted(
+                .dateTime
+                    .weekday(.wide)
+                    .month(.wide)
+                    .day()
+            )
+        )
+        .accessibilityValue(
+            count == 1
+                ? "1 scheduled entry"
+                : String(count)
+                    + " scheduled entries"
+        )
+    }
+
+    private func stackEntryCard(
+        _ entry: ScheduledEntry
+    ) -> some View {
+        TrackingCard {
+            HStack(
+                alignment:
+                    .firstTextBaseline,
+                spacing: Theme.spaceS
+            ) {
+                VStack(
+                    alignment: .leading,
+                    spacing:
+                        Theme.spaceXXS
+                ) {
+                    Text(
+                        entry.at.formatted(
+                            date: .omitted,
+                            time: .shortened
+                        )
+                    )
+                    .font(Theme.label)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                    .monospacedDigit()
+
+                    Text(
+                        entry.revision
+                            .compoundName
+                    )
+                    .font(
+                        Theme.sectionTitle
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                }
+
+                Spacer()
+
+                StatusBadge(
+                    text:
+                        entry.log?.status
+                        ?? "Scheduled"
+                )
+            }
+
+            Text(
+                entry.revision.protocolName
+            )
+            .font(Theme.body)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+
+            HStack(
+                spacing: Theme.spaceS
+            ) {
+                Label(
+                    entry.revision.amountText
+                    + " "
+                    + entry.revision.unitText,
+                    systemImage:
+                        "number"
+                )
+
+                Label(
+                    entry.revision
+                        .route.rawValue,
+                    systemImage:
+                        "arrow.right.circle"
+                )
+            }
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+    private func entries(
+        on day: Date
+    ) -> [ScheduledEntry] {
+        weekEntries.filter {
+            calendar.isDate(
+                $0.at,
+                inSameDayAs: day
+            )
+        }
+    }
+
+    private var weekRangeLabel:
+        String {
+        guard
+            let last =
+                calendar.date(
+                    byAdding: .day,
+                    value: 6,
+                    to: weekStart
+                )
+        else {
+            return weekStart.formatted(
+                date: .abbreviated,
+                time: .omitted
+            )
+        }
+
+        return
+            weekStart.formatted(
+                .dateTime
+                    .month(.abbreviated)
+                    .day()
+            )
+            + " – "
+            + last.formatted(
+                .dateTime
+                    .month(.abbreviated)
+                    .day()
+            )
+    }
+
+    private func moveWeek(
+        _ offset: Int
+    ) {
+        guard
+            let next =
+                calendar.date(
+                    byAdding:
+                        .weekOfYear,
+                    value: offset,
+                    to: anchor
+                )
+        else {
+            return
+        }
+
+        anchor = next
+        selectedDay =
+            calendar
+                .dateInterval(
+                    of: .weekOfYear,
+                    for: next
+                )?
+                .start
+            ?? calendar
+                .startOfDay(
+                    for: next
+                )
     }
 }

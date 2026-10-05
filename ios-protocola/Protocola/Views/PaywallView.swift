@@ -46,7 +46,7 @@ struct PaywallView: View {
                     .foregroundStyle(Theme.muted)
                     .frame(
                         maxWidth: .infinity,
-                        minHeight: 44
+                        minHeight: Theme.minimumTapTarget
                     )
                     .buttonStyle(.plain)
 
@@ -131,29 +131,43 @@ struct PaywallView: View {
             spacing: 0
         ) {
             ForEach(
-                Array(reason.orderedBenefits.enumerated()),
+                Array(
+                    reason
+                        .orderedBenefits
+                        .enumerated()
+                ),
                 id: \.element.id
             ) { index, benefit in
                 if index > 0 {
-                    Divider()
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
                 }
 
                 TrustRow(
                     icon: benefit.icon,
                     title: benefit.title,
-                    detail: benefit.detail,
-                    compact: true
+                    detail: benefit.detail
                 )
             }
         }
-        .background(
-            Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusCard,
-                style: .continuous
-            )
-        )
-        .inkBorder(cornerRadius: Theme.radiusCard)
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 
 
@@ -268,7 +282,10 @@ struct PaywallView: View {
                     }
                 }
 
-                HStack(alignment: .firstTextBaseline, spacing: Theme.spaceXS) {
+                HStack(
+                    alignment: .firstTextBaseline,
+                    spacing: Theme.spaceXS
+                ) {
                     Text(
                         "\(package.storeProduct.localizedPriceString) "
                         + periodSuffix(package)
@@ -297,20 +314,22 @@ struct PaywallView: View {
                         : "Subscribe"
                 )
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(TrackingCompactButtonStyle(prominent: true))
             .tint(Theme.ink)
             .controlSize(.regular)
             .disabled(purchases.isPurchasing)
         }
-        .padding(Theme.spaceM)
-        .background(
-            Theme.surface,
-            in: RoundedRectangle(
-                cornerRadius: Theme.radiusRow,
-                style: .continuous
-            )
+        .padding(
+            .vertical,
+            Theme.spaceM
         )
-        .inkBorder(cornerRadius: Theme.radiusRow)
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 
 
@@ -319,8 +338,9 @@ struct PaywallView: View {
     }
 
 
-    /// Rectangular editorial tag used for plan badges (Best value, Save N%).
-    private func rectTag(_ text: String) -> some View {
+    private func rectTag(
+        _ text: String
+    ) -> some View {
         Text(text)
             .font(Theme.micro)
             .foregroundStyle(Theme.ink)
@@ -334,40 +354,68 @@ struct PaywallView: View {
             )
             .background(
                 Theme.neutralTint,
-                in: RoundedRectangle(
-                    cornerRadius: 5,
-                    style: .continuous
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusBadge
                 )
             )
-            .overlay {
-                RoundedRectangle(
-                    cornerRadius: 5,
-                    style: .continuous
-                )
-                .strokeBorder(
-                    Theme.border,
-                    lineWidth: 1
-                )
-            }
+            .inkBorder(
+                cornerRadius:
+                    Theme.radiusBadge
+            )
     }
 
 
-    /// Savings of the annual plan versus twelve months at the monthly price,
-    /// computed from live store prices; hidden when it cannot be computed.
     private var annualSavingsPercent: Int? {
         guard
-            let annual = purchases.offerings.first(where: { $0.packageType == .annual }),
-            let monthly = purchases.offerings.first(where: { $0.packageType == .monthly })
-        else { return nil }
+            let annual =
+                purchases.offerings.first(
+                    where: {
+                        $0.packageType == .annual
+                    }
+                ),
+            let monthly =
+                purchases.offerings.first(
+                    where: {
+                        $0.packageType == .monthly
+                    }
+                )
+        else {
+            return nil
+        }
 
-        let monthlyPrice = NSDecimalNumber(decimal: monthly.storeProduct.price).doubleValue
-        let annualPrice = NSDecimalNumber(decimal: annual.storeProduct.price).doubleValue
-        guard monthlyPrice * 12 > 0 else { return nil }
+        let monthlyPrice =
+            NSDecimalNumber(
+                decimal:
+                    monthly.storeProduct.price
+            )
+            .doubleValue
+        let annualPrice =
+            NSDecimalNumber(
+                decimal:
+                    annual.storeProduct.price
+            )
+            .doubleValue
 
-        let savings = 1 - (annualPrice / (monthlyPrice * 12))
-        guard savings > 0 else { return nil }
+        guard monthlyPrice * 12 > 0 else {
+            return nil
+        }
 
-        return Int((savings * 100).rounded())
+        let savings =
+            1
+            - (
+                annualPrice
+                / (monthlyPrice * 12)
+            )
+
+        guard savings > 0 else {
+            return nil
+        }
+
+        return Int(
+            (savings * 100)
+                .rounded()
+        )
     }
 
 

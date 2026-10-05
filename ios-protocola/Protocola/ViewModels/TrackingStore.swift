@@ -35,10 +35,7 @@ import Observation
         guard activeProtocolIDs.contains(id), !isPremium else { return }
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.selectedFreeProtocolID = id } }
     }
-    /// Deep-link target for locked features: any view (or an opened
-    /// `protocola://paywall/<reason>` URL) requests a specific reason, and
-    /// ContentView presents the matching paywall. Successful dose logging
-    /// never sets this.
+    /// Central contextual paywall request used by locked features and deep links.
     private(set) var pendingPaywall: PaywallReason?
     var error: String?
     let notifications = NotificationService()
@@ -79,11 +76,12 @@ import Observation
 
     /// Drag-and-drop reorder: the dragged entry lands just before or after the row
     /// it was dropped on, then the order persists to preferences.
-    /// Returns whether the order changed, so callers can cue a completion haptic.
     @discardableResult
     func moveTodayEntry(_ draggedID: String, relativeTo anchorID: String, after: Bool) -> Bool {
         var ids = today.map(\.id)
-        guard let from = ids.firstIndex(of: draggedID), let anchor = ids.firstIndex(of: anchorID), from != anchor else { return false }
+        guard let from = ids.firstIndex(of: draggedID),
+              let anchor = ids.firstIndex(of: anchorID),
+              from != anchor else { return false }
         let anchorIndex = anchor > from ? anchor - 1 : anchor
         let dragged = ids.remove(at: from)
         ids.insert(dragged, at: after ? anchorIndex + 1 : anchorIndex)
@@ -95,7 +93,8 @@ import Observation
     @discardableResult
     func moveTodayEntry(_ id: String, by delta: Int) -> Bool {
         var ids = today.map(\.id)
-        guard let index = ids.firstIndex(of: id), ids.indices.contains(index + delta) else { return false }
+        guard let index = ids.firstIndex(of: id),
+              ids.indices.contains(index + delta) else { return false }
         ids.swapAt(index, index + delta)
         setTodayOrder(ids)
         return true
@@ -105,21 +104,208 @@ import Observation
         today = ids.compactMap { id in today.first { $0.id == id } }
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.todayOrder = ids } }
     }
-    func vialStatus(_ vial: VialRecord) -> String {
-        let balance = balances[vial.id] ?? 0
-        if vial.isArchived { return "Archived" }
-        if balance == 0 { return "Depleted" }
-        return balance < vial.originalMg / 5 ? "Low recorded balance" : "Active"
+    func vialStatus(
+        _ vial: VialRecord
+    ) -> String {
+        let balance =
+            balances[vial.id] ?? 0
+
+        if vial.lifecycleState == .archived {
+            return "Archived"
+        }
+
+        if balance == 0 {
+            return "Depleted"
+        }
+
+        if vial.lifecycleState == .sealed {
+            return "Sealed"
+        }
+
+        if vial.lifecycleState == .reserve {
+            return "Reserve"
+        }
+
+        return balance
+            < vial.originalMg / 5
+            ? "Low recorded balance"
+            : "Active"
     }
-    /// Deterministic supply runway: whole scheduled entries this vial can still serve.
-    /// Computed only when a single active, un-ended schedule with a fixed mg amount is
-    /// recorded against the vial; frequency-based depletion estimates stay out until validated.
-    func scheduledEntriesRemaining(in vial: VialRecord) -> Int? {
-        guard !vial.isArchived,
-              let revision = revisions.first(where: { $0.enabled && $0.effectiveUntil == nil && $0.vialID == vial.id }),
-              revision.unit == .mg, revision.amount > 0 else { return nil }
-        let entries = NSDecimalNumber(decimal: (balances[vial.id] ?? 0) / revision.amount).intValue
+
+    func scheduledEntriesRemaining(
+        in vial: VialRecord,
+        at date: Date = .now
+    ) -> Int? {
+        guard let mass =
+            singleScheduledMassMg(
+                for: vial,
+                at: date
+            ),
+              mass > 0
+        else {
+            return nil
+        }
+
+        let entries =
+            NSDecimalNumber(
+                decimal:
+                    (balances[vial.id] ?? 0)
+                    / mass
+            ).intValue
+
         return max(0, entries)
+    }
+
+    func dosesPerVial(
+        _ vial: VialRecord,
+        at date: Date = .now
+    ) -> Int? {
+        guard let mass =
+            singleScheduledMassMg(
+                for: vial,
+                at: date
+            ),
+              mass > 0
+        else {
+            return nil
+        }
+
+        let entries =
+            NSDecimalNumber(
+                decimal:
+                    vial.originalMg / mass
+            ).intValue
+
+        return max(0, entries)
+    }
+
+    func estimatedDepletionDate(
+        in vial: VialRecord,
+        now: Date = .now
+    ) -> Date? {
+        guard vial.lifecycleState
+                != .archived,
+              (balances[vial.id] ?? 0) > 0
+        else {
+            return nil
+        }
+
+        let calendar = Calendar.current
+        guard let horizon =
+            calendar.date(
+                byAdding: .year,
+                value: 2,
+                to: now
+            )
+        else {
+            return nil
+        }
+
+        let linked =
+            revisions.filter {
+                $0.enabled
+                && $0.vialID == vial.id
+                && $0.intersects(
+                    start: now,
+                    end: horizon
+                )
+            }
+
+        guard !linked.isEmpty else {
+            return nil
+        }
+
+        var future:
+            [(at: Date, massMg: Decimal)] = []
+
+        for revision in linked {
+            guard let config =
+                    revision.config,
+                  let mass =
+                    scheduledMassMg(
+                        revision
+                    ),
+                  mass > 0
+            else {
+                return nil
+            }
+
+            let occurrences =
+                SchedulingEngine
+                    .occurrences(
+                        config: config,
+                        effectiveFrom:
+                            revision
+                                .effectiveFrom,
+                        effectiveUntil:
+                            revision
+                                .effectiveUntil,
+                        start: now,
+                        end: horizon
+                    )
+
+            future.append(
+                contentsOf:
+                    occurrences.map {
+                        (
+                            at: $0,
+                            massMg: mass
+                        )
+                    }
+            )
+        }
+
+        future.sort {
+            $0.at < $1.at
+        }
+
+        var remaining =
+            balances[vial.id] ?? 0
+
+        for entry in future {
+            remaining -= entry.massMg
+
+            if remaining <= 0 {
+                return entry.at
+            }
+        }
+
+        return nil
+    }
+
+    private func singleScheduledMassMg(
+        for vial: VialRecord,
+        at date: Date
+    ) -> Decimal? {
+        let linked =
+            revisions.filter {
+                $0.enabled
+                && $0.vialID == vial.id
+                && $0.isEffective(
+                    at: date
+                )
+            }
+
+        guard linked.count == 1,
+              let revision = linked.first
+        else {
+            return nil
+        }
+
+        return scheduledMassMg(revision)
+    }
+
+    private func scheduledMassMg(
+        _ revision: ScheduleRevision
+    ) -> Decimal? {
+        switch revision.unit {
+        case .mg:
+            return revision.amount
+        case .mcg:
+            return revision.amount / 1_000
+        case .mL, .units:
+            return nil
+        }
     }
     func entries(start: Date, end: Date) -> [ScheduledEntry] {
         revisions.filter(\.enabled).flatMap { revision -> [ScheduledEntry] in
@@ -130,17 +316,182 @@ import Observation
             }
         }.sorted { $0.at < $1.at }
     }
-    func currentRevisions(_ protocolID: UUID) -> [ScheduleRevision] { revisions.filter { $0.protocolID == protocolID && $0.effectiveUntil == nil } }
-    func vial(_ id: UUID?) -> VialRecord? { vials.first { $0.id == id } }
+    func currentRevisions(
+        _ protocolID: UUID,
+        at date: Date = .now
+    ) -> [ScheduleRevision] {
+        revisions
+            .filter {
+                $0.protocolID
+                    == protocolID
+                && $0.isEffective(
+                    at: date
+                )
+            }
+            .sorted {
+                $0.compoundName
+                    < $1.compoundName
+            }
+    }
+
+    func plannedRevisions(
+        _ protocolID: UUID,
+        after date: Date = .now
+    ) -> [ScheduleRevision] {
+        revisions
+            .filter {
+                $0.protocolID
+                    == protocolID
+                && $0.isPlanned(
+                    after: date
+                )
+            }
+            .sorted {
+                $0.effectiveFrom
+                    < $1.effectiveFrom
+            }
+    }
+
+    func plannedRevisions(
+        compoundID: UUID,
+        after date: Date = .now
+    ) -> [ScheduleRevision] {
+        revisions
+            .filter {
+                $0.compoundID
+                    == compoundID
+                && $0.isPlanned(
+                    after: date
+                )
+            }
+            .sorted {
+                $0.effectiveFrom
+                    < $1.effectiveFrom
+            }
+    }
+
+    func vial(
+        _ id: UUID?
+    ) -> VialRecord? {
+        vials.first {
+            $0.id == id
+        }
+    }
     func perform(_ operation: () throws -> Void) -> Bool {
         do { try operation(); refresh(); resyncReminders(); return true }
         catch { self.error = (error as? TrackingError)?.errorDescription ?? "Changes could not be saved. Please try again."; refresh(); return false }
     }
-    func saveProtocol(_ draft: ProtocolDraft, protocolID: UUID?, compoundID: UUID?) -> Bool {
-        guard protocolID.map(canEdit) ?? canCreateProtocol else { pendingPaywall = .secondProtocol; return false }
-        return perform { try repository.saveProtocol(draft, protocolID: protocolID, compoundID: compoundID) }
+    func saveProtocol(
+        _ draft: ProtocolDraft,
+        protocolID: UUID?,
+        compoundID: UUID?
+    ) -> Bool {
+        guard
+            protocolID.map(canEdit)
+                ?? canCreateProtocol
+        else {
+            pendingPaywall = .secondProtocol
+            return false
+        }
+
+        return perform {
+            try repository.saveProtocol(
+                draft,
+                protocolID:
+                    protocolID,
+                compoundID:
+                    compoundID
+            )
+        }
     }
-    func saveVial(_ draft: VialDraft, id: UUID?) -> Bool { perform { try repository.saveVial(draft, id: id) } }
+
+    func savePlannedProtocolChange(
+        _ draft: ProtocolDraft,
+        protocolID: UUID,
+        compoundID: UUID,
+        plannedRevisionID: UUID?,
+        effectiveFrom: Date
+    ) -> Bool {
+        guard canEdit(protocolID) else {
+            error =
+                "Choose this protocol for tracking or restore Pro before editing it."
+            return false
+        }
+
+        return perform {
+            try repository
+                .savePlannedProtocolChange(
+                    draft,
+                    protocolID:
+                        protocolID,
+                    compoundID:
+                        compoundID,
+                    plannedRevisionID:
+                        plannedRevisionID,
+                    effectiveFrom:
+                        effectiveFrom
+                )
+        }
+    }
+
+    func cancelPlannedRevision(
+        _ revision: ScheduleRevision
+    ) -> Bool {
+        guard
+            canEdit(revision.protocolID)
+        else {
+            error =
+                "Choose this protocol for tracking or restore Pro before editing it."
+            return false
+        }
+
+        return perform {
+            try repository
+                .cancelPlannedRevision(
+                    revision.id
+                )
+        }
+    }
+
+    func saveCompoundHalfLife(
+        _ compound: CompoundRecord,
+        hoursText: String,
+        source: String
+    ) -> Bool {
+        guard
+            canEdit(
+                compound.protocolID
+            )
+        else {
+            error =
+                "Choose this protocol for tracking or restore Pro before editing it."
+            return false
+        }
+
+        return perform {
+            try repository
+                .saveCompoundHalfLife(
+                    compoundID:
+                        compound.id,
+                    hoursText:
+                        hoursText,
+                    source: source
+                )
+        }
+    }
+
+
+    func saveVial(
+        _ draft: VialDraft,
+        id: UUID?
+    ) -> Bool {
+        perform {
+            try repository.saveVial(
+                draft,
+                id: id
+            )
+        }
+    }
     func saveDose(_ draft: DoseDraft, revision: ScheduleRevision?, occurrence: ScheduledEntry?, correcting: DoseLog?) -> Bool {
         guard let id = correcting?.protocolID ?? revision?.protocolID, correcting == nil ? canTrack(id) : canEdit(id) else { error = "This protocol is read-only on Free. Choose it for tracking or restore Pro."; return false }
         return perform { try repository.saveDose(draft, revision: revision, occurrence: occurrence, correcting: correcting) }
@@ -154,21 +505,56 @@ import Observation
         guard canEdit(record.id) else { error = "Choose this protocol for tracking or restore Pro before editing it."; return }
         _ = perform { try repository.changeStatus(record, to: status) }
     }
-    func archiveVial(_ vial: VialRecord) {
-        _ = perform { try repository.transaction {
-            let before = vial.isArchived ? "Archived" : "Active"
-            vial.isArchived.toggle()
-            let event = ProtocolEvent(protocolID: nil, title: "Vial status changed", detail: "")
-            try event.recordChanges([RecordChange(field: "Status", before: before, after: vial.isArchived ? "Archived" : "Active")], category: "Vial")
-            repository.context.insert(event)
-        } }
+    func archiveVial(
+        _ vial: VialRecord
+    ) {
+        _ = perform {
+            try repository.transaction {
+                let before =
+                    vial.lifecycleState
+                        .rawValue
+
+                vial.lifecycleState =
+                    vial.lifecycleState
+                        == .archived
+                    ? .active
+                    : .archived
+
+                let event =
+                    ProtocolEvent(
+                        protocolID: nil,
+                        title:
+                            "Vial status changed",
+                        detail: ""
+                    )
+
+                try event.recordChanges(
+                    [
+                        RecordChange(
+                            field: "State",
+                            before: before,
+                            after:
+                                vial.lifecycleState
+                                    .rawValue
+                        )
+                    ],
+                    category: "Vial"
+                )
+                repository.context.insert(event)
+            }
+        }
     }
     func completeOnboarding() {
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.disclaimerAccepted = true; prefs.onboarded = true } }
     }
     func setAISharing(_ enabled: Bool) { _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.aiSharing = enabled } } }
-    func requestPaywall(_ reason: PaywallReason) { pendingPaywall = reason }
-    func dismissPaywall() { pendingPaywall = nil }
+    func requestPaywall(_ reason: PaywallReason) {
+        pendingPaywall = reason
+    }
+
+    func dismissPaywall() {
+        pendingPaywall = nil
+    }
     func visitSummaryURL(protocolID: UUID? = nil, period: AnalysisPeriod? = nil) throws -> URL {
         guard isPremium else { throw TrackingError.invalidInput("Visit Summary requires Pro.") }
         let selectedProtocols = protocols.filter { protocolID == nil || $0.id == protocolID }
@@ -179,11 +565,92 @@ import Observation
 
     func clearData() { _ = perform { try repository.clear() } }
     func resyncReminders() {
-        guard !isDemo else { return }
+        guard !isDemo else {
+            return
+        }
+
         let now = Date()
-        let end = Calendar.current.date(byAdding: .day, value: 90, to: now) ?? now
-        let upcoming = entries(start: now, end: end).filter { $0.revision.reminders && $0.log == nil && canTrack($0.revision.protocolID) }
-        notifications.update(upcoming)
+        let end =
+            Calendar.current.date(
+                byAdding: .day,
+                value: 90,
+                to: now
+            ) ?? now
+
+        let scheduled =
+            entries(
+                start: now,
+                end: end
+            )
+            .filter {
+                $0.revision.reminders
+                && $0.log == nil
+                && canTrack(
+                    $0.revision.protocolID
+                )
+            }
+            .map {
+                ReminderPlanner.Candidate(
+                    id: $0.id,
+                    at: $0.at
+                )
+            }
+
+        let cycleRestarts =
+            revisions.compactMap {
+                revision
+                    -> ReminderPlanner.Candidate?
+                in
+
+                guard
+                    revision.enabled,
+                    revision.reminders,
+                    revision.intersects(
+                        start: now,
+                        end: end
+                    ),
+                    canTrack(
+                        revision.protocolID
+                    ),
+                    let config =
+                        revision.config,
+                    config.hasCycle,
+                    let restart =
+                        CycleDisplay
+                            .nextRestart(
+                                config,
+                                after: now
+                            ),
+                    restart <= end
+                else {
+                    return nil
+                }
+
+                return ReminderPlanner
+                    .Candidate(
+                        id:
+                            "cycle-restart:"
+                            + revision.id
+                                .uuidString
+                            + ":"
+                            + String(
+                                Int(
+                                    restart
+                                        .timeIntervalSince1970
+                                )
+                            ),
+                        at: restart,
+                        title:
+                            "Protocola · cycle restart",
+                        body:
+                            "A recorded cycle is scheduled to resume. Open Protocola to review it."
+                    )
+            }
+
+        notifications.update(
+            scheduled
+            + cycleRestarts
+        )
     }
     func enterDemo() {
         do {

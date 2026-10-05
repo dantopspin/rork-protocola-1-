@@ -104,17 +104,13 @@ struct InsightsView: View {
 private extension InsightsView {
 
     var emptyProtocolState: some View {
-        ContentUnavailableView {
-            Label(
-                "No protocol yet",
-                systemImage: "chart.xyaxis.line"
-            )
-        } description: {
-            Text(
+        TrackingEmptyState(
+            icon: "chart.xyaxis.line",
+            title: "No protocol yet",
+            message:
                 "Add a protocol first. Insights are built from your recorded entries and changes."
-            )
-            .font(Theme.body)
-        }
+        )
+        .screenPadding()
         .frame(
             maxWidth: .infinity,
             maxHeight: .infinity
@@ -176,6 +172,8 @@ private extension InsightsView {
                     if let latest {
                         changeContext(latest)
                     }
+
+                    estimatedLevelsEntry
 
                     if !summary.sites.isEmpty {
                         sitesCard(summary)
@@ -250,18 +248,24 @@ private extension InsightsView {
                     Theme.muted
                 )
             }
-            .padding(Theme.spaceM)
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius:
-                        Theme.radiusRow
-                )
+            .padding(
+                .vertical,
+                Theme.spaceS
             )
-            .inkBorder(
-                cornerRadius:
-                    Theme.radiusRow
-            )
+            .overlay(
+                alignment: .top
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
         }
         .buttonStyle(.plain)
     }
@@ -274,7 +278,7 @@ private extension InsightsView {
             message:
                 "Record entries from Today. Consistency, changes, sites, and observations will appear as your history grows."
         )
-        .frame(minHeight: 260)
+        .frame(minHeight: Theme.emptyStateMinHeight)
     }
 }
 
@@ -338,9 +342,7 @@ private extension InsightsView {
                     alignment: .leading,
                     spacing: Theme.spaceXXS
                 ) {
-                    Text("Consistency")
-                        .font(Theme.label)
-                        .foregroundStyle(Theme.ink)
+                    Eyebrow(text: "Consistency")
 
                     Text(summary.percentage)
                         .font(Theme.metric)
@@ -396,7 +398,7 @@ private extension InsightsView {
                     Theme.teal
                 )
             }
-            .frame(height: 145)
+            .frame(height: Theme.chartHeight)
             .chartYAxis(.hidden)
             .chartXAxis {
                 AxisMarks(
@@ -425,18 +427,24 @@ private extension InsightsView {
                 }
             }
         }
-        .padding(Theme.spaceM)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
+        .padding(
+            .vertical,
+            Theme.spaceM
         )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 
 
@@ -447,9 +455,7 @@ private extension InsightsView {
             alignment: .leading,
             spacing: Theme.spaceXS
         ) {
-            Text("Recorded entries")
-                .font(Theme.label)
-                .foregroundStyle(Theme.ink)
+            Eyebrow(text: "Recorded entries")
 
             Text(String(periodLogs.count))
                 .font(Theme.metric)
@@ -462,22 +468,28 @@ private extension InsightsView {
             .font(Theme.caption)
             .foregroundStyle(Theme.muted)
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 
 
@@ -490,7 +502,8 @@ private extension InsightsView {
             }.count
 
         return HStack(
-            spacing: Theme.spaceXS
+            alignment: .top,
+            spacing: Theme.spaceM
         ) {
             statTile(
                 value:
@@ -499,11 +512,27 @@ private extension InsightsView {
                 dot: Theme.teal
             )
 
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    width: Theme.ruleThickness,
+                    height:
+                        Theme.compactMetricTileHeight
+                )
+
             statTile(
                 value: String(skipped),
                 label: "Skipped",
                 dot: Theme.muted
             )
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    width: Theme.ruleThickness,
+                    height:
+                        Theme.compactMetricTileHeight
+                )
 
             statTile(
                 value:
@@ -513,6 +542,20 @@ private extension InsightsView {
                 label: "Sites",
                 dot: Theme.line
             )
+        }
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -527,13 +570,7 @@ private extension InsightsView {
             spacing: Theme.spaceXS
         ) {
             Text(value)
-                .font(
-                    .system(
-                        size: 26,
-                        weight: .medium,
-                        design: .serif
-                    )
-                )
+                .font(Theme.metricCompact)
                 .monospacedDigit()
                 .foregroundStyle(Theme.ink)
 
@@ -541,8 +578,8 @@ private extension InsightsView {
                 Circle()
                     .fill(dot)
                     .frame(
-                        width: 6,
-                        height: 6
+                        width: Theme.statusDot,
+                        height: Theme.statusDot
                     )
 
                 Text(label)
@@ -552,22 +589,15 @@ private extension InsightsView {
                     )
             }
         }
-        .padding(Theme.spaceM)
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
         .frame(
             maxWidth: .infinity,
-            minHeight: 92,
+            minHeight:
+                Theme.compactMetricTileHeight,
             alignment: .leading
-        )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusRow
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusRow
         )
     }
 }
@@ -597,7 +627,7 @@ private extension InsightsView {
                 )
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Color.white.opacity(0.76)
+                    Theme.onDarkPrimary.opacity(0.76)
                 )
 
                 VStack(
@@ -607,14 +637,14 @@ private extension InsightsView {
                     Text("Since last change")
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Color.white.opacity(0.58)
+                            Theme.onDarkPrimary.opacity(0.58)
                         )
 
                     Text(
                         changeSummary(change)
                     )
                     .font(Theme.sectionTitle)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onDarkPrimary)
                     .lineLimit(2)
 
                     Text(
@@ -625,7 +655,7 @@ private extension InsightsView {
                     )
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Color.white.opacity(0.58)
+                        Theme.onDarkPrimary.opacity(0.58)
                     )
                 }
 
@@ -636,7 +666,7 @@ private extension InsightsView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Color.white.opacity(0.52)
+                    Theme.onDarkPrimary.opacity(0.52)
                 )
             }
             .padding(Theme.spaceM)
@@ -645,7 +675,7 @@ private extension InsightsView {
                 alignment: .leading
             )
             .background(
-                Theme.ink,
+                Theme.darkSurface,
                 in: .rect(
                     cornerRadius:
                         Theme.radiusCard
@@ -693,6 +723,106 @@ private extension InsightsView {
         }
 
         return change.detail
+    }
+}
+
+
+// MARK: - Estimated levels entry
+
+private extension InsightsView {
+
+    @ViewBuilder
+    var estimatedLevelsEntry:
+        some View {
+        if let selected {
+            if store.isPremium {
+                NavigationLink {
+                    EstimatedLevelsView(
+                        protocolID:
+                            selected.id
+                    )
+                } label: {
+                    estimatedLevelsLabel
+                }
+                .buttonStyle(.plain)
+
+            } else {
+                Button {
+                    store.requestPaywall(.levels)
+                } label: {
+                    estimatedLevelsLabel
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+
+    var estimatedLevelsLabel:
+        some View {
+        HStack(
+            spacing: Theme.spaceM
+        ) {
+            Image(
+                systemName:
+                    "waveform.path.ecg"
+            )
+            .font(Theme.sectionTitle)
+            .foregroundStyle(
+                Theme.teal
+            )
+
+            VStack(
+                alignment: .leading,
+                spacing:
+                    Theme.spaceXXS
+            ) {
+                Text("Estimated levels")
+                    .font(
+                        Theme.sectionTitle
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+
+                Text(
+                    "Half-life model from actual recorded doses"
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
+            }
+
+            Spacer()
+
+            Image(
+                systemName:
+                    "chevron.right"
+            )
+            .font(Theme.micro)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
+        .overlay(
+            alignment: .top
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 }
 
@@ -756,8 +886,8 @@ private extension InsightsView {
                                 )
                             )
                             .frame(
-                                width: 8,
-                                height: 8
+                                width: Theme.siteDot,
+                                height: Theme.siteDot
                             )
 
                         Text(site.name)
@@ -1166,6 +1296,554 @@ private struct ComparisonCard: View {
                             )
                     }
             )
+        }
+    }
+}
+
+
+
+// MARK: - Estimated level detail
+
+struct EstimatedLevelsView: View {
+    let protocolID: UUID
+
+    @Environment(TrackingStore.self)
+    private var store
+
+    @State
+    private var window = 30
+
+    @State
+    private var editingCompound:
+        CompoundRecord?
+
+    private var period:
+        AnalysisPeriod {
+        let now = Date.now
+        let start =
+            Calendar.current.date(
+                byAdding: .day,
+                value:
+                    -(window - 1),
+                to:
+                    Calendar.current
+                        .startOfDay(
+                            for: now
+                        )
+            ) ?? now
+
+        return AnalysisPeriod(
+            start: start,
+            end: now
+        )
+    }
+
+    private var overview:
+        EstimatedLevelOverview {
+        EstimatedLevelOverview(
+            store: store,
+            protocolID: protocolID,
+            period: period
+        )
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXL
+            ) {
+                Picker(
+                    "Period",
+                    selection: $window
+                ) {
+                    Text("7D").tag(7)
+                    Text("30D").tag(30)
+                    Text("90D").tag(90)
+                }
+                .pickerStyle(.segmented)
+                .tint(Theme.ink)
+
+                modelExplanation
+
+                if overview.series.count
+                    > 1 {
+                    multiCompoundOverview
+                }
+
+                ForEach(
+                    overview.series
+                ) { series in
+                    compoundCard(series)
+                }
+
+                if !overview
+                    .missingReference
+                    .isEmpty {
+                    missingReferenceCard
+                }
+
+                if overview.series.isEmpty,
+                   overview
+                    .missingReference
+                    .isEmpty {
+                    TrackingEmptyState(
+                        icon:
+                            "waveform.path.ecg",
+                        title:
+                            "No compounds to model",
+                        message:
+                            "Add a compound to this protocol first."
+                    )
+                }
+            }
+            .screenPadding()
+            .padding(
+                .bottom,
+                Theme.spaceXL
+                + Theme.spaceL
+            )
+        }
+        .scrollIndicators(.hidden)
+        .background(Theme.paper)
+        .navigationTitle(
+            "Estimated levels"
+        )
+        .navigationBarTitleDisplayMode(
+            .inline
+        )
+        .sheet(
+            item: $editingCompound
+        ) { compound in
+            CompoundHalfLifeEditorView(
+                compound: compound
+            )
+        }
+    }
+}
+
+
+private extension EstimatedLevelsView {
+
+    var modelExplanation:
+        some View {
+        TrackingCard {
+            Text("Model assumptions")
+                .font(
+                    Theme.sectionTitle
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            Text(
+                "Each curve uses simple exponential decay from actual recorded doses and the reference half-life you enter. It is not a measured blood concentration, exposure, efficacy, or safety estimate."
+            )
+            .font(Theme.body)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+
+    var multiCompoundOverview:
+        some View {
+        TrackingCard {
+            Text("Current estimates")
+                .font(
+                    Theme.sectionTitle
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            ForEach(
+                overview.series
+            ) { series in
+                RecordRow(
+                    label:
+                        series
+                            .compoundName,
+                    value:
+                        series.currentText
+                )
+            }
+
+            Text(
+                "Values are compound-specific remaining-amount estimates and should not be compared as equivalent biological effect."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+
+    func compoundCard(
+        _ series:
+            EstimatedLevelOverview.Series
+    ) -> some View {
+        TrackingCard {
+            HStack(
+                alignment:
+                    .firstTextBaseline,
+                spacing: Theme.spaceS
+            ) {
+                VStack(
+                    alignment: .leading,
+                    spacing:
+                        Theme.spaceXXS
+                ) {
+                    Text(
+                        series.compoundName
+                    )
+                    .font(
+                        Theme.sectionTitle
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+
+                    Text(
+                        "Half-life input · "
+                        + series
+                            .halfLifeText
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                }
+
+                Spacer()
+
+                Button("Edit reference") {
+                    editingCompound =
+                        store.compounds
+                            .first {
+                                $0.id
+                                    == series
+                                        .compoundID
+                            }
+                }
+                .font(Theme.label)
+            }
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text("Estimated remaining")
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+
+                Text(series.currentText)
+                    .font(
+                        Theme.metricLarge
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .monospacedDigit()
+            }
+
+            Chart {
+                ForEach(
+                    series.samples
+                ) { sample in
+                    LineMark(
+                        x: .value(
+                            "Time",
+                            sample.at
+                        ),
+                        y: .value(
+                            "Estimated remaining",
+                            sample
+                                .estimatedMg
+                        )
+                    )
+                    .foregroundStyle(
+                        Theme.teal
+                    )
+                }
+
+                ForEach(
+                    series.revisionDates,
+                    id: \.self
+                ) { date in
+                    RuleMark(
+                        x: .value(
+                            "Protocol change",
+                            date
+                        )
+                    )
+                    .foregroundStyle(
+                        Theme.hairline
+                    )
+                }
+            }
+            .frame(
+                height:
+                    Theme.chartHeight
+            )
+            .chartYAxis(.hidden)
+            .chartXAxis {
+                AxisMarks(
+                    values:
+                        .automatic(
+                            desiredCount: 4
+                        )
+                ) { value in
+                    AxisGridLine()
+                        .foregroundStyle(
+                            Theme.line
+                        )
+
+                    AxisValueLabel(
+                        format:
+                            .dateTime
+                                .month(
+                                    .abbreviated
+                                )
+                                .day()
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                }
+            }
+
+            if let source =
+                series.source,
+               !source.isEmpty {
+                RecordRow(
+                    label:
+                        "Reference source",
+                    value: source
+                )
+            }
+
+            if series
+                .unsupportedLogCount > 0 {
+                Text(
+                    String(
+                        series
+                            .unsupportedLogCount
+                    )
+                    + " recorded "
+                    + (
+                        series
+                            .unsupportedLogCount
+                            == 1
+                        ? "entry could"
+                        : "entries could"
+                    )
+                    + " not be converted to mass because no concentration snapshot was available."
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.amber
+                )
+            }
+
+            Text(
+                "Vertical markers show effective protocol-revision dates. The curve itself uses recorded doses, so corrected or changed doses alter the model automatically."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+
+    var missingReferenceCard:
+        some View {
+        TrackingCard {
+            Text("Add half-life reference")
+                .font(
+                    Theme.sectionTitle
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+
+            Text(
+                "Protocola does not guess a pharmacokinetic half-life. Record a reference value and optional source for each compound you want to model."
+            )
+            .font(Theme.body)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+
+            ForEach(
+                overview
+                    .missingReference
+            ) { compound in
+                Button {
+                    editingCompound =
+                        compound
+                } label: {
+                    HStack(
+                        spacing:
+                            Theme.spaceS
+                    ) {
+                        Text(
+                            compound.name
+                        )
+                        .font(
+                            Theme.body
+                        )
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                        Spacer()
+
+                        Text("Set reference")
+                            .font(
+                                Theme.label
+                            )
+                            .foregroundStyle(
+                                Theme.teal
+                            )
+                    }
+                    .contentShape(
+                        Rectangle()
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+
+struct CompoundHalfLifeEditorView:
+    View {
+    let compound: CompoundRecord
+
+    @Environment(TrackingStore.self)
+    private var store
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State
+    private var hoursText: String
+
+    @State
+    private var source: String
+
+    init(
+        compound: CompoundRecord
+    ) {
+        self.compound = compound
+        _hoursText =
+            State(
+                initialValue:
+                    compound
+                        .referenceHalfLifeHoursText
+                    ?? ""
+            )
+        _source =
+            State(
+                initialValue:
+                    compound
+                        .referenceHalfLifeSource
+                    ?? ""
+            )
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(
+                        "Half-life (hours)",
+                        text: $hoursText
+                    )
+                    .keyboardType(
+                        .decimalPad
+                    )
+
+                    TextField(
+                        "Reference source (optional)",
+                        text: $source,
+                        axis: .vertical
+                    )
+
+                } header: {
+                    Text(
+                        compound.name
+                    )
+
+                } footer: {
+                    Text(
+                        "Enter a half-life from a source you trust. This value powers a mathematical decay model only; Protocola does not infer a clinical half-life or recommend treatment."
+                    )
+                }
+
+                if compound
+                    .referenceHalfLifeHours
+                    != nil {
+                    Section {
+                        Button(
+                            "Clear reference",
+                            role: .destructive
+                        ) {
+                            hoursText = ""
+                            source = ""
+                            save()
+                        }
+                    }
+                }
+            }
+            .paperList()
+            .doneKeyboard()
+            .navigationTitle(
+                "Level reference"
+            )
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+            .toolbar {
+                ToolbarItem(
+                    placement:
+                        .cancellationAction
+                ) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(
+                    placement:
+                        .confirmationAction
+                ) {
+                    Button("Save") {
+                        save()
+                    }
+                }
+            }
+            .trackingErrors()
+        }
+    }
+
+
+    private func save() {
+        if store
+            .saveCompoundHalfLife(
+                compound,
+                hoursText:
+                    hoursText,
+                source: source
+            ) {
+            dismiss()
         }
     }
 }

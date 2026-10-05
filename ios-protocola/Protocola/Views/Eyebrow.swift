@@ -5,11 +5,14 @@ struct Eyebrow: View {
     var onDark: Bool = false
 
     var body: some View {
-        Text(text)
+        Text(text.uppercased())
             .font(Theme.micro)
+            .tracking(
+                Theme.eyebrowTracking
+            )
             .foregroundStyle(
                 onDark
-                    ? Color.white.opacity(0.58)
+                    ? Theme.onDarkSecondary
                     : Theme.muted
             )
     }

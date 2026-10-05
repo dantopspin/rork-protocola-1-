@@ -15,6 +15,7 @@ struct HistoryView: View {
         ) ?? .now
     @State private var to = Date.now
     @State private var summary = false
+    @State private var siteHistory = false
     @State private var filtersPresented = false
 
     init(protocolID: UUID? = nil) {
@@ -22,6 +23,18 @@ struct HistoryView: View {
             State(
                 initialValue: protocolID
             )
+    }
+
+    private var injectionSiteLogs: [DoseLog] {
+        store.logs.filter {
+            $0.route.usesInjectionSite
+            && $0.status != "Skipped"
+            && !$0.site
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty
+        }
     }
 
     private var records: [TimelineRecord] {
@@ -143,19 +156,15 @@ struct HistoryView: View {
 
             if groupedDays.isEmpty {
                 Section {
-                    ContentUnavailableView {
-                        Label(
-                            "No records to show",
-                            systemImage:
-                                "clock.arrow.circlepath"
-                        )
-                    } description: {
-                        Text(
+                    TrackingEmptyState(
+                        icon:
+                            "clock.arrow.circlepath",
+                        title: "No records to show",
+                        message:
                             hasActiveFilters
-                                ? "Try changing your filters or search."
-                                : "Recorded entries and protocol changes appear here."
-                        )
-                    }
+                            ? "Try changing your filters or search."
+                            : "Recorded entries and protocol changes appear here."
+                    )
                 }
             } else {
                 ForEach(groupedDays) { day in
@@ -165,16 +174,16 @@ struct HistoryView: View {
                             recordLink(record)
                         }
                     } header: {
-                        Text(dayTitle(day.date))
-                            .font(Theme.sectionTitle)
-                            .foregroundStyle(Theme.ink)
-                            .textCase(nil)
+                        Eyebrow(
+                            text: dayTitle(day.date)
+                        )
                     }
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .paperList()
+        .scrollContentBackground(.hidden)
         .navigationTitle("History")
         .searchable(
             text: $search,
@@ -192,6 +201,18 @@ struct HistoryView: View {
                         systemImage:
                             "line.3.horizontal.decrease"
                     )
+                }
+
+                if !injectionSiteLogs.isEmpty {
+                    Button {
+                        siteHistory = true
+                    } label: {
+                        Label(
+                            "Injection site history",
+                            systemImage:
+                                "figure.stand"
+                        )
+                    }
                 }
 
                 Button {
@@ -226,6 +247,13 @@ struct HistoryView: View {
         }
         .sheet(isPresented: $summary) {
             VisitSummaryView()
+        }
+        .sheet(
+            isPresented: $siteHistory
+        ) {
+            InjectionSiteHistoryView(
+                logs: injectionSiteLogs
+            )
         }
         .trackingRoutes()
         .trackingErrors()
@@ -296,7 +324,7 @@ private extension HistoryView {
         .font(Theme.label)
         .foregroundStyle(
             selected
-                ? Color.white
+                ? Theme.onDarkPrimary
                 : Theme.ink
         )
         .padding(
@@ -309,17 +337,23 @@ private extension HistoryView {
         )
         .background(
             selected
-                ? Theme.ink
+                ? Theme.teal
                 : Theme.surface,
-            in: .capsule
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusBadge
+            )
         )
         .overlay {
             if !selected {
-                Capsule()
-                    .stroke(
-                        Theme.border,
-                        lineWidth: 1
-                    )
+                RoundedRectangle(
+                    cornerRadius:
+                        Theme.radiusBadge
+                )
+                .stroke(
+                    Theme.border,
+                    lineWidth: 1
+                )
             }
         }
         .buttonStyle(.plain)
@@ -868,8 +902,8 @@ private struct TimelineRow: View {
                 .font(Theme.label)
                 .foregroundStyle(tint)
                 .frame(
-                    width: 24,
-                    height: 24
+                    width: Theme.iconColumn,
+                    height: Theme.iconColumn
                 )
 
             VStack(
@@ -883,7 +917,7 @@ private struct TimelineRow: View {
 
                 Text(detail)
                     .font(Theme.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                     .lineLimit(2)
             }
 
@@ -898,12 +932,12 @@ private struct TimelineRow: View {
                 )
             )
             .font(Theme.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.textSecondary)
             .monospacedDigit()
         }
         .padding(
             .vertical,
-            Theme.spaceXXS
+            Theme.spaceS
         )
     }
 }

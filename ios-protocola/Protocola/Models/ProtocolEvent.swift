@@ -17,7 +17,30 @@ import SwiftData
         return "Protocol"
     }
     var isChangeAnchor: Bool {
-        category == "Protocol" && (changes.contains(where: \.isMeaningful) || (changesData == nil && title != "Protocol created"))
+        let planningOnlyTitles =
+            Set(
+                [
+                    "Future change planned",
+                    "Planned change updated",
+                    "Planned change cancelled"
+                ]
+            )
+
+        return
+            category == "Protocol"
+            && !planningOnlyTitles
+                .contains(title)
+            && (
+                changes.contains(
+                    where:
+                        \.isMeaningful
+                )
+                || (
+                    changesData == nil
+                    && title
+                        != "Protocol created"
+                )
+            )
     }
     var showsInTimeline: Bool { category != "Metadata" }
     func recordChanges(_ values: [RecordChange], category: String) throws {

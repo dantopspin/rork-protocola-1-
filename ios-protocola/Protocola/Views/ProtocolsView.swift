@@ -1,19 +1,22 @@
 import SwiftUI
 
 struct ProtocolsView: View {
-    @Environment(TrackingStore.self) private var store
+    @Environment(TrackingStore.self)
+    private var store
 
     @State private var create = false
     @State private var choice = false
     @State private var calculator = false
 
-    private var activeProtocols: [ProtocolRecord] {
+    private var activeProtocols:
+        [ProtocolRecord] {
         store.protocols.filter {
             $0.status == "Active"
         }
     }
 
-    private var otherProtocols: [ProtocolRecord] {
+    private var otherProtocols:
+        [ProtocolRecord] {
         store.protocols.filter {
             $0.status != "Active"
         }
@@ -44,8 +47,9 @@ struct ProtocolsView: View {
                 } else {
                     if !activeProtocols.isEmpty {
                         protocolSection(
-                            title: "Active",
-                            records: activeProtocols,
+                            title: "Active protocols",
+                            records:
+                                activeProtocols,
                             featured: true
                         )
                     }
@@ -53,7 +57,8 @@ struct ProtocolsView: View {
                     if !otherProtocols.isEmpty {
                         protocolSection(
                             title: "Other protocols",
-                            records: otherProtocols,
+                            records:
+                                otherProtocols,
                             featured: false
                         )
                     }
@@ -73,7 +78,8 @@ struct ProtocolsView: View {
         .navigationTitle("Protocols")
         .toolbar {
             ToolbarItem(
-                placement: .topBarTrailing
+                placement:
+                    .topBarTrailing
             ) {
                 Button(
                     "Add protocol",
@@ -82,7 +88,9 @@ struct ProtocolsView: View {
                     if store.canCreateProtocol {
                         create = true
                     } else {
-                        store.requestPaywall(.secondProtocol)
+                        store.requestPaywall(
+                            .secondProtocol
+                        )
                     }
                 }
             }
@@ -102,8 +110,6 @@ struct ProtocolsView: View {
 }
 
 
-// MARK: - Sections
-
 private extension ProtocolsView {
 
     var freeChoiceCallout: some View {
@@ -113,21 +119,23 @@ private extension ProtocolsView {
             HStack(
                 spacing: Theme.spaceS
             ) {
-                Image(
-                    systemName:
-                        "checkmark.circle"
-                )
-                .foregroundStyle(
-                    Theme.muted
-                )
+                VStack(
+                    alignment: .leading,
+                    spacing:
+                        Theme.spaceXXS
+                ) {
+                    Eyebrow(
+                        text: "Free tracking"
+                    )
 
-                Text(
-                    "Choose protocol to track on Free"
-                )
-                .font(Theme.label)
-                .foregroundStyle(
-                    Theme.ink
-                )
+                    Text(
+                        "Choose the protocol you want active on Free"
+                    )
+                    .font(Theme.label)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                }
 
                 Spacer()
 
@@ -140,20 +148,19 @@ private extension ProtocolsView {
                     Theme.muted
                 )
             }
-            .padding(Theme.spaceM)
+            .padding(
+                .vertical,
+                Theme.spaceS
+            )
         }
         .buttonStyle(.plain)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusRow
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusRow
-        )
+        .overlay(
+            alignment: .bottom
+        ) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
     }
 
 
@@ -166,15 +173,9 @@ private extension ProtocolsView {
             alignment: .leading,
             spacing: Theme.spaceS
         ) {
-            Text(title)
-                .font(Theme.sectionTitle)
-                .foregroundStyle(
-                    Theme.ink
-                )
+            Eyebrow(text: title)
 
-            VStack(
-                spacing: Theme.spaceXS
-            ) {
+            VStack(spacing: 0) {
                 ForEach(
                     Array(
                         records.enumerated()
@@ -188,7 +189,7 @@ private extension ProtocolsView {
                                     record.id
                                 )
                     ) {
-                        protocolCard(
+                        protocolRow(
                             record,
                             emphasized:
                                 featured
@@ -196,13 +197,36 @@ private extension ProtocolsView {
                         )
                     }
                     .buttonStyle(.plain)
+
+                    if index
+                        < records.count - 1 {
+                        Rectangle()
+                            .fill(
+                                Theme.hairline
+                            )
+                            .frame(height: Theme.ruleThickness)
+                    }
                 }
+            }
+            .overlay(
+                alignment: .top
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
             }
         }
     }
 
 
-    func protocolCard(
+    func protocolRow(
         _ record: ProtocolRecord,
         emphasized: Bool
     ) -> some View {
@@ -210,24 +234,32 @@ private extension ProtocolsView {
             store.currentRevisions(
                 record.id
             )
-
         let primary =
             revisions.first
 
         return VStack(
             alignment: .leading,
-            spacing: Theme.spaceM
+            spacing:
+                emphasized
+                ? Theme.spaceM
+                : Theme.spaceS
         ) {
             HStack(
-                alignment: .top,
+                alignment:
+                    .firstTextBaseline,
                 spacing: Theme.spaceS
             ) {
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceXXS
+                    spacing:
+                        Theme.spaceXXS
                 ) {
                     Text(record.name)
-                        .font(Theme.sectionTitle)
+                        .font(
+                            emphasized
+                            ? Theme.modalTitle
+                            : Theme.sectionTitle
+                        )
                         .foregroundStyle(
                             Theme.ink
                         )
@@ -252,7 +284,8 @@ private extension ProtocolsView {
 
                 StatusBadge(
                     text:
-                        record.status == "Active"
+                        record.status
+                            == "Active"
                         ? (
                             store.canTrack(
                                 record.id
@@ -284,29 +317,31 @@ private extension ProtocolsView {
                 .foregroundStyle(
                     Theme.muted
                 )
+
+                if let config =
+                    primary.config,
+                   let cycle =
+                    CycleDisplay.status(
+                        config
+                    ) {
+                    Text(cycle)
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                }
             }
 
             if emphasized {
-                Divider()
-
                 HStack(
-                    spacing: Theme.spaceXL
+                    spacing:
+                        Theme.spaceXXL
                 ) {
-                    VStack(
-                        alignment: .leading,
-                        spacing:
-                            Theme.spaceXXS
-                    ) {
-                        Text("Next entry")
-                            .font(Theme.caption)
-                            .foregroundStyle(
-                                Theme.muted
-                            )
-
-                        Text(
+                    editorialMetric(
+                        label: "Next entry",
+                        value:
                             nextEntry(
-                                for:
-                                    record.id
+                                for: record.id
                             )?
                             .at
                             .formatted(
@@ -316,61 +351,45 @@ private extension ProtocolsView {
                                     .shortened
                             )
                             ?? "Not scheduled"
-                        )
-                        .font(Theme.label)
-                        .foregroundStyle(
-                            Theme.ink
-                        )
-                        .monospacedDigit()
-                    }
+                    )
 
-                    VStack(
-                        alignment: .leading,
-                        spacing:
-                            Theme.spaceXXS
-                    ) {
-                        Text("Compounds")
-                            .font(Theme.caption)
-                            .foregroundStyle(
-                                Theme.muted
-                            )
-
-                        Text(
+                    editorialMetric(
+                        label: "Compounds",
+                        value:
                             String(
                                 revisions.count
                             )
-                        )
-                        .font(Theme.label)
-                        .foregroundStyle(
-                            Theme.ink
-                        )
-                        .monospacedDigit()
-                    }
+                    )
                 }
             }
         }
         .padding(
+            .vertical,
             emphasized
                 ? Theme.spaceM
-                : Theme.spaceM
+                : Theme.spaceS
         )
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
-        )
-        .background(
-            emphasized
-                ? Theme.neutralTint
-                : Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        .contentShape(Rectangle())
+    }
+
+
+    func editorialMetric(
+        label: String,
+        value: String
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXXS
+        ) {
+            Eyebrow(text: label)
+
+            Text(value)
+                .font(Theme.label)
+                .foregroundStyle(
+                    Theme.ink
+                )
+                .monospacedDigit()
+        }
     }
 
 
@@ -379,79 +398,66 @@ private extension ProtocolsView {
             alignment: .leading,
             spacing: Theme.spaceS
         ) {
-            Text("Tools")
-                .font(Theme.sectionTitle)
-                .foregroundStyle(
-                    Theme.ink
-                )
+            Eyebrow(text: "Tools")
 
             VStack(spacing: 0) {
                 NavigationLink {
                     InventoryView()
                 } label: {
                     toolRow(
-                        icon: "shippingbox",
-                        title: "Vial inventory",
-                        detail: inventorySummary
+                        title:
+                            "Vial inventory",
+                        detail:
+                            inventorySummary
                     )
                 }
                 .buttonStyle(.plain)
 
-                Divider()
-                    .padding(
-                        .leading,
-                        48
-                    )
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
 
                 Button {
                     calculator = true
                 } label: {
                     toolRow(
-                        icon: "function",
-                        title: "Calculator",
+                        title:
+                            "Calculator",
                         detail:
                             "Dose · Volume · Units"
                     )
                 }
                 .buttonStyle(.plain)
             }
-            .padding(
-                .horizontal,
-                Theme.spaceM
-            )
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius:
-                        Theme.radiusCard
-                )
-            )
-            .inkBorder(
-                cornerRadius:
-                    Theme.radiusCard
-            )
+            .overlay(
+                alignment: .top
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: Theme.ruleThickness)
+            }
         }
     }
 
 
     func toolRow(
-        icon: String,
         title: String,
         detail: String
     ) -> some View {
         HStack(
             spacing: Theme.spaceM
         ) {
-            Image(systemName: icon)
-                .font(Theme.label)
-                .foregroundStyle(
-                    Theme.teal
-                )
-                .frame(width: 24)
-
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXXS
+                spacing:
+                    Theme.spaceXXS
             ) {
                 Text(title)
                     .font(Theme.label)
@@ -486,15 +492,12 @@ private extension ProtocolsView {
 }
 
 
-// MARK: - Derived values
-
 private extension ProtocolsView {
 
     func nextEntry(
         for protocolID: UUID
     ) -> ScheduledEntry? {
         let now = Date.now
-
         let end =
             Calendar.current.date(
                 byAdding: .day,

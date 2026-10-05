@@ -22,7 +22,7 @@ enum ScheduleDisplay {
             return "Multiple times per week"
 
         case .asRecorded:
-            return "As recorded"
+            return "As needed"
         }
     }
 
@@ -30,7 +30,7 @@ enum ScheduleDisplay {
         _ config: ScheduleConfig
     ) -> String {
         if config.kind == .asRecorded {
-            return "As recorded"
+            return "As needed"
         }
 
         let times =
@@ -45,9 +45,11 @@ enum ScheduleDisplay {
                 }
                 .joined(separator: ", ")
 
+        let base: String
+
         switch config.kind {
         case .daily:
-            return
+            base =
                 times.isEmpty
                 ? "Daily"
                 : "Daily at " + times
@@ -58,7 +60,7 @@ enum ScheduleDisplay {
                     .map(weekdayName)
                 ?? "Weekly"
 
-            return
+            base =
                 times.isEmpty
                 ? day
                 : day + " at " + times
@@ -71,7 +73,7 @@ enum ScheduleDisplay {
                     .map(weekdayShort)
                     .joined(separator: ", ")
 
-            return
+            base =
                 days
                 + (
                     times.isEmpty
@@ -80,7 +82,7 @@ enum ScheduleDisplay {
                 )
 
         case .everyNDays:
-            return
+            base =
                 "Every "
                 + String(config.interval)
                 + (
@@ -95,8 +97,25 @@ enum ScheduleDisplay {
                 )
 
         case .asRecorded:
-            return "As recorded"
+            base = "As needed"
         }
+
+        guard
+            let on = config.cycleOnDays,
+            let off = config.cycleOffDays,
+            on > 0,
+            off > 0
+        else {
+            return base
+        }
+
+        return
+            base
+            + " · "
+            + String(on)
+            + "d ON / "
+            + String(off)
+            + "d OFF"
     }
 
 

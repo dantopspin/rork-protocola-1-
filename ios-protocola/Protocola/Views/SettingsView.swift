@@ -28,7 +28,10 @@ struct SettingsView: View {
                 legalSection
                 dangerZoneSection
             }
+            .listStyle(.plain)
             .paperList()
+            .scrollContentBackground(.hidden)
+            .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -142,7 +145,6 @@ private extension SettingsView {
             Button {
                 Task {
                     await purchases.restore()
-
                     if store.isPremium {
                         Haptics.success()
                     }
@@ -168,7 +170,7 @@ private extension SettingsView {
             )
 
         } header: {
-            Text("Protocola Pro")
+            Eyebrow(text: "Protocola Pro")
         } footer: {
             VStack(
                 alignment: .leading,
@@ -192,7 +194,7 @@ private extension SettingsView {
 
 
     var preferencesSection: some View {
-        Section("Preferences") {
+        Section {
             Button {
                 openNotificationSettings()
             } label: {
@@ -214,6 +216,8 @@ private extension SettingsView {
                 }
             }
             .foregroundStyle(Theme.ink)
+        } header: {
+            Eyebrow(text: "Preferences")
         }
     }
 
@@ -239,7 +243,7 @@ private extension SettingsView {
             }
 
         } header: {
-            Text("Data & Privacy")
+            Eyebrow(text: "Data & Privacy")
         } footer: {
             Text(
                 "Your core records are stored on this iPhone. "
@@ -251,7 +255,7 @@ private extension SettingsView {
 
 
     var supportSection: some View {
-        Section("Support") {
+        Section {
             Button {
                 contactSupport()
             } label: {
@@ -260,12 +264,14 @@ private extension SettingsView {
                     systemImage: "envelope"
                 )
             }
+        } header: {
+            Eyebrow(text: "Support")
         }
     }
 
 
     var legalSection: some View {
-        Section("Legal") {
+        Section {
             Button("Privacy Policy") {
                 document = LegalContent.privacy
             }
@@ -277,6 +283,8 @@ private extension SettingsView {
             Button("Medical Disclaimer") {
                 document = LegalContent.medicalDisclaimer
             }
+        } header: {
+            Eyebrow(text: "Legal")
         }
     }
 
@@ -293,7 +301,7 @@ private extension SettingsView {
             }
 
         } header: {
-            Text("Danger Zone")
+            Eyebrow(text: "Danger Zone")
         } footer: {
             VStack(
                 alignment: .leading,
@@ -333,7 +341,6 @@ private extension SettingsView {
         do {
             exportURL = try ExportService.historyCSV(store.logs)
             shareCSV = true
-            Haptics.success()
         } catch {
             store.error =
                 "Your export could not be prepared. Please try again."

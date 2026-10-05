@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// Branded editorial empty/completion state.
+/// Use this instead of the native unavailable placeholder inside product screens.
 struct TrackingEmptyState: View {
     let icon: String
     let title: String
@@ -10,21 +12,22 @@ struct TrackingEmptyState: View {
 
     var body: some View {
         VStack(
+            alignment: .leading,
             spacing: Theme.spaceS
         ) {
             Image(systemName: icon)
                 .font(
                     .system(
-                        size: 24,
+                        size: Theme.iconLarge,
                         weight: .regular
                     )
                 )
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textTertiary
                 )
 
             Text(title)
-                .font(Theme.sectionTitle)
+                .font(Theme.modalTitle)
                 .foregroundStyle(
                     Theme.ink
                 )
@@ -32,10 +35,11 @@ struct TrackingEmptyState: View {
             Text(message)
                 .font(Theme.body)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
-                .multilineTextAlignment(
-                    .center
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
                 )
 
             if let actionTitle,
@@ -45,7 +49,7 @@ struct TrackingEmptyState: View {
                     action: action
                 )
                 .buttonStyle(
-                    TrackingSecondaryButtonStyle()
+                    TrackingCompactButtonStyle()
                 )
                 .padding(
                     .top,
@@ -54,7 +58,8 @@ struct TrackingEmptyState: View {
             }
         }
         .frame(
-            maxWidth: .infinity
+            maxWidth: .infinity,
+            alignment: .leading
         )
         .padding(
             .vertical,

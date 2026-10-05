@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Primary action. Near-black on light surfaces; white on the dark hero.
-/// Keep one dominant action per screen whenever possible.
+/// Rectangular blue-grey primary action from the original Peptide Lens direction.
 struct TrackingPrimaryButtonStyle: ButtonStyle {
     var inverted: Bool = false
 
@@ -15,56 +14,55 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
             .font(Theme.buttonLabel)
             .frame(
                 maxWidth: .infinity,
-                minHeight: Theme.minimumTapTarget
+                minHeight:
+                    Theme.buttonHeight
             )
             .foregroundStyle(
                 inverted
-                    ? Theme.ink
-                    : Color.white
+                    ? Theme.teal
+                    : Theme.onDarkPrimary
             )
             .background(
                 configuration.isPressed
                     ? (
                         inverted
-                        ? Color.white.opacity(0.82)
-                        : Theme.ink.opacity(0.82)
+                        ? Theme.onDarkPrimary
+                            .opacity(0.84)
+                        : Theme.teal
+                            .opacity(0.84)
                     )
                     : (
                         inverted
-                        ? Color.white
-                        : Theme.ink
+                        ? Theme.onDarkPrimary
+                        : Theme.teal
                     ),
                 in: .rect(
                     cornerRadius:
                         Theme.radiusButton
                 )
             )
-            .scaleEffect(
+            .opacity(
                 configuration.isPressed
-                    && !reduceMotion
-                    ? 0.985
+                    ? 0.92
                     : 1
             )
             .animation(
                 reduceMotion
                     ? nil
-                    : .spring(
-                        response: 0.24,
-                        dampingFraction: 0.82
+                    : .easeOut(
+                        duration: 0.12
                     ),
-                value: configuration.isPressed
+                value:
+                    configuration
+                        .isPressed
             )
     }
 }
 
 
-/// Quiet secondary action. Borders and hierarchy do the work;
-/// color is reserved for semantics rather than decoration.
+/// Flat outlined secondary action.
 struct TrackingSecondaryButtonStyle: ButtonStyle {
     var onDark: Bool = false
-
-    @Environment(\.accessibilityReduceMotion)
-    private var reduceMotion
 
     func makeBody(
         configuration: Configuration
@@ -73,16 +71,18 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
             .font(Theme.buttonLabel)
             .frame(
                 maxWidth: .infinity,
-                minHeight: Theme.minimumTapTarget
+                minHeight:
+                    Theme.compactButtonHeight
             )
             .foregroundStyle(
                 onDark
-                    ? Color.white.opacity(0.9)
+                    ? Theme.onDarkPrimary
                     : Theme.ink
             )
             .background(
                 onDark
-                    ? Color.white.opacity(0.07)
+                    ? Theme.onDarkPrimary
+                        .opacity(0.04)
                     : Theme.surface,
                 in: .rect(
                     cornerRadius:
@@ -96,30 +96,69 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
                 )
                 .stroke(
                     onDark
-                        ? Color.white.opacity(0.18)
-                        : Theme.border,
+                        ? Theme
+                            .onDarkPrimary
+                            .opacity(0.24)
+                        : Theme.hairline,
                     lineWidth: 1
                 )
             }
             .opacity(
                 configuration.isPressed
-                    ? 0.72
+                    ? 0.64
                     : 1
             )
-            .scaleEffect(
+    }
+}
+
+
+/// Compact rectangular inline action.
+struct TrackingCompactButtonStyle: ButtonStyle {
+    var prominent: Bool = false
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+        configuration.label
+            .font(Theme.label)
+            .foregroundStyle(
+                prominent
+                    ? Theme.onDarkPrimary
+                    : Theme.ink
+            )
+            .padding(
+                .horizontal,
+                Theme.spaceS
+            )
+            .frame(
+                minHeight:
+                    Theme.compactButtonHeight
+            )
+            .background(
+                prominent
+                    ? Theme.teal
+                    : Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusButton
+                )
+            )
+            .overlay {
+                if !prominent {
+                    RoundedRectangle(
+                        cornerRadius:
+                            Theme.radiusButton
+                    )
+                    .stroke(
+                        Theme.hairline,
+                        lineWidth: 1
+                    )
+                }
+            }
+            .opacity(
                 configuration.isPressed
-                    && !reduceMotion
-                    ? 0.985
+                    ? 0.64
                     : 1
-            )
-            .animation(
-                reduceMotion
-                    ? nil
-                    : .spring(
-                        response: 0.22,
-                        dampingFraction: 0.86
-                    ),
-                value: configuration.isPressed
             )
     }
 }

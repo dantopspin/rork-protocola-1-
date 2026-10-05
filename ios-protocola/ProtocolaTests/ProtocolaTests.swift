@@ -133,3 +133,1401 @@ struct InventoryTests {
         #expect(try repository.all(DoseLog.self).count == 1)
     }
 }
+
+
+@MainActor
+struct PeptideProtocolMechanicsTests {
+
+    @Test
+    func onOffCycleSuppressesOffPeriodOccurrences() throws {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_735_689_600
+            )
+
+        let config =
+            ScheduleConfig(
+                kind: .daily,
+                weekdays: [],
+                interval: 1,
+                minutes: [480],
+                anchor: start,
+                timeZoneID: "UTC",
+                cycleOnDays: 2,
+                cycleOffDays: 2
+            )
+
+        let dates =
+            SchedulingEngine
+                .occurrences(
+                    config: config,
+                    effectiveFrom: start,
+                    effectiveUntil: nil,
+                    start: start,
+                    end:
+                        start.addingTimeInterval(
+                            6 * 86_400
+                        )
+                )
+
+        #expect(dates.count == 4)
+        #expect(
+            dates[0]
+                == start.addingTimeInterval(
+                    480 * 60
+                )
+        )
+        #expect(
+            dates[1]
+                == start.addingTimeInterval(
+                    86_400
+                    + 480 * 60
+                )
+        )
+        #expect(
+            dates[2]
+                == start.addingTimeInterval(
+                    4 * 86_400
+                    + 480 * 60
+                )
+        )
+
+        let offPhase =
+            try #require(
+                config.cyclePhase(
+                    at:
+                        start.addingTimeInterval(
+                            2 * 86_400
+                        )
+                )
+            )
+
+        #expect(
+            offPhase.state == .off
+        )
+        #expect(offPhase.day == 1)
+
+        let onAgain =
+            try #require(
+                config.cyclePhase(
+                    at:
+                        start.addingTimeInterval(
+                            4 * 86_400
+                        )
+                )
+            )
+
+        #expect(
+            onAgain.state == .on
+        )
+        #expect(onAgain.day == 1)
+    }
+
+
+    @Test
+    func asNeededCreatesNoAutomaticOccurrences() throws {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_735_689_600
+            )
+
+        let config =
+            ScheduleConfig(
+                kind: .asRecorded,
+                weekdays: [],
+                interval: 1,
+                minutes: [],
+                anchor: start,
+                timeZoneID: "UTC"
+            )
+
+        try config.validate()
+
+        #expect(
+            ScheduleDisplay.summary(
+                config
+            ) == "As needed"
+        )
+
+        #expect(
+            SchedulingEngine
+                .occurrences(
+                    config: config,
+                    effectiveFrom: start,
+                    effectiveUntil: nil,
+                    start: start,
+                    end:
+                        start.addingTimeInterval(
+                            7 * 86_400
+                        )
+                )
+                .isEmpty
+        )
+    }
+
+
+    @Test
+    func nonInjectionRouteIsSnapshottedAndDoesNotConsumeVial() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+
+        var vialDraft =
+            VialDraft()
+
+        vialDraft.name = "Vial A"
+        vialDraft.compound = "C"
+        vialDraft.amount = "10"
+        vialDraft.diluent = "2"
+
+        try repository.saveVial(
+            vialDraft,
+            id: nil
+        )
+
+        let vial =
+            try #require(
+                repository
+                    .all(
+                        VialRecord.self
+                    )
+                    .first
+            )
+
+        var protocolDraft =
+            ProtocolDraft()
+
+        protocolDraft.name = "Oral"
+        protocolDraft.compound = "C"
+        protocolDraft.amount = "1"
+        protocolDraft.unit = .mg
+        protocolDraft.route = .oral
+        protocolDraft.vialID = vial.id
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let revision =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        #expect(
+            revision.route == .oral
+        )
+        #expect(revision.vialID == nil)
+
+        var dose =
+            DoseDraft(
+                revision: revision
+            )
+
+        dose.site = "Left abdomen"
+        dose.vialID = vial.id
+
+        try repository.saveDose(
+            dose,
+            revision: revision,
+            occurrence: nil,
+            correcting: nil
+        )
+
+        let log =
+            try #require(
+                repository
+                    .all(
+                        DoseLog.self
+                    )
+                    .first
+            )
+
+        #expect(log.route == .oral)
+        #expect(log.vialID == nil)
+        #expect(log.site.isEmpty)
+        #expect(
+            try repository.balance(vial)
+                == 10
+        )
+    }
+
+
+    @Test
+    func skippedScheduledEntryConsumesZeroInventoryAndCanBeUndone() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+
+        var vialDraft =
+            VialDraft()
+
+        vialDraft.name = "V"
+        vialDraft.compound = "C"
+        vialDraft.amount = "10"
+        vialDraft.diluent = "2"
+
+        try repository.saveVial(
+            vialDraft,
+            id: nil
+        )
+
+        let vial =
+            try #require(
+                repository
+                    .all(
+                        VialRecord.self
+                    )
+                    .first
+            )
+
+        var protocolDraft =
+            ProtocolDraft()
+
+        protocolDraft.name = "P"
+        protocolDraft.compound = "C"
+        protocolDraft.amount = "1"
+        protocolDraft.unit = .mg
+        protocolDraft.vialID = vial.id
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let revision =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        let at = Date.now
+
+        let entry =
+            ScheduledEntry(
+                id:
+                    SchedulingEngine
+                        .occurrenceKey(
+                            compoundID:
+                                revision
+                                    .compoundID,
+                            revisionID:
+                                revision.id,
+                            at: at
+                        ),
+                revision: revision,
+                at: at,
+                log: nil
+            )
+
+        var draft =
+            DoseDraft(
+                revision: revision
+            )
+
+        draft.status = "Skipped"
+
+        try repository.saveDose(
+            draft,
+            revision: revision,
+            occurrence: entry,
+            correcting: nil
+        )
+
+        let log =
+            try #require(
+                repository
+                    .all(
+                        DoseLog.self
+                    )
+                    .first
+            )
+
+        #expect(
+            log.status == "Skipped"
+        )
+        #expect(log.consumptionMg == 0)
+        #expect(
+            try repository.balance(vial)
+                == 10
+        )
+
+        try repository.deleteDose(log)
+
+        #expect(
+            try repository.balance(vial)
+                == 10
+        )
+    }
+}
+
+
+
+struct InjectionSiteTests {
+
+    @Test
+    func canonicalSiteMatchingNormalizesCaseWhitespaceAndHyphens() {
+        #expect(
+            InjectionSite.match(
+                "  LEFT   ABDOMEN "
+            ) == .leftAbdomen
+        )
+        #expect(
+            InjectionSite.match(
+                "right-upper-arm"
+            ) == .rightUpperArm
+        )
+        #expect(
+            InjectionSite.match(
+                "custom location"
+            ) == nil
+        )
+    }
+
+
+    @MainActor
+    @Test
+    func recentUsesAreCrossProtocolMostRecentAndIgnoreSkippedEntries() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+
+        var first =
+            ProtocolDraft()
+        first.name = "Protocol A"
+        first.compound = "Compound A"
+        first.amount = "1"
+        first.unit = .mg
+
+        try repository.saveProtocol(
+            first,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        var second =
+            ProtocolDraft()
+        second.name = "Protocol B"
+        second.compound = "Compound B"
+        second.amount = "1"
+        second.unit = .mg
+
+        try repository.saveProtocol(
+            second,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let revisions =
+            try repository
+                .all(
+                    ScheduleRevision.self
+                )
+
+        let revisionA =
+            try #require(
+                revisions.first {
+                    $0.protocolName
+                        == "Protocol A"
+                }
+            )
+
+        let revisionB =
+            try #require(
+                revisions.first {
+                    $0.protocolName
+                        == "Protocol B"
+                }
+            )
+
+        let now = Date.now
+
+        var older =
+            DoseDraft(
+                revision: revisionA
+            )
+        older.site =
+            InjectionSite
+                .leftAbdomen
+                .rawValue
+        older.loggedAt =
+            now.addingTimeInterval(
+                -86_400
+            )
+
+        try repository.saveDose(
+            older,
+            revision: revisionA,
+            occurrence: nil,
+            correcting: nil,
+            now: now
+        )
+
+        var newer =
+            DoseDraft(
+                revision: revisionB
+            )
+        newer.site =
+            InjectionSite
+                .leftAbdomen
+                .rawValue
+        newer.loggedAt =
+            now.addingTimeInterval(
+                -3_600
+            )
+
+        try repository.saveDose(
+            newer,
+            revision: revisionB,
+            occurrence: nil,
+            correcting: nil,
+            now: now
+        )
+
+        var skipped =
+            DoseDraft(
+                revision: revisionA
+            )
+        skipped.site =
+            InjectionSite
+                .rightThigh
+                .rawValue
+        skipped.status = "Skipped"
+        skipped.loggedAt = now
+
+        try repository.saveDose(
+            skipped,
+            revision: revisionA,
+            occurrence: nil,
+            correcting: nil,
+            now: now
+        )
+
+        let uses =
+            InjectionSite.recentUses(
+                from:
+                    try repository
+                        .all(
+                            DoseLog.self
+                        )
+            )
+
+        #expect(uses.count == 1)
+        #expect(
+            uses.first?.site
+                == .leftAbdomen
+        )
+        #expect(
+            uses.first?
+                .protocolName
+                == "Protocol B"
+        )
+    }
+}
+
+
+
+@MainActor
+struct VialIntelligenceTests {
+
+    @Test
+    func lifecycleDatesPhotoAndRunwayPersist() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        var vialDraft = VialDraft()
+        vialDraft.name = "Reserve vial"
+        vialDraft.compound = "Compound"
+        vialDraft.amount = "10"
+        vialDraft.diluent = "2"
+        vialDraft.state = .reserve
+        vialDraft.hasReconstitutedDate = true
+        vialDraft.reconstitutedAt =
+            now.addingTimeInterval(
+                -86_400
+            )
+        vialDraft.hasOpenedDate = true
+        vialDraft.openedAt =
+            now.addingTimeInterval(
+                -43_200
+            )
+        vialDraft.photoData =
+            Data([1, 2, 3])
+
+        try repository.saveVial(
+            vialDraft,
+            id: nil,
+            now: now
+        )
+
+        let vial =
+            try #require(
+                repository
+                    .all(
+                        VialRecord.self
+                    )
+                    .first
+            )
+
+        #expect(
+            vial.lifecycleState == .reserve
+        )
+        #expect(vial.reconstitutedAt != nil)
+        #expect(vial.openedAt != nil)
+        #expect(
+            vial.photoData == Data([1, 2, 3])
+        )
+
+        var protocolDraft =
+            ProtocolDraft()
+        protocolDraft.name = "Protocol"
+        protocolDraft.compound = "Compound"
+        protocolDraft.amount = "2"
+        protocolDraft.unit = .mg
+        protocolDraft.vialID = vial.id
+        protocolDraft.start = now
+        protocolDraft.kind = .daily
+        protocolDraft.timeZoneID = "UTC"
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil,
+            now: now
+        )
+
+        let store =
+            TrackingStore(
+                container: container
+            )
+
+        #expect(
+            store.dosesPerVial(
+                vial,
+                at: now
+            ) == 5
+        )
+        #expect(
+            store
+                .scheduledEntriesRemaining(
+                    in: vial,
+                    at: now
+                ) == 5
+        )
+        #expect(
+            store
+                .estimatedDepletionDate(
+                    in: vial,
+                    now: now
+                ) != nil
+        )
+    }
+
+    @Test
+    func futureLifecycleDatesAreRejected() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+        let now = Date.now
+        var draft = VialDraft()
+        draft.name = "V"
+        draft.compound = "C"
+        draft.amount = "5"
+        draft.diluent = "1"
+        draft.hasOpenedDate = true
+        draft.openedAt =
+            now.addingTimeInterval(
+                3_600
+            )
+
+        #expect(
+            throws: TrackingError.self
+        ) {
+            try repository.saveVial(
+                draft,
+                id: nil,
+                now: now
+            )
+        }
+    }
+}
+
+
+
+struct SyringePresetTests {
+
+    @Test
+    func standardSyringeScalesMatchRecordedValues() {
+        #expect(
+            SyringeScalePreset
+                .match("40")
+                == .u40
+        )
+        #expect(
+            SyringeScalePreset
+                .match("100.0")
+                == .u100
+        )
+        #expect(
+            SyringeScalePreset
+                .match("50")
+                == nil
+        )
+    }
+}
+
+
+
+struct CycleRestartReminderTests {
+
+    @Test
+    func nextRestartUsesCurrentCyclePhase() throws {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let config =
+            ScheduleConfig(
+                kind: .daily,
+                weekdays: [],
+                interval: 1,
+                minutes: [480],
+                anchor: start,
+                timeZoneID: "UTC",
+                cycleOnDays: 2,
+                cycleOffDays: 2
+            )
+
+        let duringOn =
+            Calendar(
+                identifier: .gregorian
+            )
+            .date(
+                byAdding: .day,
+                value: 1,
+                to: start
+            )!
+
+        let duringOff =
+            Calendar(
+                identifier: .gregorian
+            )
+            .date(
+                byAdding: .day,
+                value: 2,
+                to: start
+            )!
+
+        let onRestart =
+            try #require(
+                CycleDisplay
+                    .nextRestart(
+                        config,
+                        after: duringOn
+                    )
+            )
+        let offRestart =
+            try #require(
+                CycleDisplay
+                    .nextRestart(
+                        config,
+                        after: duringOff
+                    )
+            )
+
+        #expect(onRestart == offRestart)
+        #expect(onRestart > duringOff)
+    }
+
+    @Test
+    func reminderPlannerPreservesCycleRestartCopy() {
+        let now = Date.now
+        let restart =
+            ReminderPlanner.Candidate(
+                id: "cycle-restart:test",
+                at:
+                    now.addingTimeInterval(
+                        3_600
+                    ),
+                title:
+                    "Protocola · cycle restart",
+                body:
+                    "A recorded cycle is scheduled to resume."
+            )
+
+        let selected =
+            ReminderPlanner.select(
+                [restart],
+                now: now,
+                otherPending: 0
+            )
+
+        #expect(
+            selected.first?.title
+                == "Protocola · cycle restart"
+        )
+        #expect(
+            selected.first?.body
+                .contains(
+                    "scheduled to resume"
+                ) == true
+        )
+    }
+}
+
+
+
+@MainActor
+struct PlannedRevisionTests {
+
+    @Test
+    func futureRevisionDoesNotReplaceCurrentUntilEffectiveDate() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        var draft = ProtocolDraft()
+        draft.name = "Plan"
+        draft.compound = "Compound"
+        draft.amount = "1"
+        draft.unit = .mg
+        draft.start = now
+        draft.kind = .daily
+        draft.timeZoneID = "UTC"
+
+        try repository.saveProtocol(
+            draft,
+            protocolID: nil,
+            compoundID: nil,
+            now: now
+        )
+
+        let record =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+        let compound =
+            try #require(
+                repository
+                    .all(
+                        CompoundRecord.self
+                    )
+                    .first
+            )
+        let current =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        let futureDate =
+            now.addingTimeInterval(
+                7 * 86_400
+            )
+
+        var futureDraft =
+            ProtocolDraft(
+                protocolRecord: record,
+                revision: current
+            )
+        futureDraft.amount = "2"
+
+        try repository
+            .savePlannedProtocolChange(
+                futureDraft,
+                protocolID: record.id,
+                compoundID: compound.id,
+                plannedRevisionID: nil,
+                effectiveFrom:
+                    futureDate,
+                now: now
+            )
+
+        let store =
+            TrackingStore(
+                container: container
+            )
+
+        #expect(
+            store.currentRevisions(
+                record.id,
+                at: now
+            )
+            .first?
+            .amount == 1
+        )
+
+        let planned =
+            store.plannedRevisions(
+                record.id,
+                after: now
+            )
+
+        #expect(planned.count == 1)
+        #expect(
+            planned.first?.amount == 2
+        )
+
+        let shortlyAfter =
+            futureDate
+                .addingTimeInterval(
+                    60
+                )
+
+        #expect(
+            store.currentRevisions(
+                record.id,
+                at: shortlyAfter
+            )
+            .first?
+            .amount == 2
+        )
+
+        #expect(
+            current.effectiveUntil
+                == futureDate
+        )
+    }
+
+
+    @Test
+    func plannedRevisionCanBeUpdatedAndCancelledWithoutChangingHistory() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        var draft = ProtocolDraft()
+        draft.name = "Plan"
+        draft.compound = "Compound"
+        draft.amount = "1"
+        draft.unit = .mg
+        draft.start = now
+        draft.kind = .daily
+        draft.timeZoneID = "UTC"
+
+        try repository.saveProtocol(
+            draft,
+            protocolID: nil,
+            compoundID: nil,
+            now: now
+        )
+
+        let record =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+        let compound =
+            try #require(
+                repository
+                    .all(
+                        CompoundRecord.self
+                    )
+                    .first
+            )
+        let current =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+        let futureDate =
+            now.addingTimeInterval(
+                5 * 86_400
+            )
+
+        var futureDraft =
+            ProtocolDraft(
+                protocolRecord: record,
+                revision: current
+            )
+        futureDraft.amount = "2"
+
+        try repository
+            .savePlannedProtocolChange(
+                futureDraft,
+                protocolID: record.id,
+                compoundID: compound.id,
+                plannedRevisionID: nil,
+                effectiveFrom:
+                    futureDate,
+                now: now
+            )
+
+        var planned =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first {
+                        $0.effectiveFrom
+                            == futureDate
+                    }
+            )
+
+        futureDraft.amount = "3"
+
+        try repository
+            .savePlannedProtocolChange(
+                futureDraft,
+                protocolID: record.id,
+                compoundID: compound.id,
+                plannedRevisionID:
+                    planned.id,
+                effectiveFrom:
+                    futureDate,
+                now: now
+            )
+
+        planned =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first {
+                        $0.id == planned.id
+                    }
+            )
+
+        #expect(planned.amount == 3)
+        #expect(current.amount == 1)
+
+        try repository
+            .cancelPlannedRevision(
+                planned.id,
+                now: now
+            )
+
+        let remaining =
+            try repository
+                .all(
+                    ScheduleRevision.self
+                )
+
+        #expect(remaining.count == 1)
+        #expect(
+            remaining.first?
+                .effectiveUntil == nil
+        )
+        #expect(
+            remaining.first?.amount == 1
+        )
+    }
+}
+
+
+
+@MainActor
+struct ProtocolEvolutionTests {
+
+    @Test
+    func plannedAuditEventsAreNotEffectiveChangeAnchors() throws {
+        let event =
+            ProtocolEvent(
+                protocolID: UUID(),
+                title:
+                    "Future change planned",
+                detail: ""
+            )
+
+        try event.recordChanges(
+            [
+                RecordChange(
+                    field: "Amount",
+                    before: "1",
+                    after: "2"
+                )
+            ],
+            category: "Protocol"
+        )
+
+        #expect(
+            !event.isChangeAnchor
+        )
+    }
+
+
+    @Test
+    func evolutionBuildsChangeComparisonAndCycleHistory() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+
+        let now = Date.now
+        let start =
+            now.addingTimeInterval(
+                -12 * 86_400
+            )
+        let changeDate =
+            now.addingTimeInterval(
+                -4 * 86_400
+            )
+
+        var draft = ProtocolDraft()
+        draft.name = "Evolution"
+        draft.compound = "Compound"
+        draft.amount = "1"
+        draft.unit = .mg
+        draft.start = start
+        draft.kind = .daily
+        draft.timeZoneID = "UTC"
+        draft.cycleEnabled = true
+        draft.cycleOnDays = 2
+        draft.cycleOffDays = 2
+
+        try repository.saveProtocol(
+            draft,
+            protocolID: nil,
+            compoundID: nil,
+            now: start
+        )
+
+        let record =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+        let firstRevision =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        var edited =
+            ProtocolDraft(
+                protocolRecord: record,
+                revision: firstRevision
+            )
+        edited.amount = "2"
+
+        try repository.saveProtocol(
+            edited,
+            protocolID: record.id,
+            compoundID:
+                firstRevision
+                    .compoundID,
+            now: changeDate
+        )
+
+        let store =
+            TrackingStore(
+                container: container
+            )
+        let summary =
+            ProtocolEvolutionSummary(
+                store: store,
+                protocolID: record.id,
+                now: now
+            )
+
+        #expect(
+            summary.latestChange
+                != nil
+        )
+        #expect(
+            summary.sinceLastChange
+                != nil
+        )
+        #expect(
+            summary.comparison
+                != nil
+        )
+        #expect(
+            !summary.cycleRuns
+                .isEmpty
+        )
+    }
+}
+
+
+
+struct EstimatedLevelEngineTests {
+
+    @Test
+    func oneHalfLifeLeavesHalfTheRecordedMass() {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let dose =
+            EstimatedLevelEngine
+                .DoseInput(
+                    at: start,
+                    massMg: 2
+                )
+
+        let value =
+            EstimatedLevelEngine
+                .estimatedRemaining(
+                    at:
+                        start
+                            .addingTimeInterval(
+                                24 * 3_600
+                            ),
+                    doses: [dose],
+                    halfLifeHours: 24
+                )
+
+        #expect(
+            abs(value - 1)
+                < 0.000_001
+        )
+    }
+
+
+    @Test
+    func repeatedRecordedDosesAccumulateDeterministically() {
+        let start =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let second =
+            start.addingTimeInterval(
+                24 * 3_600
+            )
+
+        let value =
+            EstimatedLevelEngine
+                .estimatedRemaining(
+                    at: second,
+                    doses: [
+                        .init(
+                            at: start,
+                            massMg: 1
+                        ),
+                        .init(
+                            at: second,
+                            massMg: 1
+                        )
+                    ],
+                    halfLifeHours: 24
+                )
+
+        #expect(
+            abs(value - 1.5)
+                < 0.000_001
+        )
+    }
+}
+
+
+@MainActor
+struct EstimatedLevelOverviewTests {
+
+    @Test
+    func overviewUsesActualRecordedDoseAndUserReference() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+        let now = Date.now
+
+        var protocolDraft =
+            ProtocolDraft()
+        protocolDraft.name = "Levels"
+        protocolDraft.compound =
+            "Compound"
+        protocolDraft.amount = "2"
+        protocolDraft.unit = .mg
+        protocolDraft.start =
+            now.addingTimeInterval(
+                -2 * 86_400
+            )
+        protocolDraft.kind = .daily
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil,
+            now:
+                protocolDraft.start
+        )
+
+        let compound =
+            try #require(
+                repository
+                    .all(
+                        CompoundRecord.self
+                    )
+                    .first
+            )
+        let revision =
+            try #require(
+                repository
+                    .all(
+                        ScheduleRevision.self
+                    )
+                    .first
+            )
+
+        try repository
+            .saveCompoundHalfLife(
+                compoundID:
+                    compound.id,
+                hoursText: "24",
+                source:
+                    "Recorded reference"
+            )
+
+        var dose =
+            DoseDraft(
+                revision: revision
+            )
+        dose.amount = "2"
+        dose.unit = .mg
+        dose.loggedAt =
+            now.addingTimeInterval(
+                -24 * 3_600
+            )
+
+        try repository.saveDose(
+            dose,
+            revision: revision,
+            occurrence: nil,
+            correcting: nil,
+            now: now
+        )
+
+        let store =
+            TrackingStore(
+                container: container
+            )
+        let overview =
+            EstimatedLevelOverview(
+                store: store,
+                protocolID:
+                    revision.protocolID,
+                period:
+                    AnalysisPeriod(
+                        start:
+                            now.addingTimeInterval(
+                                -48
+                                * 3_600
+                            ),
+                        end: now
+                    ),
+                now: now
+            )
+
+        let series =
+            try #require(
+                overview.series.first
+            )
+
+        #expect(
+            series.compoundName
+                == "Compound"
+        )
+        #expect(
+            abs(
+                series
+                    .currentEstimatedMg
+                - 1
+            ) < 0.000_001
+        )
+        #expect(
+            series.source
+                == "Recorded reference"
+        )
+    }
+}
