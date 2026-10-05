@@ -70,6 +70,12 @@ enum ReminderDeliveryLedgerStore {
         return ledger
     }
 
+    static func clear() {
+        UserDefaults.standard
+            .removeObject(forKey: key)
+    }
+
+
     static func write(
         _ ledger: ReminderDeliveryLedger
     ) {
