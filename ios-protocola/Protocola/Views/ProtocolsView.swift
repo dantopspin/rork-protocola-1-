@@ -201,7 +201,12 @@ private extension ProtocolsView {
                                 && index == 0
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(
+                        TrackingRowButtonStyle()
+                    )
+                    .trackingStagger(
+                        index: index
+                    )
 
                     if index
                         < records.count - 1 {
