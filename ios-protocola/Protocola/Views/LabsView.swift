@@ -451,7 +451,7 @@ struct LabEditorView: View {
                                 $draft.value
                         )
                         .keyboardType(
-                            .decimalPad
+                            .numbersAndPunctuation
                         )
 
                         TextField(
@@ -476,7 +476,7 @@ struct LabEditorView: View {
                                     .referenceLow
                         )
                         .keyboardType(
-                            .decimalPad
+                            .numbersAndPunctuation
                         )
 
                         TextField(
@@ -486,7 +486,7 @@ struct LabEditorView: View {
                                     .referenceHigh
                         )
                         .keyboardType(
-                            .decimalPad
+                            .numbersAndPunctuation
                         )
                     }
                 } header: {
