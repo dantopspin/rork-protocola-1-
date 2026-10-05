@@ -1,9 +1,10 @@
 import Foundation
 
-/// One concise outcome shown on the Pro paywall.
+/// A concise outcome shown on the Pro paywall.
 ///
-/// We intentionally keep this to three benefit groups so the complete paywall
-/// can remain visible on one screen instead of becoming a feature list.
+/// The purchase surface deliberately groups Pro into three outcomes instead of
+/// listing every feature separately. This keeps the hierarchy clear and allows
+/// the complete paywall to remain visible on one screen.
 struct PaywallBenefit: Identifiable {
     let icon: String
     let title: String
@@ -37,10 +38,11 @@ struct PaywallBenefit: Identifiable {
 }
 
 
-/// Verified customer feedback displayed on the paywall.
+/// Genuine customer feedback shown on the purchase surface.
 ///
-/// Add ONLY genuine feedback here.
-/// If this array is empty, the testimonial block automatically disappears.
+/// Do not add invented quotes, names, ratings, or usage claims.
+/// If this collection is empty, PaywallView automatically replaces the
+/// testimonial with a compact product-trust strip.
 struct PaywallTestimonial: Identifiable {
     let quote: String
     let attribution: String
@@ -50,10 +52,10 @@ struct PaywallTestimonial: Identifiable {
     }
 
     static let verified: [PaywallTestimonial] = [
-        // Example once you have genuine feedback:
+        // Add genuine feedback here when available.
         //
         // PaywallTestimonial(
-        //     quote: "Finally a peptide tracker that feels like an actual record.",
+        //     quote: "Finally a tracker that feels like an actual record.",
         //     attribution: "Alex R. · Pro user"
         // )
     ]
@@ -62,8 +64,8 @@ struct PaywallTestimonial: Identifiable {
 
 /// Why the paywall was presented.
 ///
-/// The opening message changes depending on the feature the user attempted
-/// to use, while the core Pro proposition stays consistent.
+/// The opening promise responds to the feature the user just attempted to use.
+/// The underlying Pro proposition stays consistent.
 enum PaywallReason: String, Identifiable {
     case pro
     case compare
@@ -127,7 +129,7 @@ enum PaywallReason: String, Identifiable {
             "Compare recorded periods around a change without digging through your timeline."
 
         case .levels:
-            "Visualize transparent half-life estimates built only from doses you recorded."
+            "Visualize transparent half-life estimates built from doses you recorded."
 
         case .ask:
             "Get answers grounded in your own recorded timeline."
@@ -140,7 +142,6 @@ enum PaywallReason: String, Identifiable {
         }
     }
 
-    /// Put the feature that triggered the paywall first.
     private var leadingBenefit: PaywallBenefit {
         switch self {
         case .pro, .secondProtocol:
