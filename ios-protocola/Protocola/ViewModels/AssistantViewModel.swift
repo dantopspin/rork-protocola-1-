@@ -25,24 +25,135 @@ import Observation
 
     private(set) var sentReferences: [TimelineRecord] = []
     private(set) var sentContext: AIRecordContext?
-    static func timelineContext(_ records: [TimelineRecord], limit: Int = 150) -> AIRecordContext {
-        let lines = records.prefix(limit).enumerated().map { index, record in
-            if let log = record.log {
-                let data = automaticContext([log], limit: 1).text.replacingOccurrences(of: "[D1]", with: "[T\(index + 1)]")
-                return String(data.prefix(1500))
+    static func timelineContext(
+        _ records: [TimelineRecord],
+        limit: Int = 150
+    ) -> AIRecordContext {
+        let shareable =
+            records.filter {
+                $0.lab == nil
+                && $0.event?
+                    .category
+                    != "Metadata"
             }
-            let changes = record.event?.changes.filter { !$0.isPrivate }.map(\.description).joined(separator: "; ") ?? ""
-            return "[T\(index + 1)] \(record.at.ISO8601Format()) · \(record.category) · \(record.title) · \(changes.isEmpty ? "Older event: detailed shared values unavailable" : String(changes.prefix(1500)))"
-        }
-        let coverage = "Coverage: \(min(records.count, limit)) of \(records.count) scoped timeline records included. \(records.count > limit ? "Incomplete coverage: only the most recent records are supplied; do not claim a complete history." : "All retained records in the scope supplied; older previous values may be unavailable.")"
-        return AIRecordContext(lines: [coverage] + lines)
+
+        let lines =
+            shareable
+                .prefix(limit)
+                .enumerated()
+                .map { index, record in
+                    if let log = record.log {
+                        let data =
+                            automaticContext(
+                                [log],
+                                limit: 1
+                            )
+                            .text
+                            .replacingOccurrences(
+                                of: "[D1]",
+                                with:
+                                    "[T\(index + 1)]"
+                            )
+
+                        return String(
+                            data.prefix(1500)
+                        )
+                    }
+
+                    let changes =
+                        record.event?
+                            .changes
+                            .filter {
+                                !$0.isPrivate
+                            }
+                            .map(\.description)
+                            .joined(
+                                separator: "; "
+                            )
+                        ?? ""
+
+                    return
+                        "[T\(index + 1)] "
+                        + record.at
+                            .ISO8601Format()
+                        + " · "
+                        + record.category
+                        + " · "
+                        + record.title
+                        + " · "
+                        + (
+                            changes.isEmpty
+                            ? "Older event: detailed shared values unavailable"
+                            : String(
+                                changes
+                                    .prefix(1500)
+                            )
+                        )
+                }
+
+        let coverage =
+            "Coverage: "
+            + String(
+                min(
+                    shareable.count,
+                    limit
+                )
+            )
+            + " of "
+            + String(
+                shareable.count
+            )
+            + " shareable scoped timeline records included. "
+            + (
+                shareable.count > limit
+                ? "Incomplete coverage: only the most recent shareable records are supplied; do not claim a complete history."
+                : "All shareable retained records in the scope supplied; private metadata and lab records are excluded."
+            )
+
+        return AIRecordContext(
+            lines: [coverage] + lines
+        )
     }
-    func send(records: [TimelineRecord], sharingAllowed: Bool, isPro: Bool) {
-        guard isPro, sharingAllowed, !isSending else { error = "Pro and record sharing are required for Ask Protocola."; return }
-        sentReferences = Array(records.prefix(150))
-        let context = Self.timelineContext(records)
+
+    func send(
+        records: [TimelineRecord],
+        sharingAllowed: Bool,
+        isPro: Bool
+    ) {
+        guard
+            isPro,
+            sharingAllowed,
+            !isSending
+        else {
+            error =
+                "Pro and record sharing are required for Ask Protocola."
+            return
+        }
+
+        let shareable =
+            records.filter {
+                $0.lab == nil
+                && $0.event?
+                    .category
+                    != "Metadata"
+            }
+
+        sentReferences =
+            Array(
+                shareable.prefix(150)
+            )
+
+        let context =
+            Self.timelineContext(
+                shareable
+            )
+
         sentContext = context
-        send(context: context, sharingAllowed: sharingAllowed)
+        send(
+            context: context,
+            sharingAllowed:
+                sharingAllowed
+        )
     }
     func previewText(_ logs: [DoseLog]) -> String { Self.automaticContext(logs).text }
 
