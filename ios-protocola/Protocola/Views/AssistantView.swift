@@ -72,7 +72,7 @@ struct AssistantView: View {
         TimelineRecord.build(
             logs: store.logs,
             events: store.events,
-            includeMetadata: true
+            includeMetadata: false
         )
         .filter {
             $0.protocolID
@@ -284,7 +284,7 @@ private extension AssistantView {
         some View {
         Section {
             Text(
-                "When you ask, your typed question and scoped compound, amount, schedule, status, site, and symptom records go to a network AI service. Private notes, protocol names, vial labels, and suppliers are excluded from automatic sharing."
+                "When you ask, your typed question and scoped compound, amount, schedule, status, site, and symptom records go to a network AI service. Private notes, protocol names, vial labels, suppliers, labs, and hidden audit metadata are excluded from automatic sharing."
             )
             .font(Theme.body)
 
