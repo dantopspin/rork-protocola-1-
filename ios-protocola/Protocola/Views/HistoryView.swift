@@ -154,8 +154,18 @@ struct HistoryView: View {
         ScrollView {
             LazyVStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.spaceL
             ) {
+                PrimaryPageHeader(
+                    title: "History"
+                )
+
+                TrackingSearchField(
+                    prompt:
+                        "Search your timeline",
+                    text: $search
+                )
+
                 if groupedDays.isEmpty {
                     TrackingEmptyState(
                         icon:
@@ -183,11 +193,8 @@ struct HistoryView: View {
         }
         .scrollIndicators(.hidden)
         .background(Theme.paper)
-        .navigationTitle("History")
-        .searchable(
-            text: $search,
-            prompt: "Search your timeline"
-        )
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(
                 placement: .topBarTrailing
