@@ -57,9 +57,9 @@ enum LegalContent {
         sections: [
             LegalSection(heading: "Off by default", body: "Record sharing for Ask Protocola is off by default. Core tracking never depends on it, and nothing is sent until you send a question yourself."),
             LegalSection(heading: "What is sent", body: "After your first-use opt-in, tapping Ask sends your typed question plus scoped compound information, amounts, units, times, statuses, schedules, sites, symptoms and relevant change values. Protocol/date scope remains visible. View shared data is optional; you do not need to confirm sharing again for each question. Nothing is sent in the background."),
-            LegalSection(heading: "What is never sent", body: "Notes, protocol names, vial labels, and supplier information are never sent."),
+            LegalSection(heading: "What is never sent", body: "Notes, protocol names, vial labels, supplier information, lab records, and hidden audit metadata are never sent."),
             LegalSection(heading: "How answers are produced", body: "The request is processed by an AI service over the network, and the summary it returns is shown to you. Protocola does not save questions or answers to local record storage. Network processing is provided through the Rork AI gateway; this does not mean the service has no processing logs or retention. Avoid typing information you do not want sent."),
-            LegalSection(heading: "Turning it off", body: "Turn off \"Allow records for Ask Protocola\" in Data & Privacy at any time. Ask Protocola stops sending records immediately.")
+            LegalSection(heading: "Turning it off", body: "Turn off \"Ask Protocola record sharing\" in Data & Privacy at any time. Ask Protocola stops sending records immediately.")
         ]
     )
 }
