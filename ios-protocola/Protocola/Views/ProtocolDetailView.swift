@@ -466,6 +466,14 @@ private extension ProtocolDetailView {
                     ?? "Not available"
             )
 
+            RecordRow(
+                label: "Effective",
+                value:
+                    phaseRangeLabel(
+                        revision
+                    )
+            )
+
             if let config =
                 revision.config,
                let cycle =
@@ -569,15 +577,9 @@ private extension ProtocolDetailView {
                             )
 
                             Text(
-                                "Effective "
-                                + revision
-                                    .effectiveFrom
-                                    .formatted(
-                                        date:
-                                            .abbreviated,
-                                        time:
-                                            .omitted
-                                    )
+                                phaseRangeLabel(
+                                    revision
+                                )
                             )
                             .font(
                                 Theme.caption
@@ -586,6 +588,7 @@ private extension ProtocolDetailView {
                                 Theme
                                     .textSecondary
                             )
+                            .monospacedDigit()
                         }
 
                         Spacer()
@@ -669,6 +672,47 @@ private extension ProtocolDetailView {
         .disabled(
             !store.canEdit(record.id)
         )
+    }
+
+
+    func phaseRangeLabel(
+        _ revision: ScheduleRevision
+    ) -> String {
+        let start =
+            revision.effectiveFrom
+                .formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                )
+
+        if let exclusiveEnd =
+            revision.effectiveUntil {
+            let displayEnd =
+                exclusiveEnd
+                    .addingTimeInterval(-1)
+
+            let end =
+                displayEnd.formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                )
+
+            return
+                start == end
+                ? start
+                : start + " – " + end
+        }
+
+        switch revision.temporalState() {
+        case .planned:
+            return "From " + start
+
+        case .current:
+            return "Since " + start
+
+        case .historical:
+            return start
+        }
     }
 
 
