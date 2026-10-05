@@ -93,7 +93,7 @@ import Foundation
             FileManager.default
                 .temporaryDirectory
                 .appendingPathComponent(
-                    "Protocola-history-\(UUID().uuidString).csv"
+                    "Protocola-history.csv"
                 )
 
         try csv.write(
@@ -162,7 +162,7 @@ import Foundation
             FileManager.default
                 .temporaryDirectory
                 .appendingPathComponent(
-                    "Protocola-labs-\(UUID().uuidString).csv"
+                    "Protocola-labs.csv"
                 )
 
         try csv.write(
