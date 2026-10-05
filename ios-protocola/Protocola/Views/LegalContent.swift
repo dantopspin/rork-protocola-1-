@@ -4,19 +4,19 @@ import Foundation
 /// actually does: local-first tracking, neutral record keeping, no medical or
 /// dosing advice, and the limited records Ask Protocola may send.
 enum LegalContent {
-    static let updated = "October 3, 2026"
+    static let updated = "October 5, 2026"
 
     static let privacy = LegalDocument(
         id: "privacy",
         title: "Privacy Policy",
         updated: updated,
         sections: [
-            LegalSection(heading: "Summary", body: "Protocola keeps your protocols, entries, vials, and preferences on this iPhone. There is no account, and nothing is uploaded unless you explicitly share an export or send a question to Ask Protocola with sharing turned on."),
-            LegalSection(heading: "What is stored on your device", body: "Your protocols, schedules, recorded entries, vial details, and app preferences are stored locally on this iPhone. This data never leaves your device except as described below. Clearing all data in Settings, or deleting the app, removes everything permanently."),
-            LegalSection(heading: "Ask Protocola", body: "Record sharing for Ask Protocola is off by default. After your first-use opt-in, sending a question shares the visible protocol/date scope: compound information, amounts, units, times, statuses, schedules, recorded sites and symptoms, and relevant previous/new change values, together with the question you type. View shared data shows the payload and any coverage limits. Notes, protocol names, vial labels, and supplier information are never sent. Protocola does not save questions or answers to local record storage. Network processing is provided through the Rork AI gateway; this does not mean the service has no processing logs or retention. Avoid typing information you do not want sent."),
+            LegalSection(heading: "Summary", body: "Protocola keeps your protocols, schedules, entries, vials, labs, and preferences on this iPhone. There is no Protocola account. Tracking records are not uploaded unless you explicitly share an export or send a question to Ask Protocola with record sharing turned on. Subscription status is handled separately through Apple and RevenueCat."),
+            LegalSection(heading: "What is stored on your device", body: "Your protocols, schedules, recorded entries, vial details, labs, audit history, and app preferences are stored locally on this iPhone. This tracking data leaves the device only through the actions described below. Clear All Data removes Protocola's local tracking records and preferences, but it does not cancel a subscription or erase purchase records managed by Apple or RevenueCat."),
+            LegalSection(heading: "Ask Protocola", body: "Record sharing for Ask Protocola is off by default. After you opt in, sending a question shares the visible protocol/date scope: compound information, amounts, units, times, statuses, schedules, recorded sites and symptoms, and relevant non-private change values, together with the question you type. View shared data shows the payload and coverage limits. Notes, protocol names, vial labels, supplier information, lab records, and hidden audit metadata are excluded from automatic sharing. Protocola does not save questions or answers to local record storage. Network processing is provided through the Rork AI gateway; this does not mean the service has no processing logs or retention. Avoid typing information you do not want sent."),
             LegalSection(heading: "Exports and sharing", body: "CSV exports and the Visit Summary PDF are created on your device. They leave your device only when you share them yourself through the iOS share sheet."),
             LegalSection(heading: "Notifications", body: "Reminders are scheduled locally with iOS. Protocola does not send notifications through a server."),
-            LegalSection(heading: "No tracking", body: "Protocola contains no advertising, no analytics, and no third-party tracking. The app's privacy manifest declares no collected data types."),
+            LegalSection(heading: "Subscriptions and tracking", body: "Protocola contains no advertising, no analytics SDK, and no third-party advertising tracking. Apple and RevenueCat process subscription and entitlement information for purchase functionality. The app privacy manifest declares purchase history for app functionality and declares tracking as off."),
             LegalSection(heading: "Sample records", body: "Demo mode shows illustrative records stored separately from your real records. Exiting the demo discards them."),
             LegalSection(heading: "Changes", body: "If this policy changes, the updated version will appear here with a new date.")
         ]
