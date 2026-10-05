@@ -15,7 +15,8 @@ struct StatusBadge: View {
              "Delayed",
              "Low recorded balance",
              "Depleted",
-             "Expires soon":
+             "Expires soon",
+             "Recorded expiry today":
             return Theme.amber
 
         case "Recorded expiry passed":
