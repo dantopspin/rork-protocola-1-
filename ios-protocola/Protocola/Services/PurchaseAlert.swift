@@ -17,7 +17,7 @@ struct PurchaseAlert: Identifiable, Equatable {
     /// The purchase attempt failed.
     static let purchaseFailed = PurchaseAlert(
         title: "Purchase failed",
-        message: "The purchase could not be completed. Please try again."
+        message: "The purchase could not be completed. You have not been charged. Please try again."
     )
 
     /// Restoring could not reach the App Store.

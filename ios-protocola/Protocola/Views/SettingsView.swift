@@ -72,7 +72,7 @@ struct SettingsView: View {
             .alert(
                 purchases.alert?.title ?? "",
                 isPresented: Binding(
-                    get: { purchases.alert != nil },
+                    get: { purchases.alert != nil && store.pendingPaywall == nil },
                     set: { if !$0 { purchases.alert = nil } }
                 ),
                 presenting: purchases.alert
