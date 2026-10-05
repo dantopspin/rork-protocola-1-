@@ -33,7 +33,19 @@ private enum PaywallDensity {
         }
     }
 
-    var titleFont: Font {
+    var showsSupportingCopy: Bool {
+        self != .tight
+    }
+
+    var showsBenefitDetails: Bool {
+        self == .regular
+    }
+
+    var showsFullProofPreview: Bool {
+        self == .regular
+    }
+
+    var headlineFont: Font {
         switch self {
         case .regular, .compact:
             Theme.pageTitle
@@ -43,58 +55,7 @@ private enum PaywallDensity {
         }
     }
 
-    var supportingFont: Font {
-        switch self {
-        case .regular:
-            Theme.body
-
-        case .compact, .tight:
-            Theme.caption
-        }
-    }
-
-    var testimonialFont: Font {
-        switch self {
-        case .regular:
-            Theme.body
-
-        case .compact, .tight:
-            Theme.caption
-        }
-    }
-
-    var showsSupportingCopy: Bool {
-        self != .tight
-    }
-
-    var showsBenefitDetails: Bool {
-        self == .regular
-    }
-
-    var testimonialLineLimit: Int {
-        switch self {
-        case .regular:
-            2
-
-        case .compact, .tight:
-            1
-        }
-    }
-
-    var benefitPadding: CGFloat {
-        switch self {
-        case .regular:
-            Theme.spaceXS
-
-        case .compact:
-            Theme.spaceXXS
-
-        case .tight:
-            Theme.spaceXXS
-        }
-    }
-
-    var planPadding: CGFloat {
+    var planVerticalPadding: CGFloat {
         switch self {
         case .regular:
             Theme.spaceS
@@ -106,13 +67,13 @@ private enum PaywallDensity {
 }
 
 
-/// Contextual, conversion-focused Pro paywall.
+/// Contextual, single-screen Pro purchase surface.
 ///
-/// Standard iPhone layouts do not scroll. ViewThatFits progressively removes
-/// secondary copy while preserving the offer, pricing, CTA, trust, restore,
-/// free continuation, and legal links.
+/// Normal Dynamic Type sizes use ViewThatFits to select the richest complete
+/// layout that fits the available iPhone height without scrolling.
 ///
-/// Accessibility Dynamic Type is allowed to scroll instead of shrinking text.
+/// Accessibility Dynamic Type can scroll rather than shrinking text below a
+/// comfortable reading size.
 struct PaywallView: View {
     var reason: PaywallReason = .pro
 
@@ -136,38 +97,30 @@ struct PaywallView: View {
     @State private var selectedPackageIdentifier: String?
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if showSuccess {
-                    successContent
-                } else {
-                    adaptivePaywall
-                }
-            }
-            .background(Theme.paper)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if !showSuccess {
-                    ToolbarItem(
-                        placement: .cancellationAction
-                    ) {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Label(
-                                "Close",
-                                systemImage: "xmark"
-                            )
-                        }
-                        .labelStyle(.iconOnly)
-                        .accessibilityLabel("Close")
-                    }
-                }
+        Group {
+            if showSuccess {
+                successContent
+            } else {
+                adaptivePaywall
             }
         }
-        .presentationDetents([.large])
-        .sheet(item: $document) {
-            LegalDocumentView(document: $0)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .top
+        )
+        .background(
+            Theme.paper
+        )
+        .presentationDetents([
+            .large
+        ])
+        .sheet(
+            item: $document
+        ) {
+            LegalDocumentView(
+                document: $0
+            )
         }
         .alert(
             purchases.alert?.title ?? "",
@@ -186,10 +139,13 @@ struct PaywallView: View {
             Button("OK") {
                 purchases.alert = nil
             }
+
         } message: { alert in
             Text(alert.message)
         }
-        .onChange(of: store.isPremium) { _, active in
+        .onChange(
+            of: store.isPremium
+        ) { _, active in
             if active {
                 withAnimation(
                     reduceMotion
@@ -232,40 +188,55 @@ struct PaywallView: View {
                     Theme.pageInset
                 )
                 .padding(
-                    .vertical,
+                    .top,
                     Theme.spaceM
                 )
+                .padding(
+                    .bottom,
+                    Theme.spaceL
+                )
             }
-            .scrollIndicators(.hidden)
+            .scrollIndicators(
+                .hidden
+            )
 
         } else {
-            ViewThatFits(
-                in: .vertical
-            ) {
-                paywallContent(
-                    density: .regular
-                )
+            GeometryReader { proxy in
+                ViewThatFits(
+                    in: .vertical
+                ) {
+                    paywallContent(
+                        density: .regular
+                    )
 
-                paywallContent(
-                    density: .compact
-                )
+                    paywallContent(
+                        density: .compact
+                    )
 
-                paywallContent(
-                    density: .tight
+                    paywallContent(
+                        density: .tight
+                    )
+                }
+                .padding(
+                    .horizontal,
+                    Theme.pageInset
+                )
+                .padding(
+                    .top,
+                    Theme.spaceS
+                )
+                .padding(
+                    .bottom,
+                    Theme.spaceXS
+                )
+                .frame(
+                    width:
+                        proxy.size.width,
+                    height:
+                        proxy.size.height,
+                    alignment: .top
                 )
             }
-            .padding(
-                .horizontal,
-                Theme.pageInset
-            )
-            .padding(
-                .top,
-                Theme.spaceXXS
-            )
-            .padding(
-                .bottom,
-                Theme.spaceXS
-            )
         }
     }
 
@@ -277,30 +248,29 @@ struct PaywallView: View {
             alignment: .leading,
             spacing: density.sectionSpacing
         ) {
-            header(
+            topBar
+
+            hero(
                 density: density
             )
 
-            if let testimonial =
-                PaywallTestimonial
-                    .verified
-                    .first {
+            proofPreview(
+                density: density
+            )
 
-                testimonialBlock(
-                    testimonial,
-                    density: density
-                )
-            }
+            socialProof(
+                density: density
+            )
 
             benefits(
                 density: density
             )
 
-            plansSection(
+            plans(
                 density: density
             )
 
-            purchaseSection(
+            purchaseArea(
                 density: density
             )
 
@@ -308,43 +278,99 @@ struct PaywallView: View {
                 density: density
             )
         }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .topLeading
+        )
+    }
+
+
+    // MARK: - Top chrome
+
+    private var topBar: some View {
+        HStack(
+            alignment: .center
+        ) {
+            Button {
+                dismiss()
+            } label: {
+                Image(
+                    systemName: "xmark"
+                )
+                .font(
+                    Theme.modalTitle
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+                .frame(
+                    width:
+                        Theme.minimumTapTarget,
+                    height:
+                        Theme.minimumTapTarget
+                )
+            }
+            .buttonStyle(
+                .plain
+            )
+            .accessibilityLabel(
+                "Close"
+            )
+
+            Spacer(
+                minLength:
+                    Theme.spaceM
+            )
+
+            Eyebrow(
+                text:
+                    reason.eyebrow
+            )
+        }
     }
 
 
     // MARK: - Hero
 
-    private func header(
+    private func hero(
         density: PaywallDensity
     ) -> some View {
         VStack(
             alignment: .leading,
             spacing: density.itemSpacing
         ) {
-            Eyebrow(
-                text: reason.eyebrow
+            Text(
+                reason.headline
             )
-
-            Text(reason.headline)
-                .font(
-                    density.titleFont
-                )
-                .foregroundStyle(
-                    Theme.ink
-                )
-                .fixedSize(
-                    horizontal: false,
-                    vertical: true
-                )
+            .font(
+                density.headlineFont
+            )
+            .foregroundStyle(
+                Theme.ink
+            )
+            .lineLimit(2)
+            .minimumScaleFactor(
+                0.88
+            )
+            .fixedSize(
+                horizontal: false,
+                vertical: true
+            )
 
             if density.showsSupportingCopy {
                 Text(
                     reason.supportingCopy
                 )
                 .font(
-                    density.supportingFont
+                    Theme.body
                 )
                 .foregroundStyle(
                     Theme.textSecondary
+                )
+                .lineLimit(
+                    density == .regular
+                        ? 2
+                        : 1
                 )
                 .fixedSize(
                     horizontal: false,
@@ -355,44 +381,71 @@ struct PaywallView: View {
     }
 
 
-    // MARK: - Social proof
+    // MARK: - Product proof
 
-    private func testimonialBlock(
-        _ testimonial: PaywallTestimonial,
+    private func proofPreview(
         density: PaywallDensity
     ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceXXS
+            spacing: density.itemSpacing
         ) {
-            Text(
-                "“\(testimonial.quote)”"
-            )
-            .font(
-                density.testimonialFont
-            )
-            .foregroundStyle(
-                Theme.ink
-            )
-            .lineLimit(
-                density.testimonialLineLimit
-            )
+            if density.showsFullProofPreview {
+                HStack {
+                    Text(
+                        "YOUR RECORD, CONNECTED"
+                    )
+                    .font(
+                        Theme.micro
+                    )
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
 
-            Text(
-                testimonial.attribution
-            )
-            .font(
-                Theme.micro
-            )
-            .foregroundStyle(
-                Theme.textSecondary
-            )
-            .lineLimit(1)
+                    Spacer()
+
+                    Text(
+                        "PRO"
+                    )
+                    .font(
+                        Theme.micro
+                    )
+                    .foregroundStyle(
+                        Theme.teal
+                    )
+                }
+            }
+
+            HStack(
+                spacing: Theme.spaceXS
+            ) {
+                proofPoint(
+                    icon: "syringe",
+                    label: "Dose"
+                )
+
+                proofConnector
+
+                proofPoint(
+                    icon: "arrow.triangle.2.circlepath",
+                    label: "Change"
+                )
+
+                proofConnector
+
+                proofPoint(
+                    icon: "chart.xyaxis.line",
+                    label: "Pattern"
+                )
+
+                proofConnector
+
+                proofPoint(
+                    icon: "doc.text",
+                    label: "Summary"
+                )
+            }
         }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
-        )
         .padding(
             .horizontal,
             Theme.spaceM
@@ -405,15 +458,234 @@ struct PaywallView: View {
         )
         .background(
             Theme.surface,
-            in: .rect(
+            in: RoundedRectangle(
                 cornerRadius:
                     Theme.radiusCard
             )
         )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
+        .overlay {
+            RoundedRectangle(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+            .stroke(
+                Theme.border,
+                lineWidth:
+                    Theme.ruleThickness
+            )
+        }
+    }
+
+
+    private func proofPoint(
+        icon: String,
+        label: String
+    ) -> some View {
+        VStack(
+            spacing: Theme.spaceXXS
+        ) {
+            Image(
+                systemName: icon
+            )
+            .font(
+                Theme.label
+            )
+            .foregroundStyle(
+                Theme.teal
+            )
+            .frame(
+                width:
+                    Theme.minimumTapTarget,
+                height:
+                    Theme.minimumTapTarget
+            )
+
+            Text(
+                label
+            )
+            .font(
+                Theme.micro
+            )
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+            .lineLimit(1)
+        }
+    }
+
+
+    private var proofConnector: some View {
+        Rectangle()
+            .fill(
+                Theme.hairline
+            )
+            .frame(
+                maxWidth: .infinity,
+                height:
+                    Theme.ruleThickness
+            )
+    }
+
+
+    // MARK: - Social proof
+
+    @ViewBuilder
+    private func socialProof(
+        density: PaywallDensity
+    ) -> some View {
+        if let testimonial =
+            PaywallTestimonial
+                .verified
+                .first {
+
+            testimonialView(
+                testimonial,
+                density: density
+            )
+
+        } else {
+            fallbackTrustStrip(
+                density: density
+            )
+        }
+    }
+
+
+    private func testimonialView(
+        _ testimonial: PaywallTestimonial,
+        density: PaywallDensity
+    ) -> some View {
+        HStack(
+            alignment: .top,
+            spacing: Theme.spaceS
+        ) {
+            Image(
+                systemName:
+                    "quote.opening"
+            )
+            .font(
+                Theme.label
+            )
+            .foregroundStyle(
+                Theme.teal
+            )
+            .accessibilityHidden(
+                true
+            )
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(
+                    testimonial.quote
+                )
+                .font(
+                    Theme.label
+                )
+                .foregroundStyle(
+                    Theme.ink
+                )
+                .lineLimit(
+                    density == .regular
+                        ? 2
+                        : 1
+                )
+
+                Text(
+                    testimonial.attribution
+                )
+                .font(
+                    Theme.micro
+                )
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
+                .lineLimit(1)
+            }
+
+            Spacer(
+                minLength:
+                    Theme.spaceXS
+            )
+        }
+    }
+
+
+    private func fallbackTrustStrip(
+        density: PaywallDensity
+    ) -> some View {
+        HStack(
+            spacing: Theme.spaceS
+        ) {
+            trustItem(
+                icon:
+                    "lock.shield",
+                text:
+                    "Private by design"
+            )
+
+            Spacer(
+                minLength:
+                    Theme.spaceXXS
+            )
+
+            trustItem(
+                icon:
+                    "rectangle.stack",
+                text:
+                    "Built around your record"
+            )
+
+            if density == .regular {
+                Spacer(
+                    minLength:
+                        Theme.spaceXXS
+                )
+
+                trustItem(
+                    icon:
+                        "doc.badge.arrow.up",
+                    text:
+                        "Exportable summary"
+                )
+            }
+        }
+        .padding(
+            .vertical,
+            Theme.spaceXXS
         )
+    }
+
+
+    private func trustItem(
+        icon: String,
+        text: String
+    ) -> some View {
+        HStack(
+            spacing: Theme.spaceXXS
+        ) {
+            Image(
+                systemName: icon
+            )
+            .font(
+                Theme.micro
+            )
+            .foregroundStyle(
+                Theme.teal
+            )
+
+            Text(
+                text
+            )
+            .font(
+                Theme.micro
+            )
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+            .lineLimit(1)
+        }
     }
 
 
@@ -447,7 +719,8 @@ struct PaywallView: View {
             spacing: Theme.spaceS
         ) {
             Image(
-                systemName: benefit.icon
+                systemName:
+                    benefit.icon
             )
             .font(
                 Theme.label
@@ -459,7 +732,9 @@ struct PaywallView: View {
                 width:
                     Theme.iconColumn
             )
-            .accessibilityHidden(true)
+            .accessibilityHidden(
+                true
+            )
 
             VStack(
                 alignment: .leading,
@@ -474,6 +749,7 @@ struct PaywallView: View {
                 .foregroundStyle(
                     Theme.ink
                 )
+                .lineLimit(1)
 
                 if density.showsBenefitDetails {
                     Text(
@@ -485,10 +761,7 @@ struct PaywallView: View {
                     .foregroundStyle(
                         Theme.textSecondary
                     )
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
+                    .lineLimit(1)
                 }
             }
 
@@ -499,7 +772,9 @@ struct PaywallView: View {
         }
         .padding(
             .vertical,
-            density.benefitPadding
+            density == .regular
+                ? Theme.spaceXS
+                : Theme.spaceXXS
         )
     }
 
@@ -507,23 +782,24 @@ struct PaywallView: View {
     // MARK: - Plans
 
     @ViewBuilder
-    private func plansSection(
+    private func plans(
         density: PaywallDensity
     ) -> some View {
         if purchases.offerings.isEmpty {
-            plansUnavailable(
+            unavailablePlans(
                 density: density
             )
 
         } else {
             HStack(
-                spacing: density.itemSpacing
+                spacing:
+                    Theme.spaceXS
             ) {
                 ForEach(
                     displayPackages,
                     id: \.identifier
                 ) { package in
-                    packageChoice(
+                    planOption(
                         package,
                         density: density
                     )
@@ -533,94 +809,7 @@ struct PaywallView: View {
     }
 
 
-    private func plansUnavailable(
-        density: PaywallDensity
-    ) -> some View {
-        HStack(
-            spacing: Theme.spaceS
-        ) {
-            if purchases.isLoading {
-                ProgressView()
-                    .controlSize(
-                        .small
-                    )
-
-                Text(
-                    "Loading plans…"
-                )
-                .font(
-                    Theme.caption
-                )
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
-
-            } else {
-                Text(
-                    "Plans unavailable"
-                )
-                .font(
-                    Theme.caption
-                )
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
-
-                Spacer(
-                    minLength:
-                        Theme.spaceXS
-                )
-
-                Button(
-                    "Try again"
-                ) {
-                    Task {
-                        await purchases
-                            .loadOfferings()
-                    }
-                }
-                .font(
-                    Theme.label
-                )
-                .foregroundStyle(
-                    Theme.teal
-                )
-                .frame(
-                    minHeight:
-                        Theme.minimumTapTarget
-                )
-                .buttonStyle(
-                    .plain
-                )
-            }
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
-        )
-        .padding(
-            .horizontal,
-            Theme.spaceS
-        )
-        .padding(
-            .vertical,
-            density.planPadding
-        )
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
-    }
-
-
-    private func packageChoice(
+    private func planOption(
         _ package: Package,
         density: PaywallDensity
     ) -> some View {
@@ -632,13 +821,15 @@ struct PaywallView: View {
         return Button {
             selectedPackageIdentifier =
                 package.identifier
+
         } label: {
             VStack(
                 alignment: .leading,
                 spacing: Theme.spaceXXS
             ) {
                 HStack(
-                    spacing: Theme.spaceXXS
+                    spacing:
+                        Theme.spaceXXS
                 ) {
                     Text(
                         planTitle(
@@ -657,9 +848,7 @@ struct PaywallView: View {
                             Theme.spaceXXS
                     )
 
-                    if package
-                        .packageType
-                        == .annual,
+                    if package.packageType == .annual,
                        let savings =
                         annualSavingsPercent {
 
@@ -682,9 +871,7 @@ struct PaywallView: View {
                         .localizedPriceString
                 )
                 .font(
-                    density == .tight
-                        ? Theme.cardTitle
-                        : Theme.sectionTitle
+                    Theme.sectionTitle
                 )
                 .foregroundStyle(
                     Theme.ink
@@ -713,13 +900,13 @@ struct PaywallView: View {
             )
             .padding(
                 .vertical,
-                density.planPadding
+                density.planVerticalPadding
             )
             .background(
                 selected
                     ? Theme.tealTint
                     : Theme.surface,
-                in: .rect(
+                in: RoundedRectangle(
                     cornerRadius:
                         Theme.radiusCard
                 )
@@ -746,17 +933,98 @@ struct PaywallView: View {
                 package
             )
         )
-        .accessibilityAddTraits(
-            selected
-                ? .isSelected
-                : []
-        )
     }
 
 
-    // MARK: - Purchase CTA
+    private func unavailablePlans(
+        density: PaywallDensity
+    ) -> some View {
+        HStack(
+            spacing: Theme.spaceS
+        ) {
+            if purchases.isLoading {
+                ProgressView()
+                    .controlSize(
+                        .small
+                    )
 
-    private func purchaseSection(
+                Text(
+                    "Loading plans…"
+                )
+                .font(
+                    Theme.caption
+                )
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
+
+            } else {
+                Text(
+                    "Plans could not be loaded."
+                )
+                .font(
+                    Theme.caption
+                )
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
+
+                Spacer()
+
+                Button(
+                    "Try again"
+                ) {
+                    Task {
+                        await purchases
+                            .loadOfferings()
+                    }
+                }
+                .font(
+                    Theme.label
+                )
+                .foregroundStyle(
+                    Theme.teal
+                )
+                .buttonStyle(
+                    .plain
+                )
+            }
+        }
+        .frame(
+            maxWidth: .infinity
+        )
+        .padding(
+            .horizontal,
+            Theme.spaceS
+        )
+        .padding(
+            .vertical,
+            density.planVerticalPadding
+        )
+        .background(
+            Theme.surface,
+            in: RoundedRectangle(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+        )
+        .overlay {
+            RoundedRectangle(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+            .stroke(
+                Theme.border,
+                lineWidth:
+                    Theme.ruleThickness
+            )
+        }
+    }
+
+
+    // MARK: - Conversion area
+
+    private func purchaseArea(
         density: PaywallDensity
     ) -> some View {
         VStack(
@@ -776,9 +1044,11 @@ struct PaywallView: View {
                         package
                     )
                 }
+
             } label: {
                 HStack(
-                    spacing: Theme.spaceXS
+                    spacing:
+                        Theme.spaceXS
                 ) {
                     if purchases.isPurchasing {
                         ProgressView()
@@ -809,30 +1079,27 @@ struct PaywallView: View {
                     || purchases.isPurchasing
             )
 
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXXS
-            ) {
-                Text(
-                    "No free trial · Renews automatically until canceled."
-                )
-                .font(
-                    Theme.micro
-                )
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
-
-                Text(
-                    "Private by design · No ads"
-                )
-                .font(
-                    Theme.micro
-                )
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
-            }
+            Text(
+                "No free trial · Subscription renews automatically until canceled."
+            )
+            .font(
+                Theme.micro
+            )
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+            .frame(
+                maxWidth: .infinity,
+                alignment: .center
+            )
+            .multilineTextAlignment(
+                .center
+            )
+            .lineLimit(
+                density == .tight
+                    ? 1
+                    : 2
+            )
 
             if let notice =
                 purchases.lastNotice {
@@ -846,11 +1113,14 @@ struct PaywallView: View {
                 .foregroundStyle(
                     Theme.textSecondary
                 )
-                .lineLimit(
-                    density == .tight
-                        ? 1
-                        : 2
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .center
                 )
+                .multilineTextAlignment(
+                    .center
+                )
+                .lineLimit(2)
             }
         }
     }
@@ -907,9 +1177,6 @@ struct PaywallView: View {
                     document =
                         LegalContent.privacy
                 }
-                .accessibilityLabel(
-                    "Privacy Policy"
-                )
 
                 Button(
                     "Terms"
@@ -917,9 +1184,6 @@ struct PaywallView: View {
                     document =
                         LegalContent.terms
                 }
-                .accessibilityLabel(
-                    "Terms of Use"
-                )
             }
             .font(
                 Theme.micro
@@ -951,21 +1215,21 @@ struct PaywallView: View {
 
 
     private var displayPackages: [Package] {
-        var packages: [Package] = []
+        var result: [Package] = []
 
         if let monthlyPackage {
-            packages.append(
+            result.append(
                 monthlyPackage
             )
         }
 
         if let annualPackage {
-            packages.append(
+            result.append(
                 annualPackage
             )
         }
 
-        if packages.isEmpty {
+        if result.isEmpty {
             return Array(
                 purchases
                     .offerings
@@ -973,15 +1237,15 @@ struct PaywallView: View {
             )
         }
 
-        return packages
+        return result
     }
 
 
-    /// Yearly is the default whenever it exists.
+    /// Annual is the default whenever it exists.
     private var selectedPackage: Package? {
         if let identifier =
             selectedPackageIdentifier,
-           let explicit =
+           let explicitPackage =
             purchases.offerings.first(
                 where: {
                     $0.identifier
@@ -989,7 +1253,7 @@ struct PaywallView: View {
                 }
             ) {
 
-            return explicit
+            return explicitPackage
         }
 
         return annualPackage
@@ -1035,7 +1299,7 @@ struct PaywallView: View {
     private func accessibilityPlanLabel(
         _ package: Package
     ) -> String {
-        let base =
+        var value =
             planTitle(package)
             + ", "
             + package
@@ -1048,14 +1312,13 @@ struct PaywallView: View {
            let savings =
             annualSavingsPercent {
 
-            return
-                base
-                + ", save "
+            value +=
+                ", save "
                 + String(savings)
                 + " percent"
         }
 
-        return base
+        return value
     }
 
 
@@ -1075,19 +1338,19 @@ struct PaywallView: View {
         switch package.packageType {
         case .monthly:
             return
-                "Unlock Pro — "
+                "Unlock Pro · "
                 + price
                 + "/month"
 
         case .annual:
             return
-                "Unlock Pro — "
+                "Unlock Pro · "
                 + price
                 + "/year"
 
         default:
             return
-                "Unlock Pro — "
+                "Unlock Pro · "
                 + price
         }
     }
@@ -1150,7 +1413,7 @@ struct PaywallView: View {
     }
 
 
-    // MARK: - Purchase success
+    // MARK: - Success
 
     private var successContent: some View {
         VStack(
