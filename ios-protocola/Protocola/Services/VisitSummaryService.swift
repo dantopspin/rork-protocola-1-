@@ -4,7 +4,7 @@ import UIKit
 /// Builds the Visit Summary PDF: a structured, neutrally framed summary of the user's
 /// recorded data. It renders only what was recorded — no interpretation, averages, or advice.
 @MainActor enum VisitSummaryService {
-    static func generate(protocols: [ProtocolRecord], compounds: [CompoundRecord], revisions: [ScheduleRevision], logs: [DoseLog], events: [ProtocolEvent] = [], period: AnalysisPeriod? = nil, summary: InsightsSummary? = nil, now: Date = .now) throws -> URL {
+    static func generate(protocols: [ProtocolRecord], compounds: [CompoundRecord], revisions: [ScheduleRevision], logs: [DoseLog], events: [ProtocolEvent] = [], labs: [LabRecord] = [], period: AnalysisPeriod? = nil, summary: InsightsSummary? = nil, now: Date = .now) throws -> URL {
         let pageRect = CGRect(x: 0, y: 0, width: 595.2, height: 841.8) // A4 in points
         let margin: CGFloat = 44
         let contentWidth = pageRect.width - margin * 2
@@ -86,9 +86,56 @@ import UIKit
                     draw("\(name) — \(group.count) \(group.count == 1 ? "entry" : "entries")", font: .systemFont(ofSize: 11), color: .darkGray, spacingAfter: 3)
                 }
             }
+            if !labs.isEmpty {
+                gap()
+                draw("Lab records", font: .systemFont(ofSize: 16, weight: .semibold), spacingAfter: 8)
+
+                for lab in labs.sorted(by: { $0.collectedAt < $1.collectedAt }) {
+                    var line =
+                        lab.collectedAt.formatted(
+                            date: .abbreviated,
+                            time: .omitted
+                        )
+                        + " · "
+                        + lab.marker
+                        + " · "
+                        + lab.displayValue
+
+                    if let range =
+                        lab.referenceRangeText {
+                        line +=
+                            " · recorded reference: "
+                            + range
+                    }
+
+                    draw(
+                        line,
+                        font: .systemFont(ofSize: 11),
+                        color: .darkGray,
+                        spacingAfter: 3
+                    )
+
+                    if !lab.notes.isEmpty {
+                        draw(
+                            "Notes: " + lab.notes,
+                            font: .systemFont(ofSize: 10),
+                            color: .darkGray,
+                            spacingAfter: 3
+                        )
+                    }
+                }
+
+                draw(
+                    "Lab values and reference ranges are reproduced as recorded and are not interpreted by Protocola.",
+                    font: .italicSystemFont(ofSize: 10),
+                    color: .darkGray,
+                    spacingAfter: 8
+                )
+            }
+
             gap()
             draw("Chronological timeline", font: .systemFont(ofSize: 16, weight: .semibold))
-            for record in TimelineRecord.build(logs: logs, events: events, includeMetadata: true).reversed() {
+            for record in TimelineRecord.build(logs: logs, events: events, labs: labs, includeMetadata: true).reversed() {
                 draw("\(record.at.formatted(date: .abbreviated, time: .shortened)) · \(record.title) · \(record.category)", font: .systemFont(ofSize: 11, weight: .semibold))
                 for line in record.detail.components(separatedBy: "\n") { draw(line, font: .systemFont(ofSize: 10), color: .darkGray) }
             }
