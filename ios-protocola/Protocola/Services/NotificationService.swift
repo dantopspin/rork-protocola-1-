@@ -116,10 +116,35 @@ final class NotificationService:
             return
         }
 
+        let now = Date.now
+        let activeIDs =
+            Set(entries.map(\.id))
+        var ledger =
+            ReminderDeliveryLedgerStore
+                .read()
+
+        ledger.prune(
+            keeping: activeIDs
+        )
+
+        defer {
+            ReminderDeliveryLedgerStore
+                .write(ledger)
+        }
+
+        let eligible =
+            entries.filter {
+                ledger.shouldSchedule(
+                    id: $0.id,
+                    at: $0.at,
+                    now: now
+                )
+            }
+
         let selected =
             ReminderPlanner.select(
-                entries,
-                now: .now,
+                eligible,
+                now: now,
                 otherPending:
                     pending.count
                     - own.count
@@ -163,6 +188,11 @@ final class NotificationService:
 
                 try await center.add(
                     request
+                )
+
+                ledger.markScheduled(
+                    id: entry.id,
+                    at: entry.at
                 )
             }
 
