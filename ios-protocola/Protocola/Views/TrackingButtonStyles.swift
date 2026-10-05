@@ -46,6 +46,12 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
                     ? Theme.pressedSurfaceOpacity
                     : 1
             )
+            .scaleEffect(
+                configuration.isPressed
+                    && !reduceMotion
+                    ? Theme.pressedPrimaryScale
+                    : 1
+            )
             .animation(
                 reduceMotion
                     ? nil
@@ -64,6 +70,9 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
 /// Flat outlined secondary action.
 struct TrackingSecondaryButtonStyle: ButtonStyle {
     var onDark: Bool = false
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
 
     func makeBody(
         configuration: Configuration
@@ -107,6 +116,23 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
                     ? Theme.pressedControlOpacity
                     : 1
             )
+            .scaleEffect(
+                configuration.isPressed
+                    && !reduceMotion
+                    ? Theme.pressedSecondaryScale
+                    : 1
+            )
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .easeOut(
+                        duration:
+                            Theme.motionPressDuration
+                    ),
+                value:
+                    configuration
+                        .isPressed
+            )
     }
 }
 
@@ -114,6 +140,9 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
 /// Compact rectangular inline action.
 struct TrackingCompactButtonStyle: ButtonStyle {
     var prominent: Bool = false
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
 
     func makeBody(
         configuration: Configuration
@@ -159,6 +188,57 @@ struct TrackingCompactButtonStyle: ButtonStyle {
                 configuration.isPressed
                     ? Theme.pressedControlOpacity
                     : 1
+            )
+            .scaleEffect(
+                configuration.isPressed
+                    && !reduceMotion
+                    ? Theme.pressedSecondaryScale
+                    : 1
+            )
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .easeOut(
+                        duration:
+                            Theme.motionPressDuration
+                    ),
+                value:
+                    configuration
+                        .isPressed
+            )
+    }
+}
+
+
+struct TrackingRowButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+        configuration.label
+            .opacity(
+                configuration.isPressed
+                    ? Theme.pressedSurfaceOpacity
+                    : 1
+            )
+            .scaleEffect(
+                configuration.isPressed
+                    && !reduceMotion
+                    ? Theme.pressedRowScale
+                    : 1
+            )
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .easeOut(
+                        duration:
+                            Theme.motionPressDuration
+                    ),
+                value:
+                    configuration
+                        .isPressed
             )
     }
 }
