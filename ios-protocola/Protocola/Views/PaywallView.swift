@@ -171,6 +171,11 @@ struct PaywallView: View {
         ) { wasActive, active in
             active && !wasActive
         }
+        .sensoryFeedback(
+            .selection,
+            trigger:
+                selectedPackageIdentifier
+        )
     }
 
 
@@ -926,9 +931,12 @@ struct PaywallView: View {
                         Theme.ruleThickness
                 )
             }
+            .trackingStateAnimation(
+                value: selected
+            )
         }
         .buttonStyle(
-            .plain
+            TrackingRowButtonStyle()
         )
         .accessibilityLabel(
             accessibilityPlanLabel(
