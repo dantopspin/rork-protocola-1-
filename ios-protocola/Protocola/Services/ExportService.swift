@@ -281,7 +281,7 @@ import Foundation
                         $0.config?.kind.rawValue
                             ?? "",
                         $0.config?.weekdays
-                            .map(String.init)
+                            .map { String($0) }
                             .joined(
                                 separator: "|"
                             )
@@ -290,7 +290,7 @@ import Foundation
                             String($0.interval)
                         } ?? "",
                         $0.config?.minutes
-                            .map(String.init)
+                            .map { String($0) }
                             .joined(
                                 separator: "|"
                             )
@@ -301,10 +301,10 @@ import Foundation
                         $0.config?.timeZoneID
                             ?? "",
                         $0.config?.cycleOnDays
-                            .map(String.init)
+                            .map { String($0) }
                             ?? "",
                         $0.config?.cycleOffDays
-                            .map(String.init)
+                            .map { String($0) }
                             ?? "",
                         $0.effectiveFrom
                             .ISO8601Format(),
