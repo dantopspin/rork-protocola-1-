@@ -11,20 +11,20 @@ nonisolated enum VialAlerts {
     static let expiryWindowDays = 14
 
 
-    /// Returns at most one candidate per vial.
-    ///
-    /// Depletion is more specific than a generic low-balance warning, so it is
-    /// preferred when both conditions are true. Recorded expiry is next, then
-    /// low balance.
-    static func candidate(
+    /// Builds independent candidates for depletion, recorded expiry, and
+    /// low balance so one condition never hides another.
+    static func candidates(
         vial: VialRecord,
         status: String,
         projectedDepletion: Date?,
         now: Date = .now
-    ) -> ReminderPlanner.Candidate? {
+    ) -> [ReminderPlanner.Candidate] {
         guard vial.lifecycleState != .archived else {
-            return nil
+            return []
         }
+
+        var result:
+            [ReminderPlanner.Candidate] = []
 
         if let depletion = projectedDepletion,
            let at = deliveryDate(
@@ -33,28 +33,31 @@ nonisolated enum VialAlerts {
                 now: now,
                 dateOnlyTarget: false
            ) {
-            return ReminderPlanner.Candidate(
-                id:
-                    "vial-depletion:"
-                    + vial.id.uuidString
-                    + ":"
-                    + String(
-                        Int(
-                            depletion
-                                .timeIntervalSince1970
+            result.append(
+                ReminderPlanner.Candidate(
+                    id:
+                        "vial-depletion:"
+                        + vial.id.uuidString
+                        + ":"
+                        + String(
+                            Int(
+                                depletion
+                                    .timeIntervalSince1970
+                            )
+                        ),
+                    at: at,
+                    title:
+                        "Protocola · inventory note",
+                    body:
+                        "At the recorded schedule, "
+                        + vial.name
+                        + " is projected to run out around "
+                        + depletion.formatted(
+                            date: .abbreviated,
+                            time: .omitted
                         )
-                    ),
-                at: at,
-                title: "Protocola · inventory note",
-                body:
-                    "At the recorded schedule, "
-                    + vial.name
-                    + " is projected to run out around "
-                    + depletion.formatted(
-                        date: .abbreviated,
-                        time: .omitted
-                    )
-                    + "."
+                        + "."
+                )
             )
         }
 
@@ -65,49 +68,77 @@ nonisolated enum VialAlerts {
                 now: now,
                 dateOnlyTarget: true
            ) {
-            return ReminderPlanner.Candidate(
-                id:
-                    "vial-expiry:"
-                    + vial.id.uuidString
-                    + ":"
-                    + String(
-                        Int(
-                            expiry
-                                .timeIntervalSince1970
+            result.append(
+                ReminderPlanner.Candidate(
+                    id:
+                        "vial-expiry:"
+                        + vial.id.uuidString
+                        + ":"
+                        + String(
+                            Int(
+                                expiry
+                                    .timeIntervalSince1970
+                            )
+                        ),
+                    at: at,
+                    title:
+                        "Protocola · inventory note",
+                    body:
+                        "Your recorded expiry date for "
+                        + vial.name
+                        + " is "
+                        + expiry.formatted(
+                            date: .abbreviated,
+                            time: .omitted
                         )
-                    ),
-                at: at,
-                title: "Protocola · inventory note",
-                body:
-                    "Your recorded expiry date for "
-                    + vial.name
-                    + " is "
-                    + expiry.formatted(
-                        date: .abbreviated,
-                        time: .omitted
-                    )
-                    + ". Open Protocola to review it."
+                        + ". Open Protocola to review it."
+                )
             )
         }
 
         if status == "Low recorded balance",
-           let at = nextStableAlertTime(
+           let at =
+            nextStableAlertTime(
                 after: now
-           ) {
-            return ReminderPlanner.Candidate(
-                id:
-                    "vial-low:"
-                    + vial.id.uuidString,
-                at: at,
-                title: "Protocola · inventory note",
-                body:
-                    "The recorded balance for "
-                    + vial.name
-                    + " is low. Open Protocola to review your inventory."
+            ) {
+            result.append(
+                ReminderPlanner.Candidate(
+                    id:
+                        "vial-low:"
+                        + vial.id.uuidString,
+                    at: at,
+                    title:
+                        "Protocola · inventory note",
+                    body:
+                        "The recorded balance for "
+                        + vial.name
+                        + " is low. Open Protocola to review your inventory."
+                )
             )
         }
 
-        return nil
+        return result.sorted {
+            $0.at < $1.at
+        }
+    }
+
+
+    /// Convenience for focused callers/tests that need the next inventory
+    /// warning only. TrackingStore schedules the complete candidates array.
+    static func candidate(
+        vial: VialRecord,
+        status: String,
+        projectedDepletion: Date?,
+        now: Date = .now
+    ) -> ReminderPlanner.Candidate? {
+        candidates(
+            vial: vial,
+            status: status,
+            projectedDepletion:
+                projectedDepletion,
+            now: now
+        )
+        .first
     }
 
 
