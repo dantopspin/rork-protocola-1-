@@ -287,8 +287,10 @@ private extension HistoryView {
                         "Type",
                         selection: $category
                     ) {
-                        ForEach(eventFilters) {
-                            filter in
+                        ForEach(
+                            eventFilters,
+                            id: \.value
+                        ) { filter in
                             Text(filter.label)
                                 .tag(filter.value)
                         }
@@ -311,8 +313,6 @@ private extension HistoryView {
                                 .tag(Optional(record.id))
                         }
                     }
-                }
-
                 } header: {
                     Eyebrow(text: "Protocol")
                 }
