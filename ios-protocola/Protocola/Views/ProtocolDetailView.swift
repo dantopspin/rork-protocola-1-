@@ -397,6 +397,10 @@ private extension ProtocolDetailView {
 
                 Spacer()
 
+                // The active phase stays identifiable at a glance; the
+                // revision timeline below records the full transition history.
+                StatusBadge(text: "Current")
+
                 Menu {
                     Button {
                         editing = revision

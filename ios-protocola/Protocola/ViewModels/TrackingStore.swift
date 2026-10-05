@@ -18,6 +18,7 @@ import Observation
     private(set) var onboarded: Bool = false
     private(set) var isDemo: Bool = false
     private(set) var aiSharing: Bool = false
+    private(set) var inventoryAlerts: Bool = false
     private var entitlement = EntitlementAccess()
     var isPremium: Bool { entitlement.isPro }
     private(set) var selectedFreeProtocolID: UUID?
@@ -51,7 +52,7 @@ import Observation
             vials = try repository.all(VialRecord.self).sorted { $0.createdAt > $1.createdAt }
             logs = try repository.all(DoseLog.self).sorted { $0.loggedAt > $1.loggedAt }
             events = try repository.all(ProtocolEvent.self).sorted { $0.at > $1.at }
-            let prefs = try repository.preferences(); onboarded = prefs.onboarded; aiSharing = prefs.aiSharing; selectedFreeProtocolID = prefs.selectedFreeProtocolID
+            let prefs = try repository.preferences(); onboarded = prefs.onboarded; aiSharing = prefs.aiSharing; inventoryAlerts = prefs.inventoryAlerts; selectedFreeProtocolID = prefs.selectedFreeProtocolID
             balances = try Dictionary(uniqueKeysWithValues: vials.map { ($0.id, try repository.balance($0)) })
             refreshDay(now: now)
         } catch { self.error = "Local records could not be loaded. Please try again. Your stored data has not been cleared." }
@@ -548,6 +549,18 @@ import Observation
         _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.disclaimerAccepted = true; prefs.onboarded = true } }
     }
     func setAISharing(_ enabled: Bool) { _ = perform { let prefs = try repository.preferences(); try repository.transaction { prefs.aiSharing = enabled } } }
+
+    /// Persists the optional inventory-alert preference. Requesting notification
+    /// permission first mirrors the protocol-reminder flow in the editor.
+    func setInventoryAlerts(_ enabled: Bool) async {
+        if enabled {
+            _ = await notifications.requestPermission()
+        }
+
+        guard perform({ let prefs = try repository.preferences(); try repository.transaction { prefs.inventoryAlerts = enabled } }) else { return }
+
+        resyncReminders()
+    }
     func requestPaywall(_ reason: PaywallReason) {
         pendingPaywall = reason
     }
@@ -647,9 +660,27 @@ import Observation
                     )
             }
 
+        // Optional inventory alerts ride the same planner pipeline as schedule
+        // reminders; every input is recorded data, never an invented date.
+        let inventory: [ReminderPlanner.Candidate] =
+            (try? repository.preferences())?.inventoryAlerts == true
+            ? vials.compactMap { vial in
+                VialAlerts.candidate(
+                    vial: vial,
+                    status: vialStatus(vial),
+                    projectedDepletion: estimatedDepletionDate(
+                        in: vial,
+                        now: now
+                    ),
+                    now: now
+                )
+            }
+            : []
+
         notifications.update(
             scheduled
             + cycleRestarts
+            + inventory
         )
     }
     func enterDemo() {

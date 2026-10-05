@@ -215,8 +215,27 @@ private extension SettingsView {
                 }
             }
             .foregroundStyle(Theme.ink)
+
+            Toggle(isOn: Binding(
+                get: { store.inventoryAlerts },
+                set: { enabled in
+                    Task {
+                        await store.setInventoryAlerts(enabled)
+                    }
+                }
+            )) {
+                Label(
+                    "Inventory alerts",
+                    systemImage: "shippingbox"
+                )
+            }
         } header: {
             Eyebrow(text: "Preferences")
+
+        } footer: {
+            Text(
+                "Optional reminders built from your recorded balance, schedule, and the expiry date you entered. Protocola never estimates an expiry date."
+            )
         }
     }
 

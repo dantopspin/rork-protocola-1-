@@ -200,15 +200,41 @@ private extension VialDetailView {
                 )
             }
 
+            if let reconstituted =
+                vial.reconstitutedAt {
+                RecordRow(
+                    label:
+                        "Reconstituted",
+                    value:
+                        daysSinceLabel(
+                            reconstituted
+                        )
+                )
+            }
+
+            if let opened =
+                vial.openedAt {
+                RecordRow(
+                    label: "Opened",
+                    value:
+                        daysSinceLabel(
+                            opened
+                        )
+                )
+            }
+
             if let expiry = vial.expiry {
                 RecordRow(
                     label:
-                        "Expiry / discard",
+                        "Recorded expiry",
                     value:
                         expiry.formatted(
                             date:
                                 .abbreviated,
                             time: .omitted
+                        )
+                        + expiryCountdownLabel(
+                            expiry
                         )
                 )
             }
@@ -221,6 +247,62 @@ private extension VialDetailView {
                 Theme.textSecondary
             )
         }
+    }
+
+
+    /// Calendar-day counts on start-of-day boundaries, computed only from
+    /// dates the user recorded. Protocola never invents a beyond-use date.
+    func daysSinceLabel(
+        _ date: Date
+    ) -> String {
+        let days = Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current
+                .startOfDay(for: date),
+            to: Calendar.current
+                .startOfDay(for: .now)
+        ).day ?? 0
+
+        if days <= 0 {
+            return "Today"
+        }
+
+        return days == 1
+            ? "1 day ago"
+            : String(days) + " days ago"
+    }
+
+
+    func expiryCountdownLabel(
+        _ expiry: Date
+    ) -> String {
+        let days = Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current
+                .startOfDay(for: .now),
+            to: Calendar.current
+                .startOfDay(for: expiry)
+        ).day ?? 0
+
+        if days > 1 {
+            return " · in " + String(days) + " days"
+        }
+
+        if days == 1 {
+            return " · tomorrow"
+        }
+
+        if days == 0 {
+            return " · today"
+        }
+
+        if days == -1 {
+            return " · 1 day ago"
+        }
+
+        return " · "
+            + String(-days)
+            + " days ago"
     }
 
 

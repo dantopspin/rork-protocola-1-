@@ -1531,3 +1531,137 @@ struct EstimatedLevelOverviewTests {
         )
     }
 }
+
+
+struct ReverseDilutionTests {
+    @Test func reverseMatchesForwardRoundTrip() throws {
+        // 5 mg vial; a 0.25 mg dose drawn as 10 units on a 100 scale
+        // solves to 2 mL of diluent at 2.5 mg/mL.
+        let target = try DoseCalculator.diluentForTarget(
+            vialAmount: 5,
+            vialUnit: .mg,
+            dose: Decimal(string: "0.25")!,
+            doseUnit: .mg,
+            drawUnits: 10,
+            scale: 100
+        )
+
+        #expect(target.diluentMl == 2)
+        #expect(target.concentration == Decimal(string: "2.5")!)
+
+        // Round trip: the forward conversion at the solved concentration
+        // must reproduce the requested draw.
+        let volume = try DoseCalculator.volume(
+            amount: Decimal(string: "0.25")!,
+            unit: .mg,
+            concentration: target.concentration,
+            unitsPerMl: 100
+        )
+
+        #expect(volume * 100 == 10)
+    }
+
+    @Test func reverseConvertsUnitsExplicitly() throws {
+        // 500 mcg vial; 250 mcg dose drawn as 5 units on a 100 scale:
+        // draw volume 0.05 mL, concentration 5 mg/mL, diluent 0.1 mL.
+        let target = try DoseCalculator.diluentForTarget(
+            vialAmount: 500,
+            vialUnit: .mcg,
+            dose: 250,
+            doseUnit: .mcg,
+            drawUnits: 5,
+            scale: 100
+        )
+
+        #expect(target.diluentMl == Decimal(string: "0.1")!)
+        #expect(target.concentration == 5)
+    }
+
+    @Test func reverseRejectsInvalidInputs() {
+        #expect(throws: TrackingError.self) {
+            try DoseCalculator.diluentForTarget(vialAmount: 5, vialUnit: .mg, dose: 0, doseUnit: .mg, drawUnits: 10, scale: 100)
+        }
+        #expect(throws: TrackingError.self) {
+            try DoseCalculator.diluentForTarget(vialAmount: 5, vialUnit: .mg, dose: 1, doseUnit: .mg, drawUnits: 0, scale: 100)
+        }
+        #expect(throws: TrackingError.self) {
+            try DoseCalculator.diluentForTarget(vialAmount: 5, vialUnit: .mg, dose: 1, doseUnit: .mg, drawUnits: 10, scale: 0)
+        }
+    }
+}
+
+
+@MainActor
+struct VialAlertTests {
+    @Test func prioritizesLowBalanceThenDepletionThenExpiry() {
+        let vial = VialRecord(
+            name: "Test vial",
+            compoundName: "Compound",
+            originalMg: 10,
+            diluentMl: 2
+        )
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+        let low = VialAlerts.candidate(
+            vial: vial,
+            status: "Low recorded balance",
+            projectedDepletion: now.addingTimeInterval(3 * 86_400),
+            now: now
+        )
+        #expect(low?.id == "vial-low:" + vial.id.uuidString)
+
+        let depletion = VialAlerts.candidate(
+            vial: vial,
+            status: "Active",
+            projectedDepletion: now.addingTimeInterval(3 * 86_400),
+            now: now
+        )
+        #expect(depletion?.id.hasPrefix("vial-depletion:") == true)
+
+        let farDepletion = VialAlerts.candidate(
+            vial: vial,
+            status: "Active",
+            projectedDepletion: now.addingTimeInterval(30 * 86_400),
+            now: now
+        )
+        #expect(farDepletion == nil)
+    }
+
+    @Test func expiryAlertUsesOnlyRecordedDateAndSkipsArchived() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+        let expiring = VialRecord(
+            name: "Expiring vial",
+            compoundName: "Compound",
+            originalMg: 10,
+            diluentMl: 2,
+            expiry: now.addingTimeInterval(5 * 86_400)
+        )
+
+        let expiry = VialAlerts.candidate(
+            vial: expiring,
+            status: "Active",
+            projectedDepletion: nil,
+            now: now
+        )
+        #expect(expiry?.id.hasPrefix("vial-expiry:") == true)
+
+        let archived = VialRecord(
+            name: "Archived vial",
+            compoundName: "Compound",
+            originalMg: 10,
+            diluentMl: 2,
+            expiry: now.addingTimeInterval(5 * 86_400)
+        )
+        archived.lifecycleState = .archived
+
+        #expect(
+            VialAlerts.candidate(
+                vial: archived,
+                status: "Low recorded balance",
+                projectedDepletion: now,
+                now: now
+            ) == nil
+        )
+    }
+}

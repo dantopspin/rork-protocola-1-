@@ -7,6 +7,7 @@ struct StatusBadge: View {
         switch text {
         case "Logged",
              "Active",
+             "Current",
              "Week recorded":
             return Theme.teal
 

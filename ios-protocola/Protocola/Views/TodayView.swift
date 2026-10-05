@@ -94,7 +94,8 @@ struct TodayView: View {
                 if !store.isDemo,
                    !store.protocols.isEmpty,
                    store.vials.isEmpty,
-                   nextUnloggedEntry?.revision
+                   nextUnloggedEntry?
+                    .revision
                     .route
                     .usesInjectionSite != true {
                     addFirstVialCard

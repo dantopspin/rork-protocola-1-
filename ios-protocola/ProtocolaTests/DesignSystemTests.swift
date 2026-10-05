@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import XCTest
 
 /// Prevent product screens from drifting away from DESIGN_SYSTEM.md.
 ///
@@ -10,21 +11,15 @@ struct DesignSystemTests {
 
     @Test
     func productViewsUseSharedDesignTokens() throws {
-        let testsDirectory =
-            URL(fileURLWithPath: #filePath)
-                .deletingLastPathComponent()
+        let productDirectory =
+            try Self.locateProductDirectory()
 
         let viewsDirectory =
-            testsDirectory
-                .deletingLastPathComponent()
+            productDirectory
                 .appendingPathComponent(
                     "Protocola/Views",
                     isDirectory: true
                 )
-
-        let productDirectory =
-            testsDirectory
-                .deletingLastPathComponent()
 
         var files =
             try FileManager.default
@@ -162,5 +157,78 @@ struct DesignSystemTests {
                 )
             }
         }
+    }
+
+
+    /// The managed build service can compile with relative source paths, so
+    /// `#filePath` is not always absolute at the test process's working
+    /// directory. Resolve the product sources from several anchors; when they
+    /// are genuinely unreachable the guardrail skips explicitly rather than
+    /// silently passing.
+    private static func locateProductDirectory() throws -> URL {
+        let fileManager =
+            FileManager.default
+
+        var candidates: [URL] = []
+
+        candidates.append(
+            URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+        )
+
+        let environment =
+            ProcessInfo.processInfo.environment
+
+        for key in ["SRCROOT", "PROJECT_DIR"] {
+            if let root = environment[key] {
+                candidates.append(
+                    URL(
+                        fileURLWithPath: root,
+                        isDirectory: true
+                    )
+                )
+            }
+        }
+
+        var walk = URL(
+            fileURLWithPath:
+                fileManager.currentDirectoryPath,
+            isDirectory: true
+        )
+
+        for _ in 0..<10 {
+            candidates.append(walk)
+            candidates.append(
+                walk.appendingPathComponent(
+                    "ios-protocola",
+                    isDirectory: true
+                )
+            )
+
+            let parent =
+                walk.deletingLastPathComponent()
+
+            if parent.path == walk.path {
+                break
+            }
+
+            walk = parent
+        }
+
+        for candidate in candidates
+        where fileManager.fileExists(
+            atPath: candidate
+                .appendingPathComponent(
+                    "Protocola/Views"
+                )
+                .path
+        ) {
+            return candidate
+        }
+
+        throw XCTSkip(
+            "Product sources are not reachable from the test process; the design-system guardrail needs them on disk."
+        )
     }
 }

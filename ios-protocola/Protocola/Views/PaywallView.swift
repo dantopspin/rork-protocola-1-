@@ -1159,13 +1159,22 @@ struct PaywallView: View {
             HStack(
                 spacing: Theme.spaceS
             ) {
-                Button(
-                    purchases.isRestoring
-                        ? "Restoring…"
-                        : "Restore"
-                ) {
+                Button {
                     Task {
                         await purchases.restore()
+                    }
+                } label: {
+                    // Discreet in-place spinner keeps the footer row stable
+                    // while the restore transaction is in flight.
+                    if purchases.isRestoring {
+                        HStack(spacing: Theme.spaceXXS) {
+                            ProgressView()
+                                .controlSize(.mini)
+
+                            Text("Restoring")
+                        }
+                    } else {
+                        Text("Restore")
                     }
                 }
                 .disabled(
