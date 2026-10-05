@@ -45,7 +45,7 @@ import UIKit
             for record in protocols {
                 draw("\(record.name) · \(record.status)", font: .systemFont(ofSize: 12, weight: .semibold), spacingAfter: 2)
                 if !record.instructionSource.isEmpty { draw("Recorded source: \(record.instructionSource)", font: .systemFont(ofSize: 11), color: .darkGray, spacingAfter: 2) }
-                for revision in revisions.filter({ $0.protocolID == record.id && $0.effectiveUntil == nil }) {
+                for revision in revisions.filter({ $0.protocolID == record.id && $0.isEffective(at: now) }) {
                     let compound = compounds.first { $0.id == revision.compoundID }?.name ?? revision.compoundName
                     var line = "\(compound) · \(revision.amountText) \(revision.unitText) · \(revision.routeText)"
                     if let config = revision.config {
@@ -61,6 +61,71 @@ import UIKit
                 if !record.notes.isEmpty { draw("Notes: \(record.notes)", font: .systemFont(ofSize: 11), color: .darkGray) }
                 gap(6)
             }
+            let planned =
+                revisions
+                    .filter {
+                        $0.isPlanned(
+                            after: now
+                        )
+                    }
+                    .sorted {
+                        $0.effectiveFrom
+                            < $1.effectiveFrom
+                    }
+
+            if !planned.isEmpty {
+                gap()
+                draw(
+                    "Planned protocol changes",
+                    font: .systemFont(
+                        ofSize: 16,
+                        weight: .semibold
+                    ),
+                    spacingAfter: 8
+                )
+
+                for revision in planned {
+                    var line =
+                        revision.effectiveFrom
+                            .formatted(
+                                date: .abbreviated,
+                                time: .omitted
+                            )
+                        + " · "
+                        + revision.compoundName
+                        + " · "
+                        + revision.amountText
+                        + " "
+                        + revision.unitText
+
+                    if let config =
+                        revision.config {
+                        line +=
+                            " · "
+                            + ScheduleDisplay
+                                .summary(config)
+                    }
+
+                    draw(
+                        line,
+                        font: .systemFont(
+                            ofSize: 11
+                        ),
+                        color: .darkGray,
+                        spacingAfter: 3
+                    )
+                }
+
+                draw(
+                    "Planned changes reflect recorded future revisions and are not dosing recommendations.",
+                    font: .italicSystemFont(
+                        ofSize: 10
+                    ),
+                    color: .darkGray,
+                    spacingAfter: 8
+                )
+            }
+
             gap()
 
             draw("Key protocol changes", font: .systemFont(ofSize: 16, weight: .semibold))
