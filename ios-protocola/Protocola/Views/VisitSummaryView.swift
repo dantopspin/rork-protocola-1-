@@ -150,6 +150,19 @@ private extension VisitSummaryView {
             )
 
             RecordRow(
+                label: "Labs",
+                value:
+                    String(
+                        selectedLabCount
+                    )
+                    + (
+                        selectedLabCount == 1
+                        ? " record"
+                        : " records"
+                    )
+            )
+
+            RecordRow(
                 label: "Timeline",
                 value: "Included"
             )
@@ -162,6 +175,51 @@ private extension VisitSummaryView {
                 Theme.textSecondary
             )
         }
+    }
+
+
+    var selectedLabCount: Int {
+        guard let protocolID else {
+            return 0
+        }
+
+        let record =
+            store.protocols.first {
+                $0.id == protocolID
+            }
+
+        let start =
+            fullHistory
+            ? (
+                record?.createdAt
+                ?? from
+            )
+            : Calendar.current
+                .startOfDay(
+                    for: from
+                )
+
+        let end =
+            fullHistory
+            ? Date.now
+            : min(
+                .now,
+                Calendar.current.date(
+                    byAdding: .day,
+                    value: 1,
+                    to:
+                        Calendar.current
+                            .startOfDay(
+                                for: to
+                            )
+                ) ?? to
+            )
+
+        return store.labs.filter {
+            $0.protocolID == protocolID
+            && $0.collectedAt >= start
+            && $0.collectedAt < end
+        }.count
     }
 
 
