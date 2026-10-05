@@ -12,26 +12,38 @@ struct VialDetailView: View {
     var body: some View {
         Group {
             if let vial = store.vial(vialID) {
-                List {
-                    inventorySection(vial)
+                ScrollView {
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceXL
+                    ) {
+                        inventoryOverview(vial)
 
-                    if vial.photoData != nil {
-                        photoSection(vial)
+                        if vial.photoData != nil {
+                            referencePhoto(vial)
+                        }
+
+                        recordedVial(vial)
+                        recordedEntries(vial)
+                        archiveAction(vial)
                     }
-
-                    vialDetailsSection(vial)
-                    actionsSection(vial)
-                    recordedEntriesSection(vial)
+                    .screenPadding()
+                    .padding(
+                        .bottom,
+                        Theme.spaceXL
+                    )
                 }
-                .listStyle(.plain)
-                .paperList()
-            .scrollContentBackground(.hidden)
+                .scrollIndicators(.hidden)
+                .background(Theme.paper)
                 .trackingRoutes()
                 .navigationTitle(vial.name)
-                .navigationBarTitleDisplayMode(.inline)
+                .navigationBarTitleDisplayMode(
+                    .inline
+                )
                 .toolbar {
                     ToolbarItem(
-                        placement: .topBarTrailing
+                        placement:
+                            .topBarTrailing
                     ) {
                         Button(
                             "Edit vial",
@@ -42,7 +54,9 @@ struct VialDetailView: View {
                     }
                 }
                 .sheet(isPresented: $edit) {
-                    VialEditorView(vial: vial)
+                    VialEditorView(
+                        vial: vial
+                    )
                 }
 
             } else {
@@ -59,35 +73,53 @@ struct VialDetailView: View {
     }
 }
 
+
 private extension VialDetailView {
 
-    func inventorySection(
+    func inventoryOverview(
         _ vial: VialRecord
     ) -> some View {
-        Section("Inventory") {
-            RecordRow(
-                label: "Remaining",
-                value:
+        editorialSection("Inventory") {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceS
+            ) {
+                Eyebrow(text: "Remaining")
+
+                Text(
                     DoseCalculator.text(
                         store.balances[
                             vial.id
                         ] ?? 0
                     )
                     + " mg"
-            )
+                )
+                .font(Theme.metricLarge)
+                .foregroundStyle(
+                    Theme.ink
+                )
+                .monospacedDigit()
 
-            RecordRow(
-                label: "State",
-                value:
-                    vial.lifecycleState
-                        .rawValue
-            )
+                HStack(
+                    spacing: Theme.spaceS
+                ) {
+                    StatusBadge(
+                        text:
+                            store.vialStatus(
+                                vial
+                            )
+                    )
 
-            RecordRow(
-                label: "Balance status",
-                value:
-                    store.vialStatus(vial)
-            )
+                    Text(
+                        vial.lifecycleState
+                            .rawValue
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                }
+            }
 
             if let entries =
                 store
@@ -108,7 +140,8 @@ private extension VialDetailView {
                 store.dosesPerVial(vial),
                doses > 0 {
                 RecordRow(
-                    label: "Original vial yield",
+                    label:
+                        "Original vial yield",
                     value:
                         "~"
                         + String(doses)
@@ -126,10 +159,12 @@ private extension VialDetailView {
                         in: vial
                     ) {
                 RecordRow(
-                    label: "Estimated depletion",
+                    label:
+                        "Estimated depletion",
                     value:
                         depletion.formatted(
-                            date: .abbreviated,
+                            date:
+                                .abbreviated,
                             time: .omitted
                         )
                 )
@@ -137,33 +172,19 @@ private extension VialDetailView {
 
             if let expiry = vial.expiry {
                 RecordRow(
-                    label: "Expiry / discard",
+                    label:
+                        "Expiry / discard",
                     value:
                         expiry.formatted(
-                            date: .abbreviated,
+                            date:
+                                .abbreviated,
                             time: .omitted
                         )
                 )
             }
 
-            let status =
-                store.vialStatus(vial)
-
-            if [
-                "Low recorded balance",
-                "Depleted"
-            ].contains(status) {
-                Label(
-                    status,
-                    systemImage:
-                        "exclamationmark.circle"
-                )
-                .font(Theme.label)
-                .foregroundStyle(Theme.amber)
-            }
-
             Text(
-                "Supply estimates use only compatible fixed-mass schedules linked to this vial and your recorded balance."
+                "Supply estimates use compatible fixed-mass schedules linked to this vial and your recorded balance."
             )
             .font(Theme.caption)
             .foregroundStyle(
@@ -172,12 +193,16 @@ private extension VialDetailView {
         }
     }
 
-    func photoSection(
+
+    func referencePhoto(
         _ vial: VialRecord
     ) -> some View {
-        Section("Reference photo") {
+        editorialSection(
+            "Reference photo"
+        ) {
             if let data = vial.photoData,
-               let image = UIImage(data: data) {
+               let image =
+                UIImage(data: data) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
@@ -196,32 +221,41 @@ private extension VialDetailView {
         }
     }
 
-    func vialDetailsSection(
+
+    func recordedVial(
         _ vial: VialRecord
     ) -> some View {
-        Section("Recorded vial") {
+        editorialSection(
+            "Recorded vial"
+        ) {
             RecordRow(
                 label: "Compound",
-                value: vial.compoundName
+                value:
+                    vial.compoundName
             )
+
             RecordRow(
                 label: "Original",
                 value:
                     vial.originalMgText
                     + " mg"
             )
+
             RecordRow(
                 label: "Diluent",
                 value:
                     vial.diluentMlText
                     + " mL"
             )
+
             RecordRow(
                 label: "Concentration",
                 value:
                     vial.concentration.map {
-                        DoseCalculator.text($0)
-                            + " mg/mL"
+                        DoseCalculator.text(
+                            $0
+                        )
+                        + " mg/mL"
                     }
                     ?? "Not recorded"
             )
@@ -231,20 +265,26 @@ private extension VialDetailView {
                 RecordRow(
                     label: "Reconstituted",
                     value:
-                        reconstituted.formatted(
-                            date: .abbreviated,
-                            time: .omitted
-                        )
+                        reconstituted
+                            .formatted(
+                                date:
+                                    .abbreviated,
+                                time:
+                                    .omitted
+                            )
                 )
             }
 
-            if let opened = vial.openedAt {
+            if let opened =
+                vial.openedAt {
                 RecordRow(
                     label: "Opened",
                     value:
                         opened.formatted(
-                            date: .abbreviated,
-                            time: .omitted
+                            date:
+                                .abbreviated,
+                            time:
+                                .omitted
                         )
                 )
             }
@@ -256,52 +296,48 @@ private extension VialDetailView {
                     ? "Not recorded"
                     : vial.batch
             )
+
             RecordRow(
-                label: "Supplier / clinic",
+                label:
+                    "Supplier / clinic",
                 value:
                     vial.supplier.isEmpty
                     ? "Not recorded"
                     : vial.supplier
             )
 
-            if !vial.storageNotes.isEmpty {
-                Text(vial.storageNotes)
-                    .font(Theme.body)
-            }
-        }
-    }
-
-    func actionsSection(
-        _ vial: VialRecord
-    ) -> some View {
-        Section {
-            Button {
-                store.archiveVial(vial)
-            } label: {
-                Label(
-                    vial.lifecycleState
-                        == .archived
-                        ? "Restore as active"
-                        : "Archive vial",
-                    systemImage:
-                        vial.lifecycleState
-                            == .archived
-                        ? "arrow.uturn.backward"
-                        : "archivebox"
+            if !vial.storageNotes
+                .isEmpty {
+                Text(
+                    vial.storageNotes
+                )
+                .font(Theme.body)
+                .foregroundStyle(
+                    Theme.ink
                 )
             }
         }
     }
 
-    func recordedEntriesSection(
+
+    @ViewBuilder
+    func recordedEntries(
         _ vial: VialRecord
     ) -> some View {
         let logs =
-            store.logs.filter {
-                $0.vialID == vial.id
-            }
+            store.logs
+                .filter {
+                    $0.vialID
+                        == vial.id
+                }
+                .sorted {
+                    $0.loggedAt
+                        > $1.loggedAt
+                }
 
-        return Section("Recorded entries") {
+        editorialSection(
+            "Recorded entries"
+        ) {
             if logs.isEmpty {
                 Text(
                     "No entries use this vial yet."
@@ -310,20 +346,32 @@ private extension VialDetailView {
                 .foregroundStyle(
                     Theme.textSecondary
                 )
+
             } else {
-                ForEach(logs) { log in
+                ForEach(
+                    Array(
+                        logs.enumerated()
+                    ),
+                    id: \.element.id
+                ) { index, log in
                     NavigationLink(
                         value:
                             TrackingRoute
-                                .logDetail(log.id)
+                                .logDetail(
+                                    log.id
+                                )
                     ) {
-                        VStack(
-                            alignment: .leading,
-                            spacing: Theme.spaceXXS
+                        HStack(
+                            alignment:
+                                .firstTextBaseline,
+                            spacing:
+                                Theme.spaceM
                         ) {
-                            HStack(
+                            VStack(
                                 alignment:
-                                    .firstTextBaseline
+                                    .leading,
+                                spacing:
+                                    Theme.spaceXXS
                             ) {
                                 Text(
                                     log.actualAmountText
@@ -331,37 +379,123 @@ private extension VialDetailView {
                                     + log.unitText
                                 )
                                 .font(
-                                    Theme.sectionTitle
+                                    Theme.metricCompact
                                 )
+                                .foregroundStyle(
+                                    Theme.ink
+                                )
+                                .monospacedDigit()
 
-                                Spacer()
-
-                                Text(log.status)
-                                    .font(Theme.caption)
-                                    .foregroundStyle(
-                                        Theme.textSecondary
-                                    )
+                                Text(
+                                    log.loggedAt
+                                        .formatted(
+                                            date:
+                                                .abbreviated,
+                                            time:
+                                                .shortened
+                                        )
+                                )
+                                .font(
+                                    Theme.caption
+                                )
+                                .foregroundStyle(
+                                    Theme
+                                        .textSecondary
+                                )
+                                .monospacedDigit()
                             }
 
-                            Text(
-                                log.loggedAt.formatted(
-                                    date: .abbreviated,
-                                    time: .shortened
-                                )
+                            Spacer()
+
+                            StatusBadge(
+                                text:
+                                    log.status
                             )
-                            .font(Theme.caption)
+
+                            Image(
+                                systemName:
+                                    "chevron.right"
+                            )
+                            .font(Theme.micro)
                             .foregroundStyle(
-                                Theme.textSecondary
+                                Theme.muted
                             )
-                            .monospacedDigit()
                         }
                         .padding(
                             .vertical,
-                            Theme.spaceXXS
+                            Theme.spaceS
                         )
+                        .contentShape(
+                            Rectangle()
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    if index
+                        < logs.count - 1 {
+                        Rectangle()
+                            .fill(
+                                Theme.hairline
+                            )
+                            .frame(
+                                height:
+                                    Theme
+                                        .ruleThickness
+                            )
                     }
                 }
             }
+        }
+    }
+
+
+    func archiveAction(
+        _ vial: VialRecord
+    ) -> some View {
+        Button {
+            store.archiveVial(vial)
+        } label: {
+            Text(
+                vial.lifecycleState
+                    == .archived
+                ? "Restore as active"
+                : "Archive vial"
+            )
+        }
+        .buttonStyle(
+            TrackingSecondaryButtonStyle()
+        )
+    }
+
+
+    func editorialSection<
+        Content: View
+    >(
+        _ title: String,
+        @ViewBuilder content:
+            () -> Content
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            Eyebrow(text: title)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
+            content()
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
         }
     }
 }
