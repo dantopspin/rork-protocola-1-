@@ -1593,37 +1593,72 @@ struct ReverseDilutionTests {
 
 @MainActor
 struct VialAlertTests {
-    @Test func prioritizesLowBalanceThenDepletionThenExpiry() {
+    @Test func inventoryWarningsAreFutureDatedAndReachPlanner() {
         let vial = VialRecord(
             name: "Test vial",
             compoundName: "Compound",
             originalMg: 10,
             diluentMl: 2
         )
-        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
 
-        let low = VialAlerts.candidate(
-            vial: vial,
-            status: "Low recorded balance",
-            projectedDepletion: now.addingTimeInterval(3 * 86_400),
-            now: now
-        )
-        #expect(low?.id == "vial-low:" + vial.id.uuidString)
+        let nearDepletion =
+            now.addingTimeInterval(
+                3 * 86_400
+            )
 
-        let depletion = VialAlerts.candidate(
-            vial: vial,
-            status: "Active",
-            projectedDepletion: now.addingTimeInterval(3 * 86_400),
-            now: now
+        let warnings =
+            VialAlerts.candidates(
+                vial: vial,
+                status:
+                    "Low recorded balance",
+                projectedDepletion:
+                    nearDepletion,
+                now: now
+            )
+
+        #expect(
+            warnings.contains {
+                $0.id.hasPrefix(
+                    "vial-depletion:"
+                )
+            }
         )
-        #expect(depletion?.id.hasPrefix("vial-depletion:") == true)
+        #expect(
+            warnings.contains {
+                $0.id
+                    == "vial-low:"
+                    + vial.id.uuidString
+            }
+        )
+        #expect(
+            warnings.allSatisfy {
+                $0.at > now
+            }
+        )
+
+        let selected =
+            ReminderPlanner.select(
+                warnings,
+                now: now,
+                otherPending: 0
+            )
+
+        #expect(
+            selected.count
+                == warnings.count
+        )
 
         let farTarget =
             now.addingTimeInterval(
                 30 * 86_400
             )
-        let farDepletion =
-            VialAlerts.candidate(
+        let farWarnings =
+            VialAlerts.candidates(
                 vial: vial,
                 status: "Active",
                 projectedDepletion:
@@ -1631,19 +1666,20 @@ struct VialAlertTests {
                 now: now
             )
 
-        #expect(farDepletion != nil)
-        #expect(farDepletion?.at > now)
-
-        let selected =
+        #expect(
+            farWarnings.count == 1
+        )
+        #expect(
+            farWarnings.first?.at
+                > now
+        )
+        #expect(
             ReminderPlanner.select(
-                [farDepletion].compactMap {
-                    $0
-                },
+                farWarnings,
                 now: now,
                 otherPending: 0
-            )
-
-        #expect(selected.count == 1)
+            ).count == 1
+        )
     }
 
     @Test func expiryAlertUsesOnlyRecordedDateAndSkipsArchived() {
