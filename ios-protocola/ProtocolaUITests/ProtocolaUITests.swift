@@ -131,6 +131,59 @@ final class ProtocolaUITests: XCTestCase {
 
 
     @MainActor
+    func testDemoMainTabsRemainReachable() throws {
+        let app = freshApp()
+
+        let demo =
+            app.buttons[
+                "Explore sample records"
+            ]
+
+        XCTAssertTrue(
+            demo.waitForExistence(
+                timeout: 8
+            )
+        )
+
+        demo.tap()
+
+        let tabBar =
+            app.tabBars.firstMatch
+
+        XCTAssertTrue(
+            tabBar.waitForExistence(
+                timeout: 4
+            )
+        )
+
+        for title in [
+            "Protocols",
+            "History",
+            "Insights",
+            "Today"
+        ] {
+            let tab =
+                tabBar.buttons[title]
+
+            XCTAssertTrue(
+                tab.waitForExistence(
+                    timeout: 2
+                )
+            )
+
+            tab.tap()
+
+            XCTAssertTrue(
+                app.staticTexts[title]
+                    .waitForExistence(
+                        timeout: 3
+                    )
+            )
+        }
+    }
+
+
+    @MainActor
     private func freshApp() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
