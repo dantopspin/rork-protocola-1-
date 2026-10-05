@@ -267,8 +267,8 @@ private extension SettingsView {
         } footer: {
             Text(
                 "Your core records are stored on this iPhone. "
-                + "Relevant information leaves the device only when required "
-                + "for a feature you choose to use, such as Ask Protocola."
+                + "Export My Data creates portable CSV copies of your protocols, schedules, entries, vial and inventory records, audit events, and labs. "
+                + "Relevant information leaves the device only when required for a feature you choose to use, such as Ask Protocola."
             )
         }
     }
@@ -361,8 +361,35 @@ private extension SettingsView {
         do {
             var urls = [
                 try ExportService
+                    .protocolsCSV(
+                        store.protocols
+                    ),
+                try ExportService
+                    .compoundsCSV(
+                        store.compounds
+                    ),
+                try ExportService
+                    .scheduleRevisionsCSV(
+                        store.revisions
+                    ),
+                try ExportService
                     .historyCSV(
                         store.logs
+                    ),
+                try ExportService
+                    .vialsCSV(
+                        store.vials,
+                        balances:
+                            store.balances
+                    ),
+                try ExportService
+                    .inventoryCSV(
+                        store
+                            .inventoryAdjustments
+                    ),
+                try ExportService
+                    .eventsCSV(
+                        store.events
                     )
             ]
 
