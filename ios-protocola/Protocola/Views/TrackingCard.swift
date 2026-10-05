@@ -114,7 +114,7 @@ struct TrackingNavLink<
         ) {
             Rectangle()
                 .fill(Theme.hairline)
-                .frame(height: 1)
+                .frame(height: Theme.ruleThickness)
         }
     }
 }
