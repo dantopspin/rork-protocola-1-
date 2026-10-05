@@ -341,7 +341,33 @@ import Foundation
     static func eventsCSV(
         _ events: [ProtocolEvent]
     ) throws -> URL {
-        try writeCSV(
+        let rows =
+            try events.map { event in
+                let changesData =
+                    try JSONEncoder()
+                        .encode(
+                            event.changes
+                        )
+                let changesJSON =
+                    String(
+                        data: changesData,
+                        encoding: .utf8
+                    ) ?? "[]"
+
+                return [
+                    event.id.uuidString,
+                    event.protocolID?
+                        .uuidString
+                        ?? "",
+                    event.title,
+                    event.category,
+                    event.detail,
+                    changesJSON,
+                    event.at.ISO8601Format()
+                ]
+            }
+
+        return try writeCSV(
             name: "protocol-events",
             header: [
                 "id",
@@ -349,21 +375,10 @@ import Foundation
                 "title",
                 "category",
                 "detail",
+                "changes_json",
                 "recorded_at"
             ],
-            rows:
-                events.map {
-                    [
-                        $0.id.uuidString,
-                        $0.protocolID?
-                            .uuidString
-                            ?? "",
-                        $0.title,
-                        $0.category,
-                        $0.detail,
-                        $0.at.ISO8601Format()
-                    ]
-                }
+            rows: rows
         )
     }
 
