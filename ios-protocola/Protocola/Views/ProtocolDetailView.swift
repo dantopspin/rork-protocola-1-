@@ -754,6 +754,24 @@ private extension ProtocolDetailView {
                         Theme.ruleThickness
                 )
 
+            NavigationLink {
+                LabListView(
+                    protocolID: record.id
+                )
+            } label: {
+                navigationRow(
+                    "Labs"
+                )
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
             Button {
                 calculator = true
             } label: {
