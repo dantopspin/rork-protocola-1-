@@ -3,21 +3,19 @@ import Foundation
 /// Deterministic inventory alert candidates built from recorded data only.
 ///
 /// Every input is either stored on the vial (user-entered expiry) or derived by
-/// `TrackingStore` from the authoritative ledger and schedule (balance,
-/// projected depletion). Protocola never invents a medical expiry or
-/// beyond-use date; the expiry candidate fires only from a date the user
-/// recorded themselves.
+/// TrackingStore from the authoritative ledger and schedule. Protocola never
+/// invents a medical expiry or beyond-use date.
 nonisolated enum VialAlerts {
 
-    /// Days ahead that a projected depletion triggers a reminder.
     static let depletionWindowDays = 7
-
-    /// Days ahead that a user-entered expiry triggers a reminder.
     static let expiryWindowDays = 14
 
 
-    /// Returns at most one candidate per vial, prioritized low balance →
-    /// projected depletion → recorded expiry. Archived vials never alert.
+    /// Returns at most one candidate per vial.
+    ///
+    /// Depletion is more specific than a generic low-balance warning, so it is
+    /// preferred when both conditions are true. Recorded expiry is next, then
+    /// low balance.
     static func candidate(
         vial: VialRecord,
         status: String,
@@ -28,23 +26,12 @@ nonisolated enum VialAlerts {
             return nil
         }
 
-        if status == "Low recorded balance" {
-            return ReminderPlanner.Candidate(
-                id: "vial-low:" + vial.id.uuidString,
-                at: now,
-                title: "Protocola · inventory note",
-                body:
-                    "The recorded balance for "
-                    + vial.name
-                    + " is low. Open Protocola to review your inventory."
-            )
-        }
-
         if let depletion = projectedDepletion,
-           isWithin(
-               depletionWindowDays,
-               of: depletion,
-               now: now
+           let at = deliveryDate(
+                target: depletion,
+                leadDays: depletionWindowDays,
+                now: now,
+                dateOnlyTarget: false
            ) {
             return ReminderPlanner.Candidate(
                 id:
@@ -57,7 +44,7 @@ nonisolated enum VialAlerts {
                                 .timeIntervalSince1970
                         )
                     ),
-                at: now,
+                at: at,
                 title: "Protocola · inventory note",
                 body:
                     "At the recorded schedule, "
@@ -72,10 +59,11 @@ nonisolated enum VialAlerts {
         }
 
         if let expiry = vial.expiry,
-           isWithin(
-               expiryWindowDays,
-               of: expiry,
-               now: now
+           let at = deliveryDate(
+                target: expiry,
+                leadDays: expiryWindowDays,
+                now: now,
+                dateOnlyTarget: true
            ) {
             return ReminderPlanner.Candidate(
                 id:
@@ -88,7 +76,7 @@ nonisolated enum VialAlerts {
                                 .timeIntervalSince1970
                         )
                     ),
-                at: now,
+                at: at,
                 title: "Protocola · inventory note",
                 body:
                     "Your recorded expiry date for "
@@ -102,33 +90,138 @@ nonisolated enum VialAlerts {
             )
         }
 
+        if status == "Low recorded balance",
+           let at = nextStableAlertTime(
+                after: now
+           ) {
+            return ReminderPlanner.Candidate(
+                id:
+                    "vial-low:"
+                    + vial.id.uuidString,
+                at: at,
+                title: "Protocola · inventory note",
+                body:
+                    "The recorded balance for "
+                    + vial.name
+                    + " is low. Open Protocola to review your inventory."
+            )
+        }
+
         return nil
     }
 
 
-    /// Calendar-day window check on start-of-day boundaries so the alert does
-    /// not flicker across midnight.
-    private static func isWithin(
-        _ days: Int,
-        of date: Date,
-        now: Date
-    ) -> Bool {
+    /// Schedule at the threshold when it is still ahead. If the user is
+    /// already inside the warning window, use a stable near-term slot instead
+    /// of the current instant, because ReminderPlanner rejects non-future
+    /// candidates.
+    private static func deliveryDate(
+        target: Date,
+        leadDays: Int,
+        now: Date,
+        dateOnlyTarget: Bool
+    ) -> Date? {
         let calendar = Calendar.current
+        let deadline: Date
 
-        guard days > 0 else {
-            return date <= now
+        if dateOnlyTarget {
+            let start =
+                calendar.startOfDay(
+                    for: target
+                )
+
+            guard
+                let nextDay =
+                    calendar.date(
+                        byAdding: .day,
+                        value: 1,
+                        to: start
+                    )
+            else {
+                return nil
+            }
+
+            deadline =
+                nextDay.addingTimeInterval(-1)
+
+        } else {
+            deadline = target
+        }
+
+        guard deadline > now else {
+            return nil
+        }
+
+        let threshold =
+            calendar.date(
+                byAdding: .day,
+                value: -leadDays,
+                to: target
+            ) ?? target
+
+        if threshold > now {
+            return threshold
+        }
+
+        if let slot =
+            nextStableAlertTime(
+                after: now
+            ),
+           slot < deadline {
+            return slot
+        }
+
+        let fallback =
+            deadline.addingTimeInterval(
+                -60
+            )
+
+        return fallback > now
+            ? fallback
+            : nil
+    }
+
+
+    /// Stable daily slots prevent reminder resyncs from continuously pushing an
+    /// already-due warning farther into the future.
+    private static func nextStableAlertTime(
+        after now: Date
+    ) -> Date? {
+        let calendar = Calendar.current
+        let day =
+            calendar.startOfDay(
+                for: now
+            )
+
+        for hour in [9, 17] {
+            if let candidate =
+                calendar.date(
+                    bySettingHour: hour,
+                    minute: 0,
+                    second: 0,
+                    of: day
+                ),
+               candidate > now {
+                return candidate
+            }
         }
 
         guard
-            let horizon = calendar.date(
-                byAdding: .day,
-                value: days,
-                to: calendar.startOfDay(for: now)
-            )
+            let tomorrow =
+                calendar.date(
+                    byAdding: .day,
+                    value: 1,
+                    to: day
+                )
         else {
-            return false
+            return nil
         }
 
-        return date < horizon
+        return calendar.date(
+            bySettingHour: 9,
+            minute: 0,
+            second: 0,
+            of: tomorrow
+        )
     }
 }
