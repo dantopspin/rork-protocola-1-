@@ -406,8 +406,6 @@ import Foundation
                 .appendingPathComponent(
                     "Protocola-"
                     + name
-                    + "-"
-                    + UUID().uuidString
                     + ".csv"
                 )
 
