@@ -222,7 +222,7 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var adaptivePaywall: some View {
-        if dynamicTypeSize.isAccessibility {
+        if dynamicTypeSize >= .accessibility1 {
             ScrollView {
                 paywallContent(
                     density: .regular
