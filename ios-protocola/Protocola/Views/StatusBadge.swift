@@ -16,10 +16,10 @@ struct StatusBadge: View {
              "Low recorded balance",
              "Depleted",
              "Expires soon",
-             "Recorded expiry today":
+             "Expiry today":
             return Theme.amber
 
-        case "Recorded expiry passed":
+        case "Expiry passed":
             return Theme.danger
 
         default:
