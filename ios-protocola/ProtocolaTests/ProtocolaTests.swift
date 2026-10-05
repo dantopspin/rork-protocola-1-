@@ -2437,11 +2437,15 @@ struct ExportHardeningTests {
     @Test
     func scheduleExportPreservesExactScheduleFields() throws {
         let protocolID = UUID()
-        let compoundID = UUID()
         let anchor =
             Date(
                 timeIntervalSince1970:
                     1_800_000_000
+            )
+        let compound =
+            CompoundRecord(
+                protocolID: protocolID,
+                name: "Compound"
             )
 
         let config =
@@ -2457,16 +2461,13 @@ struct ExportHardeningTests {
             )
 
         let revision =
-            ScheduleRevision(
-                protocolID: protocolID,
-                compoundID: compoundID,
+            try ScheduleRevision(
+                compound: compound,
                 protocolName: "Protocol",
-                compoundName: "Compound",
                 amount: 1,
                 unit: .mg,
                 route: .injection,
                 vialID: nil,
-                configuredSite: nil,
                 config: config,
                 effectiveFrom: anchor
             )
