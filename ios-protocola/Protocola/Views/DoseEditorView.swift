@@ -684,7 +684,7 @@ private struct SyringeVisualization:
                         )
                         .stroke(
                             Theme.hairline,
-                            lineWidth: 1
+                            lineWidth: Theme.ruleThickness
                         )
                     }
 
@@ -1276,7 +1276,7 @@ private struct InjectionSiteMapCanvas:
                     Circle()
                         .stroke(
                             Theme.hairline,
-                            lineWidth: 1
+                            lineWidth: Theme.ruleThickness
                         )
                 }
 

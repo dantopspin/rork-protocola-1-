@@ -890,7 +890,7 @@ private struct TrailingIconLabelStyle: LabelStyle {
     func makeBody(
         configuration: Configuration
     ) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Theme.spaceXS) {
             configuration.title
                 .lineLimit(1)
 

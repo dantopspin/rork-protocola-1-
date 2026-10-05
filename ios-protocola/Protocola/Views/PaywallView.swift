@@ -97,7 +97,7 @@ struct PaywallView: View {
         }
         .onChange(of: store.isPremium) { _, active in
             if active {
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: Theme.motionStateDuration)) {
                     showSuccess = true
                 }
             }
