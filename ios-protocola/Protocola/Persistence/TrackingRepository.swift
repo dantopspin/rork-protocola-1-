@@ -1398,10 +1398,7 @@ import SwiftData
             let value =
                 Decimal(
                     string: clean
-                ),
-            NSDecimalNumber(
-                decimal: value
-            ) != .notANumber
+                )
         else {
             throw TrackingError.invalidInput(
                 "Enter a valid \(label.lowercased())."
