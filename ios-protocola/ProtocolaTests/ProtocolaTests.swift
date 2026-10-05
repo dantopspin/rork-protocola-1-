@@ -2073,3 +2073,169 @@ struct LabTrackingTests {
         )
     }
 }
+
+
+struct ReleaseHardeningTests {
+
+    @Test
+    func cachedEntitlementDoesNotGrantAfterKnownExpiration() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        let valid =
+            EntitlementCache.Record(
+                active: true,
+                expirationDate:
+                    now.addingTimeInterval(
+                        3_600
+                    ),
+                verifiedAt:
+                    now.addingTimeInterval(
+                        -60
+                    )
+            )
+
+        let expired =
+            EntitlementCache.Record(
+                active: true,
+                expirationDate:
+                    now.addingTimeInterval(
+                        -1
+                    ),
+                verifiedAt:
+                    now.addingTimeInterval(
+                        -60
+                    )
+            )
+
+        let inactive =
+            EntitlementCache.Record(
+                active: false,
+                expirationDate: nil,
+                verifiedAt: now
+            )
+
+        #expect(
+            valid.grantsAccess(
+                at: now
+            )
+        )
+        #expect(
+            !expired.grantsAccess(
+                at: now
+            )
+        )
+        #expect(
+            !inactive.grantsAccess(
+                at: now
+            )
+        )
+    }
+
+
+    @Test
+    func nonExpiringVerifiedEntitlementCanSeedAccess() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        let lifetime =
+            EntitlementCache.Record(
+                active: true,
+                expirationDate: nil,
+                verifiedAt: now
+            )
+
+        #expect(
+            lifetime.grantsAccess(
+                at: now
+            )
+        )
+    }
+
+
+    @Test
+    func reminderLedgerSuppressesFingerprintAfterItsWindowPasses() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let id = "vial-low:test"
+        let scheduled =
+            now.addingTimeInterval(
+                -60
+            )
+
+        var ledger =
+            ReminderDeliveryLedger()
+        ledger.markScheduled(
+            id: id,
+            at: scheduled
+        )
+
+        #expect(
+            !ledger.shouldSchedule(
+                id: id,
+                at:
+                    now.addingTimeInterval(
+                        3_600
+                    ),
+                now: now
+            )
+        )
+
+        ledger.prune(
+            keeping: []
+        )
+
+        #expect(
+            ledger.shouldSchedule(
+                id: id,
+                at:
+                    now.addingTimeInterval(
+                        3_600
+                    ),
+                now: now
+            )
+        )
+    }
+
+
+    @Test
+    func reminderLedgerAllowsPendingFingerprintToBeReplaced() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let id = "vial-expiry:test"
+        let future =
+            now.addingTimeInterval(
+                3_600
+            )
+
+        var ledger =
+            ReminderDeliveryLedger()
+        ledger.markScheduled(
+            id: id,
+            at: future
+        )
+
+        #expect(
+            ledger.shouldSchedule(
+                id: id,
+                at:
+                    future.addingTimeInterval(
+                        60
+                    ),
+                now: now
+            )
+        )
+    }
+}
