@@ -26,8 +26,12 @@ struct ProtocolsView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.spaceL
             ) {
+                PrimaryPageHeader(
+                    title: "Protocols"
+                )
+
                 if !store.isPremium,
                    store.activeProtocolIDs.count > 1 {
                     freeChoiceCallout
@@ -75,7 +79,8 @@ struct ProtocolsView: View {
         }
         .scrollIndicators(.hidden)
         .background(Theme.paper)
-        .navigationTitle("Protocols")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(
                 placement:
