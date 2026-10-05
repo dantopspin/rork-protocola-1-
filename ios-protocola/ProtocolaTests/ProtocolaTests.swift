@@ -1618,13 +1618,32 @@ struct VialAlertTests {
         )
         #expect(depletion?.id.hasPrefix("vial-depletion:") == true)
 
-        let farDepletion = VialAlerts.candidate(
-            vial: vial,
-            status: "Active",
-            projectedDepletion: now.addingTimeInterval(30 * 86_400),
-            now: now
-        )
-        #expect(farDepletion == nil)
+        let farTarget =
+            now.addingTimeInterval(
+                30 * 86_400
+            )
+        let farDepletion =
+            VialAlerts.candidate(
+                vial: vial,
+                status: "Active",
+                projectedDepletion:
+                    farTarget,
+                now: now
+            )
+
+        #expect(farDepletion != nil)
+        #expect(farDepletion?.at > now)
+
+        let selected =
+            ReminderPlanner.select(
+                [farDepletion].compactMap {
+                    $0
+                },
+                now: now,
+                otherPending: 0
+            )
+
+        #expect(selected.count == 1)
     }
 
     @Test func expiryAlertUsesOnlyRecordedDateAndSkipsArchived() {
@@ -1645,6 +1664,18 @@ struct VialAlertTests {
             now: now
         )
         #expect(expiry?.id.hasPrefix("vial-expiry:") == true)
+        #expect(expiry?.at > now)
+
+        let selected =
+            ReminderPlanner.select(
+                [expiry].compactMap {
+                    $0
+                },
+                now: now,
+                otherPending: 0
+            )
+
+        #expect(selected.count == 1)
 
         let archived = VialRecord(
             name: "Archived vial",
