@@ -14,8 +14,12 @@ struct StatusBadge: View {
         case "Partial",
              "Delayed",
              "Low recorded balance",
-             "Depleted":
+             "Depleted",
+             "Expires soon":
             return Theme.amber
+
+        case "Recorded expiry passed":
+            return Theme.danger
 
         default:
             return Theme.muted
