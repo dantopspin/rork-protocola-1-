@@ -2,8 +2,8 @@ import Foundation
 
 /// One concise outcome shown on the Pro paywall.
 ///
-/// The paywall intentionally uses only three outcome groups so the complete
-/// conversion surface can fit on one screen at standard Dynamic Type sizes.
+/// We intentionally keep this to three benefit groups so the complete paywall
+/// can remain visible on one screen instead of becoming a feature list.
 struct PaywallBenefit: Identifiable {
     let icon: String
     let title: String
@@ -37,10 +37,10 @@ struct PaywallBenefit: Identifiable {
 }
 
 
-/// Verified customer feedback displayed as social proof.
+/// Verified customer feedback displayed on the paywall.
 ///
-/// Keep this collection empty until feedback is genuinely received. Never ship
-/// invented names, ratings, quotes, or usage claims on the purchase surface.
+/// Add ONLY genuine feedback here.
+/// If this array is empty, the testimonial block automatically disappears.
 struct PaywallTestimonial: Identifiable {
     let quote: String
     let attribution: String
@@ -49,14 +49,21 @@ struct PaywallTestimonial: Identifiable {
         quote + attribution
     }
 
-    static let verified: [PaywallTestimonial] = []
+    static let verified: [PaywallTestimonial] = [
+        // Example once you have genuine feedback:
+        //
+        // PaywallTestimonial(
+        //     quote: "Finally a peptide tracker that feels like an actual record.",
+        //     attribution: "Alex R. · Pro user"
+        // )
+    ]
 }
 
 
 /// Why the paywall was presented.
 ///
-/// The opening promise changes with the locked feature the user just attempted,
-/// while the compact three-benefit structure stays consistent.
+/// The opening message changes depending on the feature the user attempted
+/// to use, while the core Pro proposition stays consistent.
 enum PaywallReason: String, Identifiable {
     case pro
     case compare
@@ -123,17 +130,17 @@ enum PaywallReason: String, Identifiable {
             "Visualize transparent half-life estimates built only from doses you recorded."
 
         case .ask:
-            "Get answers grounded in your own recorded timeline, not a generic history."
+            "Get answers grounded in your own recorded timeline."
 
         case .summary:
-            "Create a structured PDF from the protocol history you have already recorded."
+            "Create a structured PDF from the protocol history you already recorded."
 
         case .secondProtocol:
             "Keep separate schedules, logs, changes, and history for every protocol."
         }
     }
 
-    /// The benefit most closely matching the trigger is shown first.
+    /// Put the feature that triggered the paywall first.
     private var leadingBenefit: PaywallBenefit {
         switch self {
         case .pro, .secondProtocol:
