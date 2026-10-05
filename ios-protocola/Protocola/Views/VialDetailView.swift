@@ -309,12 +309,12 @@ private extension VialDetailView {
 
         if days < 0 {
             return
-                "Recorded expiry passed"
+                "Expiry passed"
         }
 
         if days == 0 {
             return
-                "Recorded expiry today"
+                "Expiry today"
         }
 
         if days <= 14 {
