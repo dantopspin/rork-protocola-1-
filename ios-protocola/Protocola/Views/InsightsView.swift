@@ -574,7 +574,7 @@ private extension InsightsView {
                 .monospacedDigit()
                 .foregroundStyle(Theme.ink)
 
-            HStack(spacing: 5) {
+            HStack(spacing: Theme.spaceXXS) {
                 Circle()
                     .fill(dot)
                     .frame(
@@ -627,7 +627,7 @@ private extension InsightsView {
                 )
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Theme.onDarkPrimary.opacity(0.76)
+                    Theme.onDarkSecondary
                 )
 
                 VStack(
@@ -637,7 +637,7 @@ private extension InsightsView {
                     Text("Since last change")
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.onDarkPrimary.opacity(0.58)
+                            Theme.onDarkSecondary
                         )
 
                     Text(
@@ -655,7 +655,7 @@ private extension InsightsView {
                     )
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Theme.onDarkPrimary.opacity(0.58)
+                        Theme.onDarkSecondary
                     )
                 }
 
@@ -666,7 +666,7 @@ private extension InsightsView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Theme.onDarkPrimary.opacity(0.52)
+                    Theme.onDarkSecondary
                 )
             }
             .padding(Theme.spaceM)

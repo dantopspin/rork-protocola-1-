@@ -1,349 +1,156 @@
-# Protocola Design System v3
+# Protocola Design System v4
 
-This file is the fixed visual reference for every Protocola screen. Product UI must use shared tokens/components before introducing local styling.
+`Theme.swift` is the executable source of truth for visual tokens. This document mirrors it. If the two ever disagree, update the document and code in the same change.
 
 ## Direction
 
 **Clinical Editorial Instrument**
 
-Protocola should feel like a premium protocol record and editorial utility, not a wellness app or generic Settings screen.
+Protocola is a restrained technical record: warm paper, black sans-serif type, one blue-grey accent, sharp geometry, thin rules, and native iOS chrome. Product content should not look like a generic rounded-card wellness app.
 
-- warm near-white paper canvas
-- almost-flat product surfaces
-- black sans-serif typography
-- dark blue-grey as the single product accent and primary-action color
-- monospaced technical numbers where precision matters
-- near-rectangular geometry
-- stronger thin rules as the main hierarchy device
-- almost no decorative shadow
-- generous whitespace around dense records
-- native iOS interaction and navigation underneath
+The product is intentionally **light-only** in v4. `ContentView` pins `.preferredColorScheme(.light)`; therefore dark-mode color variants are not part of the current product contract. “Dark” below refers only to deliberate dark/accent modules inside the light interface.
 
-### Chrome vs product content
+## Color
 
-**Native iOS chrome may use system glass/material. Product content may not.**
-
-Allowed glass/material:
-- tab bar
-- navigation toolbar
-- menus
-- system sheets/popovers
-- transient undo/toast surfaces
-
-Do not use glass/material for:
-- cards
-- protocol surfaces
-- paywall benefits
-- insight modules
-- forms
-- primary buttons
-
----
-
-## Color tokens
-
-| Token | Value | Use |
+| Token | Value | Role |
 | --- | --- | --- |
-| canvas / paper | #F5F3EE | main app background |
-| surface | #FCFBF8 | cards and grouped content |
-| surfaceRaised | #FFFFFF | rare modal/foreground surface |
-| ink | #151513 | primary text/icons/actions |
-| textSecondary | #706D66 | supporting copy |
-| textTertiary | #96928A | dates/metadata/inactive |
-| hairline | ink @ 11% | borders/dividers |
-| subtleFill | ink @ 4.5% | quiet selection/fill |
-| teal | #466C64 | recorded/active/chart/link semantics |
-| tealFill | teal @ 10% | semantic background |
-| amber | #94763F | overdue/low inventory/attention |
-| amberFill | amber @ 10% | warning background |
-| danger | #A6534D | destructive only |
-| darkSurface | #171715 | one high-value dark module per screen |
-| onDarkPrimary | #FAF9F5 | main text on dark |
-| onDarkSecondary | onDarkPrimary @ 62% | supporting text on dark |
+| paper | #F8F7F3 | app canvas |
+| surface | #FBFAF7 | quiet product surface |
+| surfaceRaised | #FFFFFF | rare foreground surface |
+| ink | #121211 | primary text/icons |
+| textSecondary / muted | #67655F | supporting copy |
+| textTertiary | #747169 | quiet metadata; >=4.5:1 on paper |
+| teal / darkSurface | #30536B | primary action, selection, charts, dark module |
+| amber | #876832 | attention; >=4.5:1 in status text |
+| danger | #A6534D | destructive semantics |
+| onDarkPrimary | #FDFCF9 | primary content on teal |
+| onDarkSecondary | onDarkPrimary @ 72% | supporting content on teal |
+| hairline / border | ink @ 16% | decorative rules/card borders |
+| controlBorder | ink @ 46% | interactive outlined-control boundary |
+| line | ink @ 12% | quiet internal rule |
+| subtleFill / neutralTint | ink @ 2.5% | quiet fill |
+| tealTint / amberTint / dangerTint | semantic color @ 8% | semantic background |
+| shadow | ink @ 3.5% | transient elevation only |
 
-**90% of the product UI should remain canvas + surface + black + gray.**
-
-No decorative blue, purple, gradients, or random accent colors.
-
----
+No local product colors. No decorative gradients or extra accent families.
 
 ## Typography
 
-Use Apple's system sans-serif throughout product content. Native chrome remains system-controlled.
+Apple system sans-serif throughout product content.
 
-Technical values, calculations, doses, times, and large metrics may use monospaced digits or the monospaced system design.
+| Token | Size | Weight |
+| --- | ---: | --- |
+| display | 38 | bold |
+| pageTitle | 34 | bold |
+| metricLarge / metric | 34 | semibold monospaced |
+| metricCompact | 26 | semibold monospaced |
+| modalTitle | 20 | semibold |
+| sectionTitle | 18 | semibold |
+| cardTitle | 16 | semibold |
+| body | 15 | regular |
+| buttonLabel | 15 | medium |
+| label | 14 | medium |
+| caption | 12.5 | regular |
+| micro | 11 | semibold |
+| tabLabel | 10 | medium |
+| segmentLabel | 13 | medium |
+| shareMetric | 64 | semibold monospaced |
 
-| Token | Size | Weight | Use |
-| --- | ---: | --- | --- |
-| display | 38 | Semibold | rare onboarding/paywall hero |
-| pageTitle | 34 | Semibold | root screens |
-| metricLarge | 34 | Medium | key number/amount |
-| modalTitle | 20 | Medium | modal emphasis |
-| sectionTitle | 18 | Medium | major sections |
-| cardTitle | 16 | Medium | card/object titles |
-| body | 15 | Regular | main content |
-| buttonLabel | 15 | Medium | primary/secondary actions |
-| label | 14 | Medium | row labels/compact controls |
-| caption | 12.5 | Regular | support/meta |
-| micro | 11 | Medium | badges/tiny metadata |
+Technical values, doses, times, and calculations use monospaced digits/design. Product views must reference `Theme`; local font sizes are forbidden.
 
-Rules:
-- sentence case
-- major headings remain sentence case; compact field/section labels may use tracked uppercase
-- important numbers may use monospaced digits
-- do not use native pre-styled sans typography inside product content
-- root tabs use 34 pt serif titles; detail/modal titles use inline navigation serif
+## Spacing and alignment
 
----
+4pt grid only: **4, 8, 12, 16, 20, 24, 32, 40, 48**.
 
-## Spacing
-
-4 pt base grid only:
-
-- 4
-- 8
-- 12
-- 16
-- 20
-- 24
-- 32
-- 40
-- 48
-
-Core layout:
-- page horizontal inset: 24
+- page inset: 24
 - major section gap: 32
-- standard card padding: 16
-- hero padding: 20
+- standard surface inset: 16
+- hero inset: 20
 - row gap: 12
-- label-to-value: 4
+- label/value micro gap: 4
 - minimum tap target: 44
 
-Empty space is part of the interface.
+Root screens use the same 24pt content grid. Native Lists are acceptable in forms/sheets, but root product timelines should not introduce a different implicit inset.
 
----
+## Geometry
 
-## Radius
-
-Only these radii are allowed in product content:
-
-- primary card: 2
-- compact card/row: 2
+- card: 2
+- row: 2
 - button: 2
-- text field: 0
+- field: 0
 - badge: 2
-- segmented state: capsule
-- avatar/status dot: circle
+- rule thickness: 1
+- primary button height: 48
+- compact/secondary button height: 44
+- badge minimum height: 22
+- icon column: 24
+- large empty-state icon: 28
 
-Do not introduce local 16/18/22/26 pt card radii.
+Capsules/circles are reserved for native segmented states and true circular/status geometry, not general cards.
 
----
+## Motion
 
-## Borders and shadows
+All explicit product motion uses `Theme` timing tokens.
 
-Standard border:
-- 1 pt
-- hairline color
+- press: 0.12s
+- feedback: 0.15s
+- state: 0.25s
+- transition: 0.30s
+- quick spring: response 0.24 / damping 0.82
+- standard spring: response 0.26 / damping 0.80
+- emphasis spring: response 0.32 / damping 0.86
 
-Normal cards:
-- no shadow
+Respect Reduce Motion.
 
-Shadow is reserved for transient/floating surfaces:
-- opacity ~5–6%
-- blur 8
-- y 3
+## Canonical components
 
----
+### EditorialSection
+Tracked uppercase `Eyebrow`, 1pt hairline, content, 1pt hairline; spacing 16. Use the shared component rather than recreating this structure.
 
-## Core components
+### TrackingCard
+Surface background, radius 2, 16pt inset, hairline border, no shadow.
 
-### HeroCard
-- darkSurface
-- radius 12
-- padding 20
-- max one per screen
-- used only for the highest-value context
-
-### SurfaceCard
-- surface
-- radius 12
-- hairline border
-- no shadow
-- padding 16
-
-### DataTile
-- surface
-- radius 10
-- hairline border
-- padding 14–16
+### TrackingHeroCard
+Teal dark surface, radius 2, 20pt inset. Rare: only for the highest-value context.
 
 ### RecordRow
-- 48 pt dense / 54 pt standard rhythm
-- label → flexible space → value
-- serif body typography
-
-### NavigationRow
-- optional 16–18 pt SF Symbol
-- title/detail
-- chevron 11–12 pt
-- no decorative icon color unless semantic
+Label left, value right, body typography, monospaced digits for values.
 
 ### StatusBadge
-- height 20
-- radius 6
-- 8 pt horizontal padding
-- semantic color only
+Micro type, radius 2, minimum height 22, 8pt horizontal inset, semantic tint.
 
 ### PrimaryButton
-- height 46
-- radius 10
-- ink fill / white label
-- one dominant primary action per screen/context
-
-### PrimaryButton on dark
-- onDarkPrimary fill
-- ink label
+Teal fill, onDarkPrimary label, radius 2, 48pt minimum height.
 
 ### SecondaryButton
-- min height 44
-- radius 10
-- surface fill
-- hairline border
-- ink label
+Surface fill, controlBorder outline, ink label, radius 2, 44pt minimum height.
 
 ### CompactButton
-- min 44 pt tap target
-- compact horizontal padding
-- radius 10
-- use for inline Log/Add actions
+44pt minimum tap target, 12pt horizontal inset, same radius/border semantics as secondary.
 
-### SegmentedSelector
-- selected = ink + white
-- unselected = transparent/subtle surface + secondary text
-- capsules only for actual segmented/filter states
+### TrackingEmptyState
+28pt tertiary icon, 20pt title, 15pt supporting copy, left aligned to the page grid.
 
-### EditorialEmptyState
-- icon 28, textTertiary
-- title 20 medium serif
-- description 15 serif / secondary
-- optional secondary/tertiary action
-- never use ContentUnavailableView for branded product screens
+## Screen first-read hierarchy
 
-### InlineNotice
-- surface/subtle fill
-- compact serif copy
-- semantic color only when attention/destructive
+- Today -> next entry / resolved-day state
+- Protocols -> active protocol
+- History -> timeline
+- Insights -> primary metric
+- Inventory -> remaining supply
+- Vial -> remaining amount
+- Calculator -> calculated result
+- Paywall -> value of Pro
+- Onboarding -> one concept per page
 
-### MetricBlock
-- metricLarge
-- supporting caption beneath
-- one dominant metric per screen
+Secondary actions should use the pattern **object -> menu -> focused sheet -> return to object**.
 
-### InjectionSiteMap
-- body map height: 360
-- canonical sites use 44 pt tappable markers
-- selected site uses teal semantic emphasis
-- previously recorded sites may use ink emphasis
-- never visually imply a recommended site
-- recency copy is descriptive history only
-- free-text historical/custom site labels remain supported
+## Native chrome
 
-### VialReferencePhoto
-- maximum displayed height: 220
-- radius 10
-- no decorative shadow
-- always secondary to recorded vial values
-- photo is reference material, never interpreted as dosing guidance
+Native tab bars, navigation bars, menus, system sheets/popovers, confirmation dialogs, and the transient Today undo material may remain native. Product content itself should use tokens/components.
 
-### SyringeVisualization
-- live arithmetic visualization only
-- U-40 and U-100 are convenience scale presets, never recommendations
-- barrel height uses the shared 44 pt compact-control token
-- fill uses teal semantic emphasis
-- over-scale state uses amber attention semantics
-- custom units-per-mL values remain supported
+## Enforcement
 
-### StackCalendar
-- one week at a time
-- combines scheduled entries across all trackable protocols
-- 64 pt minimum day cell width
-- selected day uses ink fill; unselected days remain surface + hairline
-- entry cards stay read-only in the calendar
-- status reflects the recorded log when present
-- calendar copy must remain descriptive, never prescriptive
+No local font sizes, product colors, non-grid spacing, line widths, opacities, animation timing, corner radii, shadows, or arbitrary frame dimensions in product views. Add a token first when a new visual value is genuinely required.
 
-### CycleRestartReminder
-- generated only from a user-recorded ON/OFF cycle with reminders enabled
-- copy says the recorded cycle is scheduled to resume
-- never instructs the user to administer, restart treatment, or change a dose
-- uses the same owned notification namespace and capacity policy as entry reminders
-
-### PlannedRevision
-- temporal states are historical, current, and planned
-- a planned revision never replaces the current revision before its effective date
-- current revision ends exactly when the next planned revision begins
-- multiple future revisions may be chained for the same compound
-- future revisions may be edited or cancelled only before becoming effective
-- historical and already-effective revisions remain immutable
-- planning UI records user-supplied instructions and never recommends a titration
-
-### ProtocolEvolution
-- revision timeline is chronological and labels historical/current/planned state
-- since-change metrics are deterministic summaries of recorded schedules and logs
-- before/after uses equal-duration windows, capped at 30 days each
-- cycle history reports recorded ON phases and restart dates only
-- comparisons remain descriptive; never infer efficacy, causation, or treatment quality
-- planned-change audit events are not treated as already-effective change anchors
-
-### EstimatedLevelChart
-- driven only by actual recorded, non-skipped doses
-- half-life is an explicit user-recorded reference; the app supplies no hidden default
-- model is simple exponential decay with multiple-dose accumulation
-- output is estimated remaining amount, never measured blood concentration or clinical effect
-- protocol-revision dates use quiet vertical markers
-- multiple compounds are summarized separately rather than implying cross-compound equivalence
-- unsupported volume/unit logs are disclosed rather than silently guessed
-
----
-
-## Screen hierarchy
-
-Every screen must have one first-read object:
-
-- Today → next entry / resolved-day state
-- Protocols → active protocol
-- History → timeline
-- Insights → primary metric
-- Inventory → remaining supply
-- Vial → remaining amount
-- Calculator → calculated result
-- Paywall → value of Pro
-- Onboarding → one concept per page
-
-Everything else visually recedes.
-
----
-
-## Forms
-
-Keep native SwiftUI Form/List behavior, but enforce:
-- paper canvas
-- serif typography
-- sentence-case headers
-- black primary controls
-- secondary/tertiary token colors
-- shared spacing
-- no decorative cards inside forms
-
----
-
-## Enforcement rule
-
-**No local font sizes.  
-No local product colors.  
-No local corner radii.  
-No local shadows.  
-No arbitrary spacing outside the token grid.  
-No new card geometry without first adding it here and to Theme.swift.**
-
-All new product UI should be composed from the shared visual primitives or added to the system first.
+`DesignSystemTests.swift` is the source-level regression gate.

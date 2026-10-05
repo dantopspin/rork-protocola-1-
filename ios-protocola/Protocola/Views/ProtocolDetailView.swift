@@ -286,7 +286,7 @@ private extension ProtocolDetailView {
     func readOnlyBlock(
         _ record: ProtocolRecord
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Free tracking"
         ) {
             HStack(
@@ -331,7 +331,7 @@ private extension ProtocolDetailView {
     func recordedInstructions(
         _ record: ProtocolRecord
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Recorded instructions"
         ) {
             RecordRow(
@@ -361,7 +361,7 @@ private extension ProtocolDetailView {
         _ revision: ScheduleRevision,
         record: ProtocolRecord
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             revision.compoundName
         ) {
             HStack(
@@ -527,7 +527,7 @@ private extension ProtocolDetailView {
             [ScheduleRevision],
         record: ProtocolRecord
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Planned changes"
         ) {
             ForEach(
@@ -671,7 +671,7 @@ private extension ProtocolDetailView {
     func toolsBlock(
         _ record: ProtocolRecord
     ) -> some View {
-        editorialSection("Tools") {
+        EditorialSection("Tools") {
             NavigationLink {
                 ProtocolEvolutionView(
                     protocolID: record.id
@@ -723,7 +723,7 @@ private extension ProtocolDetailView {
     func protocolActions(
         _ record: ProtocolRecord
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Protocol status"
         ) {
             Button {
@@ -811,36 +811,6 @@ private extension ProtocolDetailView {
     }
 
 
-    func editorialSection<
-        Content: View
-    >(
-        _ title: String,
-        @ViewBuilder content:
-            () -> Content
-    ) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
-        ) {
-            Eyebrow(text: title)
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-
-            content()
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-        }
-    }
 }
 
 

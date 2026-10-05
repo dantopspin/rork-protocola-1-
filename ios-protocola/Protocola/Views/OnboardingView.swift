@@ -251,7 +251,7 @@ private extension OnboardingView {
             Text("Next entry")
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Theme.onDarkPrimary.opacity(0.56)
+                    Theme.onDarkSecondary
                 )
 
             HStack(
@@ -279,13 +279,13 @@ private extension OnboardingView {
                 )
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Theme.onDarkPrimary.opacity(0.56)
+                    Theme.onDarkSecondary
                 )
             }
 
             Divider()
                 .overlay(
-                    Theme.onDarkPrimary.opacity(0.12)
+                    Theme.onDarkHairline
                 )
 
             Label(
@@ -295,7 +295,7 @@ private extension OnboardingView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.onDarkPrimary.opacity(0.68)
+                Theme.onDarkSecondary
             )
         }
         .padding(Theme.spaceM)
@@ -400,8 +400,8 @@ private extension OnboardingView {
                 reduceMotion
                     ? nil
                     : .spring(
-                        response: 0.26,
-                        dampingFraction: 0.8
+                        response: Theme.springStandardResponse,
+                        dampingFraction: Theme.springStandardDamping
                     )
             ) {
                 intent = item
@@ -548,7 +548,7 @@ private extension OnboardingView {
                         spacing: Theme.spaceXS
                     ) {
                         HStack(
-                            spacing: 4
+                            spacing: Theme.spaceXXS
                         ) {
                             ForEach(
                                 0..<5,
@@ -641,7 +641,7 @@ private extension OnboardingView {
                 .font(Theme.caption)
                 .foregroundStyle(
                     dark
-                        ? Theme.onDarkPrimary.opacity(0.56)
+                        ? Theme.onDarkSecondary
                         : Theme.muted
                 )
 
@@ -658,7 +658,7 @@ private extension OnboardingView {
                 .font(Theme.caption)
                 .foregroundStyle(
                     dark
-                        ? Theme.onDarkPrimary.opacity(0.66)
+                        ? Theme.onDarkSecondary
                         : Theme.muted
                 )
         }
@@ -669,7 +669,7 @@ private extension OnboardingView {
         )
         .background(
             dark
-                ? Theme.ink
+                ? Theme.darkSurface
                 : Theme.surface,
             in: .rect(
                 cornerRadius:
@@ -684,7 +684,7 @@ private extension OnboardingView {
                 )
                 .stroke(
                     Theme.border,
-                    lineWidth: 1
+                    lineWidth: Theme.ruleThickness
                 )
             }
         }
@@ -1080,8 +1080,8 @@ private extension OnboardingView {
                 reduceMotion
                     ? nil
                     : .spring(
-                        response: 0.24,
-                        dampingFraction: 0.82
+                        response: Theme.springQuickResponse,
+                        dampingFraction: Theme.springQuickDamping
                     )
             ) {
                 accepted.toggle()
@@ -1185,8 +1185,8 @@ private extension OnboardingView {
                         reduceMotion
                             ? nil
                             : .spring(
-                                response: 0.24,
-                                dampingFraction: 0.82
+                                response: Theme.springQuickResponse,
+                                dampingFraction: Theme.springQuickDamping
                             ),
                         value: step
                     )
@@ -1325,8 +1325,8 @@ private extension OnboardingView {
         } else {
             withAnimation(
                 .spring(
-                    response: 0.32,
-                    dampingFraction: 0.86
+                    response: Theme.springEmphasisResponse,
+                    dampingFraction: Theme.springEmphasisDamping
                 )
             ) {
                 step = target

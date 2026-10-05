@@ -127,7 +127,7 @@ struct TodayView: View {
         .animation(
             reduceMotion
                 ? nil
-                : .snappy(duration: 0.3),
+                : .snappy(duration: Theme.motionTransitionDuration),
             value: undoLog?.id
         )
         .onDisappear {
@@ -840,7 +840,7 @@ private extension TodayView {
             .animation(
                 reduceMotion
                     ? nil
-                    : .easeIn(duration: 0.15),
+                    : .easeIn(duration: Theme.motionFeedbackDuration),
                 value: dropTarget
             )
         }
@@ -1418,72 +1418,6 @@ private extension TodayView {
 
 
     @ViewBuilder
-    func vialAction(
-        _ next: ScheduledEntry
-    ) -> some View {
-        if let vial =
-            store.vial(
-                next.revision.vialID
-            ) {
-            Button {
-                open(next)
-            } label: {
-                HStack(spacing: Theme.spaceS) {
-                    Image(
-                        systemName: "cross.vial"
-                    )
-
-                    Text(vial.name)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    Image(
-                        systemName: "chevron.right"
-                    )
-                    .font(Theme.micro)
-                }
-                .font(Theme.body)
-                .foregroundStyle(
-                    Theme.onDarkPrimary.opacity(0.82)
-                )
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-        } else {
-            Button {
-                if store.vials.isEmpty {
-                    addVial = true
-                } else {
-                    open(next)
-                }
-            } label: {
-                HStack(spacing: Theme.spaceS) {
-                    Image(
-                        systemName: "cross.vial"
-                    )
-
-                    Text("Add or select vial")
-
-                    Spacer()
-
-                    Image(
-                        systemName: "chevron.right"
-                    )
-                    .font(Theme.micro)
-                }
-                .font(Theme.label)
-                .foregroundStyle(
-                    Theme.onDarkPrimary.opacity(0.9)
-                )
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-
     func heroDose(
         _ next: ScheduledEntry
     ) -> some View {
@@ -1675,7 +1609,7 @@ private extension TodayView {
         .animation(
             reduceMotion
                 ? nil
-                : .snappy(duration: 0.25),
+                : .snappy(duration: Theme.motionStateDuration),
             value: entry.log?.id
         )
     }
@@ -1727,7 +1661,7 @@ private extension TodayView {
         withAnimation(
             reduceMotion
                 ? nil
-                : .snappy(duration: 0.3)
+                : .snappy(duration: Theme.motionTransitionDuration)
         ) {
             if store.moveTodayEntry(
                 draggedID,
@@ -1749,7 +1683,7 @@ private extension TodayView {
         withAnimation(
             reduceMotion
                 ? nil
-                : .snappy(duration: 0.3)
+                : .snappy(duration: Theme.motionTransitionDuration)
         ) {
             if store.moveTodayEntry(
                 entry.id,
@@ -2319,7 +2253,7 @@ struct StackCalendarView: View {
                     )
                     .stroke(
                         Theme.hairline,
-                        lineWidth: 1
+                        lineWidth: Theme.ruleThickness
                     )
                 }
             }

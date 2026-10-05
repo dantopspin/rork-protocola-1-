@@ -145,7 +145,7 @@ private extension LogDetailView {
     func recordedEntry(
         _ log: DoseLog
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Recorded entry"
         ) {
             VStack(
@@ -209,7 +209,7 @@ private extension LogDetailView {
     func historicalSnapshot(
         _ log: DoseLog
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Historical snapshot"
         ) {
             RecordRow(
@@ -315,7 +315,7 @@ private extension LogDetailView {
     func observations(
         _ log: DoseLog
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Observations"
         ) {
             if log.route
@@ -404,34 +404,4 @@ private extension LogDetailView {
     }
 
 
-    func editorialSection<
-        Content: View
-    >(
-        _ title: String,
-        @ViewBuilder content:
-            () -> Content
-    ) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
-        ) {
-            Eyebrow(text: title)
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-
-            content()
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-        }
-    }
 }

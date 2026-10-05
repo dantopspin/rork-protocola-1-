@@ -38,11 +38,11 @@ enum Theme {
         blue: 0.3725
     )
 
-    /// #8D8982 — quiet metadata.
+    /// #747169 — quiet metadata that still clears 4.5:1 on paper.
     static let textTertiary = Color(
-        red: 0.5529,
-        green: 0.5373,
-        blue: 0.5098
+        red: 0.4549,
+        green: 0.4431,
+        blue: 0.4118
     )
 
     static let muted = textSecondary
@@ -55,10 +55,11 @@ enum Theme {
         blue: 0.4196
     )
 
+    /// #876832 — attention color tuned to clear 4.5:1 in status text.
     static let amber = Color(
-        red: 0.5804,
-        green: 0.4627,
-        blue: 0.2471
+        red: 0.5294,
+        green: 0.4078,
+        blue: 0.1961
     )
 
     static let danger = Color(
@@ -78,12 +79,19 @@ enum Theme {
 
     static let onDarkSecondary =
         onDarkPrimary.opacity(0.72)
+    static let onDarkHairline =
+        onDarkPrimary.opacity(0.12)
+    static let onDarkSubtleFill =
+        onDarkPrimary.opacity(0.04)
+    static let onDarkControlBorder =
+        onDarkPrimary.opacity(0.46)
 
 
     // MARK: - Structural colors
 
     static let hairline = ink.opacity(0.16)
     static let border = hairline
+    static let controlBorder = ink.opacity(0.46)
     static let line = ink.opacity(0.12)
     static let subtleFill = ink.opacity(0.025)
     static let neutralTint = subtleFill
@@ -91,6 +99,25 @@ enum Theme {
     static let amberTint = amber.opacity(0.08)
     static let dangerTint = danger.opacity(0.08)
     static let shadow = ink.opacity(0.035)
+
+    // Interaction-state values live here so controls do not invent local
+    // transparency or motion values.
+    static let pressedFillOpacity = 0.84
+    static let pressedControlOpacity = 0.64
+    static let pressedSurfaceOpacity = 0.92
+    static let statusFillOpacity = 0.055
+    static let statusBorderOpacity = 0.22
+
+    static let motionPressDuration = 0.12
+    static let motionFeedbackDuration = 0.15
+    static let motionStateDuration = 0.25
+    static let motionTransitionDuration = 0.30
+    static let springQuickResponse = 0.24
+    static let springQuickDamping = 0.82
+    static let springStandardResponse = 0.26
+    static let springStandardDamping = 0.80
+    static let springEmphasisResponse = 0.32
+    static let springEmphasisDamping = 0.86
 
 
     // MARK: - Typography

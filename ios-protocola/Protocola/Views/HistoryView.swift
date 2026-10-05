@@ -151,37 +151,38 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        List {
-            if groupedDays.isEmpty {
-                Section {
+        ScrollView {
+            LazyVStack(
+                alignment: .leading,
+                spacing: Theme.spaceXL
+            ) {
+                if groupedDays.isEmpty {
                     TrackingEmptyState(
                         icon:
                             "clock.arrow.circlepath",
-                        title: "No records to show",
+                        title:
+                            "No records to show",
                         message:
                             hasActiveFilters
                             ? "Try changing your filters or search."
                             : "Recorded entries and protocol changes appear here."
                     )
-                }
-            } else {
-                ForEach(groupedDays) { day in
-                    Section {
-                        ForEach(day.records) {
-                            record in
-                            recordLink(record)
-                        }
-                    } header: {
-                        Eyebrow(
-                            text: dayTitle(day.date)
-                        )
+                } else {
+                    ForEach(groupedDays) {
+                        day in
+                        dayGroup(day)
                     }
                 }
             }
+            .screenPadding()
+            .padding(
+                .bottom,
+                Theme.spaceXL
+                    + Theme.spaceL
+            )
         }
-        .listStyle(.plain)
-        .paperList()
-        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
+        .background(Theme.paper)
         .navigationTitle("History")
         .searchable(
             text: $search,
@@ -243,15 +244,6 @@ struct HistoryView: View {
                     )
                 }
             }
-        }
-        .safeAreaInset(
-            edge: .bottom,
-            spacing: 0
-        ) {
-            Color.clear
-                .frame(
-                    height: Theme.spaceL
-                )
         }
         .sheet(
             isPresented:
@@ -454,6 +446,40 @@ private extension HistoryView {
 // MARK: - Timeline
 
 private extension HistoryView {
+
+    func dayGroup(
+        _ day: TimelineDay
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
+        ) {
+            Eyebrow(
+                text: dayTitle(day.date)
+            )
+
+            EditorialRule()
+
+            VStack(spacing: 0) {
+                ForEach(
+                    Array(
+                        day.records.enumerated()
+                    ),
+                    id: \.element.id
+                ) { index, record in
+                    recordLink(record)
+
+                    if index
+                        < day.records.count - 1 {
+                        EditorialRule()
+                    }
+                }
+            }
+
+            EditorialRule()
+        }
+    }
+
 
     @ViewBuilder
     func recordLink(
@@ -890,7 +916,7 @@ private struct TrailingIconLabelStyle: LabelStyle {
     func makeBody(
         configuration: Configuration
     ) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Theme.spaceXS) {
             configuration.title
                 .lineLimit(1)
 
