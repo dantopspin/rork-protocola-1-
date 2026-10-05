@@ -515,16 +515,18 @@ struct PaywallView: View {
 
 
     private var proofConnector: some View {
-        Rectangle()
-            .fill(
-                Theme.hairline
-            )
-            .frame(
-                maxWidth: .infinity,
-                height:
-                    Theme.ruleThickness
-            )
-    }
+    Rectangle()
+        .fill(
+            Theme.hairline
+        )
+        .frame(
+            height:
+                Theme.ruleThickness
+        )
+        .frame(
+            maxWidth: .infinity
+        )
+}
 
 
     // MARK: - Social proof
