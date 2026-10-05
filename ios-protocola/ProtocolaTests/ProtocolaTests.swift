@@ -2400,7 +2400,7 @@ struct ExportHardeningTests {
 
         #expect(
             protocolCSV.contains(
-                ""'=unsafe name""
+                "\"'=unsafe name\""
             )
         )
         #expect(
