@@ -1733,3 +1733,343 @@ struct VialAlertTests {
         )
     }
 }
+
+
+@MainActor
+struct LabTrackingTests {
+
+    @Test
+    func labCRUDPreservesRecordedValues() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+
+        var protocolDraft =
+            ProtocolDraft()
+        protocolDraft.name = "Lab protocol"
+        protocolDraft.compound =
+            "Compound"
+        protocolDraft.amount = "1"
+        protocolDraft.unit = .mg
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let protocolRecord =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+
+        var draft =
+            LabDraft(
+                protocolID:
+                    protocolRecord.id
+            )
+        draft.marker = "IGF-1"
+        draft.value = "210"
+        draft.unit = "ng/mL"
+        draft.referenceLow = "90"
+        draft.referenceHigh = "250"
+        draft.notes = "Morning draw"
+        draft.collectedAt =
+            Date.now
+                .addingTimeInterval(
+                    -86_400
+                )
+
+        try repository.saveLab(
+            draft,
+            id: nil
+        )
+
+        let lab =
+            try #require(
+                repository
+                    .all(
+                        LabRecord.self
+                    )
+                    .first
+            )
+
+        #expect(
+            lab.protocolID
+                == protocolRecord.id
+        )
+        #expect(
+            lab.marker == "IGF-1"
+        )
+        #expect(
+            lab.displayValue
+                == "210 ng/mL"
+        )
+        #expect(
+            lab.referenceRangeText
+                == "90 – 250 ng/mL"
+        )
+
+        draft.value = "220"
+
+        try repository.saveLab(
+            draft,
+            id: lab.id
+        )
+
+        #expect(
+            lab.valueText == "220"
+        )
+
+        try repository.deleteLab(lab)
+
+        #expect(
+            try repository
+                .all(
+                    LabRecord.self
+                )
+                .isEmpty
+        )
+    }
+
+
+    @Test
+    func labValidationRejectsInvalidRangeAndFutureDate() throws {
+        let repository =
+            TrackingRepository(
+                container:
+                    try LocalPersistence
+                        .container(
+                            inMemory: true
+                        )
+            )
+
+        var draft = LabDraft()
+        draft.marker = "Marker"
+        draft.value = "10"
+        draft.referenceLow = "20"
+        draft.referenceHigh = "5"
+
+        #expect(
+            throws: TrackingError.self
+        ) {
+            try repository.saveLab(
+                draft,
+                id: nil
+            )
+        }
+
+        draft.referenceLow = ""
+        draft.referenceHigh = ""
+        draft.collectedAt =
+            Date.now
+                .addingTimeInterval(
+                    86_400
+                )
+
+        #expect(
+            throws: TrackingError.self
+        ) {
+            try repository.saveLab(
+                draft,
+                id: nil
+            )
+        }
+    }
+
+
+    @Test
+    func timelineIncludesLabRecordsChronologically() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        let lab =
+            LabRecord(
+                protocolID: UUID(),
+                marker: "Marker",
+                value: 12,
+                unit: "unit",
+                collectedAt: now
+            )
+
+        let timeline =
+            TimelineRecord.build(
+                logs: [],
+                events: [],
+                labs: [lab]
+            )
+
+        #expect(timeline.count == 1)
+        #expect(
+            timeline.first?.category
+                == "Lab"
+        )
+        #expect(
+            timeline.first?.lab?.id
+                == lab.id
+        )
+    }
+
+
+    @Test
+    func labComparisonUsesClosestMatchingUnitsAcrossChange() {
+        let protocolID = UUID()
+        let change =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        let before =
+            AnalysisPeriod(
+                start:
+                    change
+                        .addingTimeInterval(
+                            -30 * 86_400
+                        ),
+                end: change
+            )
+        let after =
+            AnalysisPeriod(
+                start: change,
+                end:
+                    change
+                        .addingTimeInterval(
+                            30 * 86_400
+                        )
+            )
+
+        let older =
+            LabRecord(
+                protocolID: protocolID,
+                marker: "IGF-1",
+                value: 180,
+                unit: "ng/mL",
+                collectedAt:
+                    change
+                        .addingTimeInterval(
+                            -10 * 86_400
+                        )
+            )
+        let nearestBefore =
+            LabRecord(
+                protocolID: protocolID,
+                marker: "IGF-1",
+                value: 200,
+                unit: "ng/mL",
+                collectedAt:
+                    change
+                        .addingTimeInterval(
+                            -2 * 86_400
+                        )
+            )
+        let nearestAfter =
+            LabRecord(
+                protocolID: protocolID,
+                marker: "IGF-1",
+                value: 220,
+                unit: "ng/mL",
+                collectedAt:
+                    change
+                        .addingTimeInterval(
+                            3 * 86_400
+                        )
+            )
+        let mismatchedUnit =
+            LabRecord(
+                protocolID: protocolID,
+                marker: "IGF-1",
+                value: 25,
+                unit: "nmol/L",
+                collectedAt:
+                    change
+                        .addingTimeInterval(
+                            4 * 86_400
+                        )
+            )
+
+        let pairs =
+            LabComparisonEngine
+                .pairs(
+                    labs: [
+                        older,
+                        nearestBefore,
+                        nearestAfter,
+                        mismatchedUnit
+                    ],
+                    protocolID:
+                        protocolID,
+                    change: change,
+                    beforePeriod: before,
+                    afterPeriod: after
+                )
+
+        #expect(pairs.count == 1)
+        #expect(
+            pairs.first?.beforeValue
+                == "200"
+        )
+        #expect(
+            pairs.first?.afterValue
+                == "220"
+        )
+        #expect(
+            pairs.first?.valueText
+                == "200 → 220 ng/mL"
+        )
+    }
+
+
+    @Test
+    func visitSummaryGeneratesWithLabs() throws {
+        let lab =
+            LabRecord(
+                protocolID: nil,
+                marker: "Marker",
+                value: 10,
+                unit: "unit",
+                referenceLow: 5,
+                referenceHigh: 15,
+                collectedAt: .now
+            )
+
+        let url =
+            try VisitSummaryService
+                .generate(
+                    protocols: [],
+                    compounds: [],
+                    revisions: [],
+                    logs: [],
+                    labs: [lab]
+                )
+
+        #expect(
+            FileManager.default
+                .fileExists(
+                    atPath: url.path
+                )
+        )
+
+        let size =
+            try FileManager.default
+                .attributesOfItem(
+                    atPath: url.path
+                )[.size] as? NSNumber
+
+        #expect(
+            (size?.intValue ?? 0) > 0
+        )
+    }
+}
