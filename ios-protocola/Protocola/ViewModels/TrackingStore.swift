@@ -594,10 +594,31 @@ import Observation
     /// permission first mirrors the protocol-reminder flow in the editor.
     func setInventoryAlerts(_ enabled: Bool) async {
         if enabled {
-            _ = await notifications.requestPermission()
+            let allowed =
+                await notifications
+                    .requestPermission()
+
+            guard allowed else {
+                error =
+                    "Inventory alerts were not enabled because notifications are disabled for Protocola."
+                return
+            }
         }
 
-        guard perform({ let prefs = try repository.preferences(); try repository.transaction { prefs.inventoryAlerts = enabled } }) else { return }
+        guard
+            perform({
+                let prefs =
+                    try repository
+                        .preferences()
+
+                try repository.transaction {
+                    prefs.inventoryAlerts =
+                        enabled
+                }
+            })
+        else {
+            return
+        }
 
         resyncReminders()
     }
