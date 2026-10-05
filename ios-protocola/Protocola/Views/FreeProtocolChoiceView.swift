@@ -1,10 +1,14 @@
 import SwiftUI
 
 struct FreeProtocolChoiceView: View {
-    @Environment(TrackingStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
+    @Environment(TrackingStore.self)
+    private var store
 
-    private var activeProtocols: [ProtocolRecord] {
+    @Environment(\.dismiss)
+    private var dismiss
+
+    private var activeProtocols:
+        [ProtocolRecord] {
         store.protocols.filter {
             $0.status == "Active"
         }
@@ -12,80 +16,166 @@ struct FreeProtocolChoiceView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXL
+                ) {
                     Text(
                         "Free includes one actively tracked protocol. Choose which one stays editable and available for logging. All other protocols and their history remain on this iPhone as read-only records."
                     )
                     .font(Theme.body)
-                    .foregroundStyle(Theme.textSecondary)
-                }
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
 
-                Section("Track on Free") {
-                    ForEach(activeProtocols) {
-                        record in
-                        Button {
-                            store.chooseFreeProtocol(
-                                record.id
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceS
+                    ) {
+                        Eyebrow(
+                            text: "Track on Free"
+                        )
+
+                        Rectangle()
+                            .fill(
+                                Theme.hairline
                             )
-                            Haptics.selection()
-                            dismiss()
-                        } label: {
-                            HStack(
-                                spacing: Theme.spaceM
-                            ) {
-                                VStack(
-                                    alignment: .leading,
-                                    spacing: Theme.spaceXXS
+                            .frame(
+                                height:
+                                    Theme.ruleThickness
+                            )
+
+                        ForEach(
+                            Array(
+                                activeProtocols
+                                    .enumerated()
+                            ),
+                            id: \.element.id
+                        ) { index, record in
+                            Button {
+                                store
+                                    .chooseFreeProtocol(
+                                        record.id
+                                    )
+                                Haptics.selection()
+                                dismiss()
+                            } label: {
+                                HStack(
+                                    spacing:
+                                        Theme.spaceM
                                 ) {
-                                    Text(record.name)
+                                    VStack(
+                                        alignment:
+                                            .leading,
+                                        spacing:
+                                            Theme.spaceXXS
+                                    ) {
+                                        Text(
+                                            record.name
+                                        )
+                                        .font(
+                                            Theme
+                                                .sectionTitle
+                                        )
                                         .foregroundStyle(
                                             Theme.ink
                                         )
 
-                                    if let revision =
-                                        store
-                                            .currentRevisions(
-                                                record.id
+                                        if let revision =
+                                            store
+                                                .currentRevisions(
+                                                    record.id
+                                                )
+                                                .first {
+                                            Text(
+                                                revision
+                                                    .compoundName
+                                                + " · "
+                                                + revision
+                                                    .amountText
+                                                + " "
+                                                + revision
+                                                    .unitText
                                             )
-                                            .first {
-                                        Text(
-                                            revision.compoundName
-                                            + " · "
-                                            + revision.amountText
-                                            + " "
-                                            + revision.unitText
+                                            .font(
+                                                Theme.body
+                                            )
+                                            .foregroundStyle(
+                                                Theme
+                                                    .textSecondary
+                                            )
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    if store
+                                        .selectedFreeProtocolID
+                                        == record.id {
+                                        Text("Selected")
+                                            .font(
+                                                Theme.micro
+                                            )
+                                            .foregroundStyle(
+                                                Theme.teal
+                                            )
+                                    } else {
+                                        Image(
+                                            systemName:
+                                                "chevron.right"
                                         )
-                                        .font(Theme.body)
+                                        .font(
+                                            Theme.micro
+                                        )
                                         .foregroundStyle(
-                                            Theme.textSecondary
+                                            Theme.muted
                                         )
                                     }
                                 }
-
-                                Spacer()
-
-                                if store
-                                    .selectedFreeProtocolID
-                                    == record.id {
-                                    Image(
-                                        systemName:
-                                            "checkmark.circle.fill"
-                                    )
-                                    .foregroundStyle(
-                                        Theme.teal
-                                    )
-                                }
+                                .padding(
+                                    .vertical,
+                                    Theme.spaceM
+                                )
+                                .contentShape(
+                                    Rectangle()
+                                )
                             }
-                            .frame(minHeight: Theme.minimumTapTarget)
-                            .contentShape(Rectangle())
+                            .buttonStyle(.plain)
+
+                            if index
+                                < activeProtocols
+                                    .count - 1 {
+                                Rectangle()
+                                    .fill(
+                                        Theme.hairline
+                                    )
+                                    .frame(
+                                        height:
+                                            Theme
+                                                .ruleThickness
+                                    )
+                            }
                         }
-                        .buttonStyle(.plain)
+
+                        Rectangle()
+                            .fill(
+                                Theme.hairline
+                            )
+                            .frame(
+                                height:
+                                    Theme.ruleThickness
+                            )
                     }
                 }
+                .screenPadding()
+                .padding(
+                    .bottom,
+                    Theme.spaceXL
+                )
             }
-            .listStyle(.insetGrouped)
-            .paperList()
+            .scrollIndicators(.hidden)
+            .background(Theme.paper)
             .navigationTitle(
                 "Choose a protocol"
             )
