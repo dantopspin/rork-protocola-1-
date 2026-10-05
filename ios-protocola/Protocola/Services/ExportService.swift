@@ -300,9 +300,10 @@ import Foundation
                             .ISO8601Format()
                             ?? "",
                         vial.lifecycleState.rawValue,
-                        vial.photoData?
-                            .base64EncodedString()
-                            ?? "",
+                        vial.photoData.map {
+                            "base64:"
+                            + $0.base64EncodedString()
+                        } ?? "",
                         vial.createdAt
                             .ISO8601Format()
                     ]
