@@ -200,22 +200,51 @@ private extension SettingsView {
             Button {
                 openNotificationSettings()
             } label: {
-                HStack(spacing: Theme.spaceS) {
-                    Label(
-                        "Notifications",
-                        systemImage: "bell"
+                HStack(
+                    alignment: .center,
+                    spacing: Theme.spaceS
+                ) {
+                    VStack(
+                        alignment: .leading,
+                        spacing:
+                            Theme.spaceXXS
+                    ) {
+                        Label(
+                            "Notifications",
+                            systemImage: "bell"
+                        )
+
+                        Text(
+                            store.notifications
+                                .status
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                        .lineLimit(2)
+                    }
+
+                    Spacer(
+                        minLength:
+                            Theme.spaceS
                     )
 
-                    Spacer()
-
-                    Text(store.notifications.status)
-                        .foregroundStyle(Theme.muted)
-
-                    Image(systemName: "chevron.right")
-                        .font(Theme.micro)
-                        .foregroundStyle(Theme.muted)
-                        .accessibilityHidden(true)
+                    Image(
+                        systemName:
+                            "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+                    .accessibilityHidden(
+                        true
+                    )
                 }
+                .contentShape(
+                    Rectangle()
+                )
             }
             .foregroundStyle(Theme.ink)
 
