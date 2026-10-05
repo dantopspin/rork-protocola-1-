@@ -262,6 +262,9 @@ private extension SettingsView {
                     systemImage: "square.and.arrow.up"
                 )
             }
+            .disabled(
+                !hasExportableData
+            )
 
         } header: {
             Eyebrow(text: "Data & Privacy")
@@ -346,6 +349,19 @@ private extension SettingsView {
 // MARK: - Actions
 
 private extension SettingsView {
+
+    var hasExportableData: Bool {
+        !store.protocols.isEmpty
+        || !store.compounds.isEmpty
+        || !store.revisions.isEmpty
+        || !store.logs.isEmpty
+        || !store.vials.isEmpty
+        || !store.inventoryAdjustments
+            .isEmpty
+        || !store.events.isEmpty
+        || !store.labs.isEmpty
+    }
+
 
     func openNotificationSettings() {
         guard let url = URL(
