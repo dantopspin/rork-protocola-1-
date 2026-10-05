@@ -664,8 +664,8 @@ import Observation
         // reminders; every input is recorded data, never an invented date.
         let inventory: [ReminderPlanner.Candidate] =
             (try? repository.preferences())?.inventoryAlerts == true
-            ? vials.compactMap { vial in
-                VialAlerts.candidate(
+            ? vials.flatMap { vial in
+                VialAlerts.candidates(
                     vial: vial,
                     status: vialStatus(vial),
                     projectedDepletion: estimatedDepletionDate(
