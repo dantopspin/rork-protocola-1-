@@ -16,6 +16,7 @@ struct TodayView: View {
     @State private var calculator = false
     @State private var stackCalendar = false
     @State private var shareCard = false
+    @State private var editingSchedule: ScheduleRevision?
     @State private var undoLog: DoseLog?
     @State private var undoTask: Task<Void, Never>?
     @State private var dropTarget: String?
@@ -60,18 +61,18 @@ struct TodayView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.spaceL
             ) {
-                Text(
-                    Date.now.formatted(
-                        .dateTime
-                            .weekday(.wide)
-                            .month(.wide)
-                            .day()
-                    )
+                PrimaryPageHeader(
+                    title: "Today",
+                    subtitle:
+                        Date.now.formatted(
+                            .dateTime
+                                .weekday(.wide)
+                                .month(.wide)
+                                .day()
+                        )
                 )
-                .font(Theme.body)
-                .foregroundStyle(Theme.muted)
 
                 if let next = nextUnloggedEntry {
                     nextEntryHero(next)
@@ -92,7 +93,11 @@ struct TodayView: View {
 
                 if !store.isDemo,
                    !store.protocols.isEmpty,
-                   store.vials.isEmpty {
+                   store.vials.isEmpty,
+                   nextUnloggedEntry?
+                    .revision
+                    .route
+                    .usesInjectionSite != true {
                     addFirstVialCard
                 }
 
@@ -117,7 +122,8 @@ struct TodayView: View {
         }
         .scrollIndicators(.hidden)
         .background(Theme.paper)
-        .navigationTitle("Today")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let log = undoLog,
                !log.isDeleted {
@@ -235,6 +241,31 @@ struct TodayView: View {
                             )
                         }
             )
+        }
+        .sheet(item: $editingSchedule) {
+            revision in
+
+            if let record =
+                store.protocols.first(
+                    where: {
+                        $0.id
+                            == revision.protocolID
+                    }
+                ) {
+                ProtocolEditorView(
+                    record: record,
+                    revision: revision
+                )
+            } else {
+                TrackingEmptyState(
+                    icon: "calendar",
+                    title: "Protocol unavailable",
+                    message:
+                        "This schedule can no longer be edited."
+                )
+                .screenPadding()
+                .background(Theme.paper)
+            }
         }
         .navigationDestination(
             isPresented: $inventory
@@ -1205,12 +1236,7 @@ private extension TodayView {
                 .fill(Theme.hairline)
                 .frame(height: Theme.ruleThickness)
 
-            RecordRow(
-                label: "Protocol",
-                value:
-                    next.revision
-                        .protocolName
-            )
+            protocolActionLight(next)
 
             if next.revision.route
                 .usesInjectionSite {
@@ -1256,6 +1282,63 @@ private extension TodayView {
                 .fill(Theme.hairline)
                 .frame(height: Theme.ruleThickness)
         }
+    }
+
+
+    func protocolActionLight(
+        _ next: ScheduledEntry
+    ) -> some View {
+        NavigationLink(
+            value:
+                TrackingRoute
+                    .protocolDetail(
+                        next.revision
+                            .protocolID
+                    )
+        ) {
+            HStack(
+                alignment:
+                    .firstTextBaseline,
+                spacing: Theme.spaceM
+            ) {
+                Text("Protocol")
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+
+                Spacer()
+
+                Text(
+                    next.revision
+                        .protocolName
+                )
+                .font(Theme.body)
+                .foregroundStyle(
+                    Theme.ink
+                )
+                .lineLimit(1)
+
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+                .font(Theme.micro)
+                .foregroundStyle(
+                    Theme.muted
+                )
+                .accessibilityHidden(true)
+            }
+            .frame(
+                minHeight:
+                    Theme.minimumTapTarget
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(
+            "Opens protocol details."
+        )
     }
 
 
@@ -1442,12 +1525,46 @@ private extension TodayView {
     func heroTime(
         _ next: ScheduledEntry
     ) -> some View {
-        Text(next.at, style: .time)
-            .font(Theme.sectionTitle)
-            .monospacedDigit()
-            .foregroundStyle(
-                Theme.ink
+        Button {
+            editingSchedule =
+                next.revision
+        } label: {
+            HStack(
+                spacing: Theme.spaceXXS
+            ) {
+                Text(
+                    next.at,
+                    style: .time
+                )
+                .font(Theme.sectionTitle)
+                .monospacedDigit()
+                .foregroundStyle(
+                    Theme.teal
+                )
+
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+                .font(Theme.micro)
+                .foregroundStyle(
+                    Theme.textTertiary
+                )
+                .accessibilityHidden(true)
+            }
+            .frame(
+                minHeight:
+                    Theme.minimumTapTarget
             )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            "Edit schedule time"
+        )
+        .accessibilityHint(
+            "Opens the protocol schedule editor."
+        )
     }
 
 
