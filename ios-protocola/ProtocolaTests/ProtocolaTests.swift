@@ -1670,8 +1670,9 @@ struct VialAlertTests {
             farWarnings.count == 1
         )
         #expect(
-            farWarnings.first?.at
-                > now
+            farWarnings.first.map {
+                $0.at > now
+            } == true
         )
         #expect(
             ReminderPlanner.select(
@@ -1700,7 +1701,7 @@ struct VialAlertTests {
             now: now
         )
         #expect(expiry?.id.hasPrefix("vial-expiry:") == true)
-        #expect(expiry?.at > now)
+        #expect(expiry.map { $0.at > now } == true)
 
         let selected =
             ReminderPlanner.select(
