@@ -167,6 +167,32 @@ struct FreeProtocolChoiceView: View {
                                     Theme.ruleThickness
                             )
                     }
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceS
+                    ) {
+                        Eyebrow(
+                            text: "Need more than one?"
+                        )
+
+                        Button {
+                            Haptics.selection()
+                            store
+                                .requestPaywall(
+                                    .secondProtocol
+                                )
+                        } label: {
+                            Label(
+                                "Unlock unlimited protocols",
+                                systemImage:
+                                    "lock.open"
+                            )
+                        }
+                        .buttonStyle(
+                            TrackingSecondaryButtonStyle()
+                        )
+                    }
                 }
                 .screenPadding()
                 .padding(
@@ -193,6 +219,24 @@ struct FreeProtocolChoiceView: View {
                 }
             }
             .trackingErrors()
+            // Presented as a sheet itself, so the paywall needs a sink here
+            // to appear on top of the protocol choice sheet.
+            .sheet(
+                item:
+                    Binding(
+                        get: {
+                            store.pendingPaywall
+                        },
+                        set: {
+                            if $0 == nil {
+                                store
+                                    .dismissPaywall()
+                            }
+                        }
+                    )
+            ) { reason in
+                PaywallView(reason: reason)
+            }
         }
     }
 }
