@@ -63,8 +63,13 @@ import UIKit
             }
             let planned =
                 revisions
-                    .filter {
-                        $0.isPlanned(
+                    .filter { revision in
+                        protocols.contains {
+                            $0.id
+                                == revision
+                                    .protocolID
+                        }
+                        && revision.isPlanned(
                             after: now
                         )
                     }
