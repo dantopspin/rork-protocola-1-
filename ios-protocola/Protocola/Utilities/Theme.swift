@@ -252,6 +252,14 @@ enum Theme {
     static let sharePreviewMinHeight: CGFloat = 240
     static let calendarDayWidth: CGFloat = 64
 
+    // Paywall loading/success geometry
+    static let paywallSuccessIconSize: CGFloat = 56
+    static let paywallSkeletonTitleWidth: CGFloat = 104
+    static let paywallSkeletonTitleHeight: CGFloat = 14
+    static let paywallSkeletonDetailWidth: CGFloat = 148
+    static let paywallSkeletonDetailHeight: CGFloat = 12
+    static let paywallSkeletonActionWidth: CGFloat = 88
+
 
     // MARK: - Layout
 
