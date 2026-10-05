@@ -28,7 +28,6 @@ struct LogDetailView: View {
                         recordedEntry(log)
                         historicalSnapshot(log)
                         observations(log)
-                        actions(log)
                     }
                     .screenPadding()
                     .padding(
@@ -49,17 +48,47 @@ struct LogDetailView: View {
                         placement:
                             .topBarTrailing
                     ) {
-                        Button(
-                            "Correct entry",
-                            systemImage: "pencil"
-                        ) {
-                            edit = true
-                        }
-                        .disabled(
-                            !store.canEdit(
-                                log.protocolID
+                        Menu {
+                            Button {
+                                edit = true
+                            } label: {
+                                Label(
+                                    "Correct entry",
+                                    systemImage:
+                                        "pencil"
+                                )
+                            }
+                            .disabled(
+                                !store.canEdit(
+                                    log.protocolID
+                                )
                             )
-                        )
+
+                            Divider()
+
+                            Button(
+                                role: .destructive
+                            ) {
+                                confirm = true
+                            } label: {
+                                Label(
+                                    "Delete entry",
+                                    systemImage:
+                                        "trash"
+                                )
+                            }
+                            .disabled(
+                                !store.canEdit(
+                                    log.protocolID
+                                )
+                            )
+                        } label: {
+                            Label(
+                                "Entry actions",
+                                systemImage:
+                                    "ellipsis.circle"
+                            )
+                        }
                     }
                 }
                 .sheet(

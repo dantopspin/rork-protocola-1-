@@ -128,7 +128,13 @@ struct PaywallView: View {
 
             VStack(spacing: Theme.spaceM) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 56, weight: .light))
+                    .font(
+                        .system(
+                            size:
+                                Theme.paywallSuccessIconSize,
+                            weight: .light
+                        )
+                    )
                     .foregroundStyle(Theme.teal)
                     .accessibilityHidden(true)
 
@@ -190,18 +196,33 @@ struct PaywallView: View {
             VStack(alignment: .leading, spacing: Theme.spaceXS) {
                 RoundedRectangle(cornerRadius: Theme.radiusBadge)
                     .fill(Theme.neutralTint)
-                    .frame(width: 104, height: 14)
+                    .frame(
+                        width:
+                            Theme.paywallSkeletonTitleWidth,
+                        height:
+                            Theme.paywallSkeletonTitleHeight
+                    )
 
                 RoundedRectangle(cornerRadius: Theme.radiusBadge)
                     .fill(Theme.neutralTint)
-                    .frame(width: 148, height: 12)
+                    .frame(
+                        width:
+                            Theme.paywallSkeletonDetailWidth,
+                        height:
+                            Theme.paywallSkeletonDetailHeight
+                    )
             }
 
             Spacer(minLength: Theme.spaceXS)
 
             RoundedRectangle(cornerRadius: Theme.radiusButton)
                 .fill(Theme.neutralTint)
-                .frame(width: 88, height: Theme.compactButtonHeight)
+                .frame(
+                    width:
+                        Theme.paywallSkeletonActionWidth,
+                    height:
+                        Theme.compactButtonHeight
+                )
         }
         .padding(.vertical, Theme.spaceM)
         .overlay(alignment: .top) {
