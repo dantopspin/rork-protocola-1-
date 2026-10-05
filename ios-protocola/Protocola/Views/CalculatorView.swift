@@ -33,14 +33,19 @@ struct CalculatorView: View {
                         "Arithmetic only. Protocola converts the explicit values you enter. It does not recommend a dose, dilution, or administration technique."
                     )
                     .font(Theme.caption)
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
                 }
             }
+            .listStyle(.plain)
             .paperList()
             .scrollContentBackground(.hidden)
             .doneKeyboard()
             .navigationTitle("Calculator")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
             .toolbar {
                 ToolbarItem(
                     placement:
@@ -97,6 +102,7 @@ private extension CalculatorView {
                         )
                 )
                 .keyboardType(.decimalPad)
+                .font(Theme.metricCompact)
 
                 Picker(
                     "Mass unit",
@@ -132,9 +138,10 @@ private extension CalculatorView {
                     )
             )
             .keyboardType(.decimalPad)
+            .font(Theme.metricCompact)
 
         } header: {
-            Text("Vial values")
+            Eyebrow(text: "Vial values")
 
         } footer: {
             Text(
@@ -162,6 +169,7 @@ private extension CalculatorView {
                         )
                 )
                 .keyboardType(.decimalPad)
+                .font(Theme.metricCompact)
 
                 Picker(
                     "Amount unit",
@@ -198,23 +206,22 @@ private extension CalculatorView {
                     )
             )
             .keyboardType(.decimalPad)
+            .font(Theme.metricCompact)
 
             Button {
                 model.calculate()
+                Haptics.selection()
             } label: {
-                Label(
-                    "Calculate",
-                    systemImage: "equal"
-                )
-                .frame(
-                    maxWidth: .infinity
-                )
+                Text("Calculate")
             }
-            .buttonStyle(TrackingCompactButtonStyle(prominent: true))
-            .tint(Theme.ink)
+            .buttonStyle(
+                TrackingPrimaryButtonStyle()
+            )
 
         } header: {
-            Text("Value to convert")
+            Eyebrow(
+                text: "Value to convert"
+            )
         }
     }
 
@@ -224,7 +231,38 @@ private extension CalculatorView {
         volume: String,
         units: String
     ) -> some View {
-        Section("Calculated result") {
+        Section {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXS
+            ) {
+                Eyebrow(
+                    text:
+                        "Calculated draw volume"
+                )
+
+                Text(volume + " mL")
+                    .font(Theme.metricLarge)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .monospacedDigit()
+
+                Text(
+                    units
+                    + " syringe units"
+                )
+                .font(Theme.label)
+                .foregroundStyle(
+                    Theme.teal
+                )
+                .monospacedDigit()
+            }
+            .padding(
+                .vertical,
+                Theme.spaceS
+            )
+
             RecordRow(
                 label: "Concentration",
                 value:
@@ -242,6 +280,11 @@ private extension CalculatorView {
             RecordRow(
                 label: "Syringe units",
                 value: units
+            )
+
+        } header: {
+            Eyebrow(
+                text: "Calculated result"
             )
         }
     }
