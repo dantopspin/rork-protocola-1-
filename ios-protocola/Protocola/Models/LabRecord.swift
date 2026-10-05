@@ -31,9 +31,9 @@ import SwiftData
         valueText = Self.text(value)
         self.unit = unit
         referenceLowText =
-            referenceLow.map(Self.text)
+            referenceLow.map { Self.text($0) }
         referenceHighText =
-            referenceHigh.map(Self.text)
+            referenceHigh.map { Self.text($0) }
         self.notes = notes
         self.collectedAt = collectedAt
         createdAt = now
