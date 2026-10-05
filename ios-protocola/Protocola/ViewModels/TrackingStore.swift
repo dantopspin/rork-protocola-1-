@@ -613,7 +613,8 @@ import Observation
         let selectedProtocols = protocols.filter { protocolID == nil || $0.id == protocolID }
         let selectedLogs = logs.filter { (protocolID == nil || $0.protocolID == protocolID) && (period?.contains($0.loggedAt) ?? true) }
         let selectedEvents = events.filter { (protocolID == nil || $0.protocolID == protocolID) && (period?.contains($0.at) ?? true) }
-        return try VisitSummaryService.generate(protocols: selectedProtocols, compounds: compounds, revisions: revisions, logs: selectedLogs, events: selectedEvents, period: period, summary: period.map { InsightsSummary(store: self, period: $0, protocolID: protocolID) })
+        let selectedLabs = labs.filter { (protocolID == nil || $0.protocolID == protocolID) && (period?.contains($0.collectedAt) ?? true) }
+        return try VisitSummaryService.generate(protocols: selectedProtocols, compounds: compounds, revisions: revisions, logs: selectedLogs, events: selectedEvents, labs: selectedLabs, period: period, summary: period.map { InsightsSummary(store: self, period: $0, protocolID: protocolID) })
     }
 
     func clearData() { _ = perform { try repository.clear() } }
