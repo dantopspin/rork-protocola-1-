@@ -109,7 +109,7 @@ private extension VialDetailView {
     func inventoryOverview(
         _ vial: VialRecord
     ) -> some View {
-        editorialSection("Inventory") {
+        EditorialSection("Inventory") {
             VStack(
                 alignment: .leading,
                 spacing: Theme.spaceS
@@ -227,7 +227,7 @@ private extension VialDetailView {
     func referencePhoto(
         _ vial: VialRecord
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Reference photo"
         ) {
             if let data = vial.photoData,
@@ -255,7 +255,7 @@ private extension VialDetailView {
     func recordedVial(
         _ vial: VialRecord
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             "Recorded vial"
         ) {
             RecordRow(
@@ -365,7 +365,7 @@ private extension VialDetailView {
                         > $1.loggedAt
                 }
 
-        editorialSection(
+        EditorialSection(
             "Recorded entries"
         ) {
             if logs.isEmpty {
@@ -498,34 +498,4 @@ private extension VialDetailView {
     }
 
 
-    func editorialSection<
-        Content: View
-    >(
-        _ title: String,
-        @ViewBuilder content:
-            () -> Content
-    ) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
-        ) {
-            Eyebrow(text: title)
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-
-            content()
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-        }
-    }
 }

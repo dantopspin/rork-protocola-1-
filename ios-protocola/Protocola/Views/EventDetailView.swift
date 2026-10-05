@@ -69,7 +69,7 @@ private extension EventDetailView {
 
 
     var retainedRecord: some View {
-        editorialSection(
+        EditorialSection(
             "Retained record"
         ) {
             Text(event.detail)
@@ -92,7 +92,7 @@ private extension EventDetailView {
     func changeBlock(
         _ change: RecordChange
     ) -> some View {
-        editorialSection(
+        EditorialSection(
             change.field
         ) {
             RecordRow(
@@ -116,34 +116,4 @@ private extension EventDetailView {
     }
 
 
-    func editorialSection<
-        Content: View
-    >(
-        _ title: String,
-        @ViewBuilder content:
-            () -> Content
-    ) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
-        ) {
-            Eyebrow(text: title)
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-
-            content()
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-        }
-    }
 }

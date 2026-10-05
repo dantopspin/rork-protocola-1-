@@ -1,5 +1,47 @@
 import SwiftUI
 
+
+/// Canonical rule used by editorial sections and record groups.
+struct EditorialRule: View {
+    var body: some View {
+        Rectangle()
+            .fill(Theme.hairline)
+            .frame(
+                height:
+                    Theme.ruleThickness
+            )
+    }
+}
+
+
+/// Canonical section rhythm for technical records and focused sheets.
+struct EditorialSection<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: () -> Content
+
+    init(
+        _ title: String,
+        @ViewBuilder content:
+            @escaping () -> Content
+    ) {
+        self.title = title
+        self.content = content
+    }
+
+    var body: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            Eyebrow(text: title)
+            EditorialRule()
+            content()
+            EditorialRule()
+        }
+    }
+}
+
+
 /// Editorial product surface. Sharp, flat, bordered, and intentionally quiet.
 struct TrackingCard<Content: View>: View {
     @ViewBuilder let content: () -> Content

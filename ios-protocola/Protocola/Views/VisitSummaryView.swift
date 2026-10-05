@@ -79,7 +79,7 @@ struct VisitSummaryView: View {
 private extension VisitSummaryView {
 
     var scopeSection: some View {
-        editorialSection(
+        EditorialSection(
             "Record scope"
         ) {
             Picker(
@@ -121,7 +121,7 @@ private extension VisitSummaryView {
 
 
     var contentsSection: some View {
-        editorialSection(
+        EditorialSection(
             "Included records"
         ) {
             RecordRow(
@@ -197,36 +197,6 @@ private extension VisitSummaryView {
     }
 
 
-    func editorialSection<
-        Content: View
-    >(
-        _ title: String,
-        @ViewBuilder content:
-            () -> Content
-    ) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
-        ) {
-            Eyebrow(text: title)
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-
-            content()
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
-        }
-    }
 
 
     func prepareSummary() {
