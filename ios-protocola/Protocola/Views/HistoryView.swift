@@ -128,9 +128,7 @@ struct HistoryView: View {
     private var hasAnyHistory: Bool {
         !store.logs.isEmpty
         || !store.labs.isEmpty
-        || store.events.contains {
-            $0.showsInTimeline
-        }
+        || !store.events.isEmpty
     }
 
 
