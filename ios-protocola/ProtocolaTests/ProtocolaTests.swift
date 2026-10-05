@@ -2239,3 +2239,117 @@ struct ReleaseHardeningTests {
         )
     }
 }
+
+
+@MainActor
+struct ExportHardeningTests {
+
+    @Test
+    func completeExportFilesAreCreatedAndEscaped() throws {
+        let protocolRecord =
+            ProtocolRecord(
+                name: "=unsafe name",
+                instructionSource:
+                    "Recorded source",
+                notes: "note"
+            )
+
+        let vial =
+            VialRecord(
+                name: "Vial 1",
+                compoundName:
+                    "Compound",
+                originalMg: 10,
+                diluentMl: 2
+            )
+
+        vial.photoData =
+            Data([0x01, 0x02, 0x03])
+
+        let protocolURL =
+            try ExportService
+                .protocolsCSV(
+                    [protocolRecord]
+                )
+        let vialURL =
+            try ExportService
+                .vialsCSV(
+                    [vial],
+                    balances: [
+                        vial.id: 8
+                    ]
+                )
+
+        let protocolCSV =
+            try String(
+                contentsOf:
+                    protocolURL,
+                encoding: .utf8
+            )
+        let vialCSV =
+            try String(
+                contentsOf:
+                    vialURL,
+                encoding: .utf8
+            )
+
+        #expect(
+            protocolCSV.contains(
+                ""'=unsafe name""
+            )
+        )
+        #expect(
+            vialCSV.contains(
+                "photo_base64"
+            )
+        )
+        #expect(
+            vialCSV.contains(
+                Data(
+                    [0x01, 0x02, 0x03]
+                )
+                .base64EncodedString()
+            )
+        )
+        #expect(
+            FileManager.default
+                .fileExists(
+                    atPath:
+                        protocolURL.path
+                )
+        )
+        #expect(
+            FileManager.default
+                .fileExists(
+                    atPath:
+                        vialURL.path
+                )
+        )
+    }
+
+
+    @Test
+    func exportSupportsEmptyRecordSets() throws {
+        let urls = [
+            try ExportService
+                .protocolsCSV([]),
+            try ExportService
+                .compoundsCSV([]),
+            try ExportService
+                .scheduleRevisionsCSV([]),
+            try ExportService
+                .inventoryCSV([]),
+            try ExportService
+                .eventsCSV([])
+        ]
+
+        #expect(
+            urls.allSatisfy {
+                FileManager.default
+                    .fileExists(
+                        atPath: $0.path
+                    )
+            }
+        )
+    }
+}
