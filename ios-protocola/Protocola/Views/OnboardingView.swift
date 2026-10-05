@@ -1081,7 +1081,7 @@ private extension OnboardingView {
                     ? nil
                     : .spring(
                         response: Theme.springQuickResponse,
-                        dampingFraction: Theme.springStandardDamping2
+                        dampingFraction: Theme.springQuickDamping
                     )
             ) {
                 accepted.toggle()
@@ -1186,7 +1186,7 @@ private extension OnboardingView {
                             ? nil
                             : .spring(
                                 response: Theme.springQuickResponse,
-                                dampingFraction: Theme.springStandardDamping2
+                                dampingFraction: Theme.springQuickDamping
                             ),
                         value: step
                     )
@@ -1326,7 +1326,7 @@ private extension OnboardingView {
             withAnimation(
                 .spring(
                     response: Theme.springEmphasisResponse,
-                    dampingFraction: Theme.springStandardDamping6
+                    dampingFraction: Theme.springEmphasisDamping
                 )
             ) {
                 step = target
