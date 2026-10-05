@@ -274,12 +274,33 @@ private extension SettingsView {
 
     var dataPrivacySection: some View {
         Section {
+            Toggle(
+                isOn: Binding(
+                    get: {
+                        store.aiSharing
+                    },
+                    set: { enabled in
+                        store.setAISharing(
+                            enabled
+                        )
+                    }
+                )
+            ) {
+                Label(
+                    "Ask Protocola record sharing",
+                    systemImage:
+                        "lock.shield"
+                )
+            }
+
             Button {
-                document = LegalContent.aiDataUse
+                document =
+                    LegalContent.aiDataUse
             } label: {
                 Label(
                     "AI & Data Use",
-                    systemImage: "lock.shield"
+                    systemImage:
+                        "doc.text.magnifyingglass"
                 )
             }
 
@@ -288,7 +309,8 @@ private extension SettingsView {
             } label: {
                 Label(
                     "Export My Data",
-                    systemImage: "square.and.arrow.up"
+                    systemImage:
+                        "square.and.arrow.up"
                 )
             }
             .disabled(
@@ -299,9 +321,9 @@ private extension SettingsView {
             Eyebrow(text: "Data & Privacy")
         } footer: {
             Text(
-                "Your core records are stored on this iPhone. "
-                + "Export My Data creates portable CSV copies of your protocols, schedules, entries, vial and inventory records, audit events, and labs. "
-                + "Relevant information leaves the device only when required for a feature you choose to use, such as Ask Protocola."
+                "Ask Protocola sharing is optional and can be turned off here at any time. "
+                + "When enabled, only the scoped record fields described in AI & Data Use are sent when you actively ask a question; nothing is sent in the background. "
+                + "Export My Data creates portable CSV copies of your protocols, schedules, entries, vial and inventory records, audit events, and labs."
             )
         }
     }
