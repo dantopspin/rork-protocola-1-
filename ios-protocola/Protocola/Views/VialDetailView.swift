@@ -224,19 +224,33 @@ private extension VialDetailView {
             }
 
             if let expiry = vial.expiry {
-                RecordRow(
-                    label:
-                        "Recorded expiry",
-                    value:
-                        expiry.formatted(
-                            date:
-                                .abbreviated,
-                            time: .omitted
-                        )
-                        + expiryCountdownLabel(
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXS
+                ) {
+                    RecordRow(
+                        label:
+                            "Recorded expiry",
+                        value:
+                            expiry.formatted(
+                                date:
+                                    .abbreviated,
+                                time: .omitted
+                            )
+                            + expiryCountdownLabel(
+                                expiry
+                            )
+                    )
+
+                    if let status =
+                        expiryStatus(
                             expiry
+                        ) {
+                        StatusBadge(
+                            text: status
                         )
-                )
+                    }
+                }
             }
 
             Text(
@@ -270,6 +284,45 @@ private extension VialDetailView {
         return days == 1
             ? "1 day ago"
             : String(days) + " days ago"
+    }
+
+
+    func expiryStatus(
+        _ expiry: Date
+    ) -> String? {
+        let days =
+            Calendar.current
+                .dateComponents(
+                    [.day],
+                    from:
+                        Calendar.current
+                            .startOfDay(
+                                for: .now
+                            ),
+                    to:
+                        Calendar.current
+                            .startOfDay(
+                                for: expiry
+                            )
+                )
+                .day ?? 0
+
+        if days < 0 {
+            return
+                "Recorded expiry passed"
+        }
+
+        if days == 0 {
+            return
+                "Recorded expiry today"
+        }
+
+        if days <= 14 {
+            return
+                "Expires soon"
+        }
+
+        return nil
     }
 
 
