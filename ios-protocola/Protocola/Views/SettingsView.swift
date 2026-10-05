@@ -43,7 +43,11 @@ struct SettingsView: View {
             .sheet(item: $document) { document in
                 LegalDocumentView(document: document)
             }
-            .sheet(isPresented: $shareCSV) {
+            .sheet(
+                isPresented: $shareCSV,
+                onDismiss:
+                    cleanupExportFiles
+            ) {
                 if !exportURLs.isEmpty {
                     ActivityView(
                         items: exportURLs
@@ -355,6 +359,8 @@ private extension SettingsView {
 
 
     func exportData() {
+        cleanupExportFiles()
+
         do {
             var urls = [
                 try ExportService
@@ -406,6 +412,16 @@ private extension SettingsView {
             store.error =
                 "Your export could not be prepared. Please try again."
         }
+    }
+
+
+    func cleanupExportFiles() {
+        for url in exportURLs {
+            try? FileManager.default
+                .removeItem(at: url)
+        }
+
+        exportURLs = []
     }
 
 
