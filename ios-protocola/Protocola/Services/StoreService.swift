@@ -86,9 +86,8 @@ final class StoreService {
 
 
     func apply(_ info: CustomerInfo) {
-        if let url = info.managementURL {
-            managementURL = url
-        }
+        managementURL =
+            info.managementURL
 
         let activeEntitlements = Set(
             info.entitlements.active.keys
@@ -105,6 +104,10 @@ final class StoreService {
             expirationDate:
                 pro?.expirationDate
         )
+
+        if pro?.isActive == true {
+            lastNotice = nil
+        }
 
         store?.receiveEntitlements(
             activeEntitlements
