@@ -107,6 +107,10 @@ struct TrackingNavLink<
                 .vertical,
                 Theme.spaceS
             )
+            .frame(
+                minHeight:
+                    Theme.minimumTapTarget
+            )
         }
         .buttonStyle(.plain)
         .overlay(
@@ -132,7 +136,8 @@ extension View {
             )
             .stroke(
                 Theme.border,
-                lineWidth: 1
+                lineWidth:
+                    Theme.ruleThickness
             )
         }
     }

@@ -27,9 +27,9 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
                     ? (
                         inverted
                         ? Theme.onDarkPrimary
-                            .opacity(0.84)
+                            .opacity(Theme.pressedFillOpacity)
                         : Theme.teal
-                            .opacity(0.84)
+                            .opacity(Theme.pressedFillOpacity)
                     )
                     : (
                         inverted
@@ -43,14 +43,15 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
             )
             .opacity(
                 configuration.isPressed
-                    ? 0.92
+                    ? Theme.pressedSurfaceOpacity
                     : 1
             )
             .animation(
                 reduceMotion
                     ? nil
                     : .easeOut(
-                        duration: 0.12
+                        duration:
+                            Theme.motionPressDuration
                     ),
                 value:
                     configuration
@@ -81,8 +82,7 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
             )
             .background(
                 onDark
-                    ? Theme.onDarkPrimary
-                        .opacity(0.04)
+                    ? Theme.onDarkSubtleFill
                     : Theme.surface,
                 in: .rect(
                     cornerRadius:
@@ -96,16 +96,15 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
                 )
                 .stroke(
                     onDark
-                        ? Theme
-                            .onDarkPrimary
-                            .opacity(0.24)
-                        : Theme.hairline,
-                    lineWidth: 1
+                        ? Theme.onDarkControlBorder
+                        : Theme.controlBorder,
+                    lineWidth:
+                        Theme.ruleThickness
                 )
             }
             .opacity(
                 configuration.isPressed
-                    ? 0.64
+                    ? Theme.pressedControlOpacity
                     : 1
             )
     }
@@ -150,14 +149,15 @@ struct TrackingCompactButtonStyle: ButtonStyle {
                             Theme.radiusButton
                     )
                     .stroke(
-                        Theme.hairline,
-                        lineWidth: 1
+                        Theme.controlBorder,
+                        lineWidth:
+                            Theme.ruleThickness
                     )
                 }
             }
             .opacity(
                 configuration.isPressed
-                    ? 0.64
+                    ? Theme.pressedControlOpacity
                     : 1
             )
     }

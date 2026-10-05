@@ -22,7 +22,11 @@ struct DesignSystemTests {
                     isDirectory: true
                 )
 
-        let files =
+        let productDirectory =
+            testsDirectory
+                .deletingLastPathComponent()
+
+        var files =
             try FileManager.default
                 .contentsOfDirectory(
                     at: viewsDirectory,
@@ -31,6 +35,13 @@ struct DesignSystemTests {
                 .filter {
                     $0.pathExtension == "swift"
                 }
+
+        files.append(
+            productDirectory
+                .appendingPathComponent(
+                    "Protocola/ContentView.swift"
+                )
+        )
 
         let forbiddenPatterns: [
             (
@@ -61,6 +72,22 @@ struct DesignSystemTests {
             (
                 "hard-coded frame dimension",
                 #"(width|height|minHeight|maxHeight):\s*[0-9]"#
+            ),
+            (
+                "hard-coded nonzero spacing",
+                #"spacing:\s*(?!0(?:\.0+)?\b)[0-9]"#
+            ),
+            (
+                "hard-coded line width",
+                #"lineWidth:\s*[0-9]"#
+            ),
+            (
+                "hard-coded opacity",
+                #"\.opacity\(\s*(?:0(?:\.\d+)?|1(?:\.0+)?)\s*\)"#
+            ),
+            (
+                "hard-coded animation timing",
+                #"(duration|response|dampingFraction):\s*[0-9]"#
             ),
             (
                 "un-tokenized secondary color",

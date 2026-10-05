@@ -34,7 +34,9 @@ struct StatusBadge: View {
             )
             .foregroundStyle(tint)
             .background(
-                tint.opacity(0.055),
+                tint.opacity(
+                    Theme.statusFillOpacity
+                ),
                 in: .rect(
                     cornerRadius:
                         Theme.radiusBadge
@@ -46,8 +48,11 @@ struct StatusBadge: View {
                         Theme.radiusBadge
                 )
                 .stroke(
-                    tint.opacity(0.22),
-                    lineWidth: 1
+                    tint.opacity(
+                        Theme.statusBorderOpacity
+                    ),
+                    lineWidth:
+                        Theme.ruleThickness
                 )
             }
     }
