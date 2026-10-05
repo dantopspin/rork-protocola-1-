@@ -52,6 +52,7 @@ struct HistoryView: View {
         return TimelineRecord.build(
             logs: store.logs,
             events: store.events,
+            labs: store.labs,
             includeMetadata:
                 category
                     == "All audit events"
@@ -438,6 +439,10 @@ private extension HistoryView {
                 value: "Vial"
             ),
             .init(
+                label: "Labs",
+                value: "Lab"
+            ),
+            .init(
                 label: "Corrections",
                 value: "Correction"
             ),
@@ -519,6 +524,21 @@ private extension HistoryView {
                     tint: tint(for: record)
                 )
             }
+
+        } else if let lab = record.lab {
+            NavigationLink {
+                LabDetailView(
+                    labID: lab.id
+                )
+            } label: {
+                TimelineRow(
+                    record: record,
+                    title: humanTitle(record),
+                    detail: humanDetail(record),
+                    icon: icon(for: record),
+                    tint: tint(for: record)
+                )
+            }
         }
     }
 
@@ -526,6 +546,10 @@ private extension HistoryView {
     func humanTitle(
         _ record: TimelineRecord
     ) -> String {
+        if record.lab != nil {
+            return "Lab recorded"
+        }
+
         if let log = record.log {
             switch log.status {
             case "Skipped":
@@ -571,6 +595,13 @@ private extension HistoryView {
     func humanDetail(
         _ record: TimelineRecord
     ) -> String {
+        if let lab = record.lab {
+            return
+                lab.marker
+                + " · "
+                + lab.displayValue
+        }
+
         if let log = record.log {
             var parts = [
                 log.protocolName,
@@ -781,6 +812,9 @@ private extension HistoryView {
         case "Vial":
             return "shippingbox"
 
+        case "Lab":
+            return "testtube.2"
+
         case "Correction":
             return "arrow.counterclockwise"
 
@@ -808,6 +842,9 @@ private extension HistoryView {
             return Theme.teal
 
         case "Vial":
+            return Theme.teal
+
+        case "Lab":
             return Theme.teal
 
         default:

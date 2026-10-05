@@ -754,6 +754,24 @@ private extension ProtocolDetailView {
                         Theme.ruleThickness
                 )
 
+            NavigationLink {
+                LabListView(
+                    protocolID: record.id
+                )
+            } label: {
+                navigationRow(
+                    "Labs"
+                )
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
             Button {
                 calculator = true
             } label: {
@@ -1146,6 +1164,58 @@ private extension ProtocolEvolutionView {
                                 .observations
                         )
                 )
+
+                let labPairs =
+                    LabComparisonEngine
+                        .pairs(
+                            labs: store.labs,
+                            protocolID:
+                                protocolID,
+                            change:
+                                comparison
+                                    .change
+                                    .at,
+                            beforePeriod:
+                                comparison
+                                    .beforePeriod,
+                            afterPeriod:
+                                comparison
+                                    .afterPeriod
+                        )
+
+                if !labPairs.isEmpty {
+                    VStack(
+                        alignment: .leading,
+                        spacing:
+                            Theme.spaceS
+                    ) {
+                        Text(
+                            "Labs around change"
+                        )
+                        .font(
+                            Theme.sectionTitle
+                        )
+
+                        ForEach(
+                            labPairs
+                        ) { pair in
+                            RecordRow(
+                                label:
+                                    pair.marker,
+                                value:
+                                    pair.valueText
+                            )
+                        }
+
+                        Text(
+                            "Closest matching recorded values in each comparison window."
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.textSecondary
+                        )
+                    }
+                }
 
                 Text(
                     comparison

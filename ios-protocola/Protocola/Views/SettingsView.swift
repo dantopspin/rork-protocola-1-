@@ -13,7 +13,7 @@ struct SettingsView: View {
 
     @State private var document: LegalDocument?
 
-    @State private var exportURL: URL?
+    @State private var exportURLs: [URL] = []
     @State private var shareCSV = false
 
     @State private var confirmClear = false
@@ -44,8 +44,10 @@ struct SettingsView: View {
                 LegalDocumentView(document: document)
             }
             .sheet(isPresented: $shareCSV) {
-                if let exportURL {
-                    ActivityView(items: [exportURL])
+                if !exportURLs.isEmpty {
+                    ActivityView(
+                        items: exportURLs
+                    )
                 }
             }
             .confirmationDialog(
@@ -357,8 +359,25 @@ private extension SettingsView {
 
     func exportData() {
         do {
-            exportURL = try ExportService.historyCSV(store.logs)
+            var urls = [
+                try ExportService
+                    .historyCSV(
+                        store.logs
+                    )
+            ]
+
+            if !store.labs.isEmpty {
+                urls.append(
+                    try ExportService
+                        .labsCSV(
+                            store.labs
+                        )
+                )
+            }
+
+            exportURLs = urls
             shareCSV = true
+
         } catch {
             store.error =
                 "Your export could not be prepared. Please try again."

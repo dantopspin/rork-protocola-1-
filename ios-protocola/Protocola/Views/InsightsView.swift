@@ -210,6 +210,14 @@ private extension InsightsView {
                     }
                 }
 
+                if let selected,
+                   !store.labs(
+                        protocolID:
+                            selected.id
+                   ).isEmpty {
+                    labsEntry(selected)
+                }
+
                 proFeatures
 
                 if weeklyShareData != nil {
@@ -855,6 +863,110 @@ private extension InsightsView {
 }
 
 
+// MARK: - Labs
+
+private extension InsightsView {
+
+    func labsEntry(
+        _ protocolRecord:
+            ProtocolRecord
+    ) -> some View {
+        let labs =
+            store.labs(
+                protocolID:
+                    protocolRecord.id
+            )
+        let latest =
+            labs.max {
+                $0.collectedAt
+                    < $1.collectedAt
+            }
+
+        return NavigationLink {
+            LabListView(
+                protocolID:
+                    protocolRecord.id
+            )
+        } label: {
+            HStack(
+                spacing: Theme.spaceM
+            ) {
+                Image(
+                    systemName:
+                        "testtube.2"
+                )
+                .font(Theme.sectionTitle)
+                .foregroundStyle(
+                    Theme.teal
+                )
+
+                VStack(
+                    alignment: .leading,
+                    spacing:
+                        Theme.spaceXXS
+                ) {
+                    Text("Labs")
+                        .font(
+                            Theme.sectionTitle
+                        )
+                        .foregroundStyle(
+                            Theme.ink
+                        )
+
+                    if let latest {
+                        Text(
+                            latest.marker
+                            + " · "
+                            + latest.displayValue
+                            + " · "
+                            + latest.collectedAt
+                                .formatted(
+                                    date:
+                                        .abbreviated,
+                                    time:
+                                        .omitted
+                                )
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.textSecondary
+                        )
+                        .lineLimit(1)
+                    }
+                }
+
+                Spacer()
+
+                Image(
+                    systemName:
+                        "chevron.right"
+                )
+                .font(Theme.micro)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
+            }
+            .padding(
+                .vertical,
+                Theme.spaceM
+            )
+            .contentShape(Rectangle())
+            .overlay(
+                alignment: .top
+            ) {
+                EditorialRule()
+            }
+            .overlay(
+                alignment: .bottom
+            ) {
+                EditorialRule()
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+
 // MARK: - Secondary insight cards
 
 private extension InsightsView {
@@ -1267,6 +1379,56 @@ private struct ComparisonCard: View {
                 "After",
                 period: periods.after
             )
+
+            if let protocolID {
+                let labPairs =
+                    LabComparisonEngine
+                        .pairs(
+                            labs: store.labs,
+                            protocolID:
+                                protocolID,
+                            change:
+                                change.at,
+                            beforePeriod:
+                                periods.before,
+                            afterPeriod:
+                                periods.after
+                        )
+
+                if !labPairs.isEmpty {
+                    VStack(
+                        alignment: .leading,
+                        spacing:
+                            Theme.spaceS
+                    ) {
+                        Text(
+                            "Labs around change"
+                        )
+                        .font(
+                            Theme.sectionTitle
+                        )
+
+                        ForEach(
+                            labPairs
+                        ) { pair in
+                            RecordRow(
+                                label:
+                                    pair.marker,
+                                value:
+                                    pair.valueText
+                            )
+                        }
+
+                        Text(
+                            "Closest matching recorded values in the before and after windows. No causal interpretation is applied."
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                    }
+                }
+            }
 
             Text(
                 "Equal-duration windows, up to 30 days each. Differences do not establish causation or medical conclusions."
