@@ -146,7 +146,7 @@ struct TodayView: View {
             newValue != nil
         }
         .toolbar {
-            ToolbarItemGroup(
+            ToolbarItem(
                 placement: .topBarTrailing
             ) {
                 Button(
@@ -155,19 +155,37 @@ struct TodayView: View {
                 ) {
                     stackCalendar = true
                 }
+            }
 
-                Button(
-                    "Calculator",
-                    systemImage: "function"
-                ) {
-                    calculator = true
-                }
+            ToolbarItem(
+                placement: .topBarTrailing
+            ) {
+                Menu {
+                    Button {
+                        calculator = true
+                    } label: {
+                        Label(
+                            "Calculator",
+                            systemImage:
+                                "function"
+                        )
+                    }
 
-                Button(
-                    "Settings",
-                    systemImage: "gearshape"
-                ) {
-                    settings = true
+                    Button {
+                        settings = true
+                    } label: {
+                        Label(
+                            "Settings",
+                            systemImage:
+                                "gearshape"
+                        )
+                    }
+                } label: {
+                    Label(
+                        "Today actions",
+                        systemImage:
+                            "ellipsis.circle"
+                    )
                 }
             }
         }

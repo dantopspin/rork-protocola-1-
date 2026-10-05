@@ -103,7 +103,6 @@ private extension ProtocolDetailView {
                 }
 
                 toolsBlock(record)
-                protocolActions(record)
             }
             .screenPadding()
             .padding(
@@ -117,6 +116,86 @@ private extension ProtocolDetailView {
         .navigationBarTitleDisplayMode(
             .inline
         )
+        .toolbar {
+            ToolbarItem(
+                placement: .topBarTrailing
+            ) {
+                Menu {
+                    Button {
+                        addCompound = true
+                    } label: {
+                        Label(
+                            "Add compound",
+                            systemImage: "plus"
+                        )
+                    }
+                    .disabled(
+                        !store.canEdit(
+                            record.id
+                        )
+                    )
+
+                    Button {
+                        store.changeStatus(
+                            record,
+                            status:
+                                record.status
+                                    == "Active"
+                                ? "Paused"
+                                : "Active"
+                        )
+                    } label: {
+                        Label(
+                            record.status
+                                == "Active"
+                            ? "Pause protocol"
+                            : "Resume protocol",
+                            systemImage:
+                                record.status
+                                    == "Active"
+                                ? "pause"
+                                : "play"
+                        )
+                    }
+                    .disabled(
+                        !store.canEdit(
+                            record.id
+                        )
+                    )
+
+                    if record.status
+                        != "Archived" {
+                        Divider()
+
+                        Button(
+                            role: .destructive
+                        ) {
+                            store.changeStatus(
+                                record,
+                                status: "Archived"
+                            )
+                        } label: {
+                            Label(
+                                "Archive protocol",
+                                systemImage:
+                                    "archivebox"
+                            )
+                        }
+                        .disabled(
+                            !store.canEdit(
+                                record.id
+                            )
+                        )
+                    }
+                } label: {
+                    Label(
+                        "Protocol actions",
+                        systemImage:
+                            "ellipsis.circle"
+                    )
+                }
+            }
+        }
         .sheet(item: $editing) {
             revision in
             ProtocolEditorView(
@@ -285,31 +364,86 @@ private extension ProtocolDetailView {
         editorialSection(
             revision.compoundName
         ) {
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXXS
+            HStack(
+                alignment: .top,
+                spacing: Theme.spaceM
             ) {
-                Eyebrow(
-                    text:
-                        revision.config?
-                            .kind
-                            == .asRecorded
-                        ? "Recorded amount"
-                        : "Scheduled amount"
-                )
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Eyebrow(
+                        text:
+                            revision.config?
+                                .kind
+                                == .asRecorded
+                            ? "Recorded amount"
+                            : "Scheduled amount"
+                    )
 
-                Text(
-                    revision.amountText
-                    + " "
-                    + revision.unitText
+                    Text(
+                        revision.amountText
+                        + " "
+                        + revision.unitText
+                    )
+                    .font(
+                        Theme.metricLarge
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .monospacedDigit()
+                }
+
+                Spacer()
+
+                Menu {
+                    Button {
+                        editing = revision
+                    } label: {
+                        Label(
+                            "Edit schedule",
+                            systemImage:
+                                "pencil"
+                        )
+                    }
+
+                    Button {
+                        planning = revision
+                    } label: {
+                        Label(
+                            "Plan future change",
+                            systemImage:
+                                "calendar.badge.plus"
+                        )
+                    }
+                } label: {
+                    Image(
+                        systemName:
+                            "ellipsis.circle"
+                    )
+                    .font(
+                        Theme.sectionTitle
+                    )
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .frame(
+                        minWidth:
+                            Theme.minimumTapTarget,
+                        minHeight:
+                            Theme.minimumTapTarget
+                    )
+                }
+                .disabled(
+                    !store.canEdit(
+                        record.id
+                    )
                 )
-                .font(
-                    Theme.metricLarge
+                .accessibilityLabel(
+                    revision.compoundName
+                    + " actions"
                 )
-                .foregroundStyle(
-                    Theme.ink
-                )
-                .monospacedDigit()
             }
 
             RecordRow(
@@ -383,37 +517,7 @@ private extension ProtocolDetailView {
                 )
             )
 
-            HStack(
-                spacing: Theme.spaceS
-            ) {
-                Button(
-                    "Edit schedule"
-                ) {
-                    editing = revision
-                }
-                .buttonStyle(
-                    TrackingSecondaryButtonStyle()
-                )
-                .disabled(
-                    !store.canEdit(
-                        record.id
-                    )
-                )
 
-                Button(
-                    "Plan change"
-                ) {
-                    planning = revision
-                }
-                .buttonStyle(
-                    TrackingSecondaryButtonStyle()
-                )
-                .disabled(
-                    !store.canEdit(
-                        record.id
-                    )
-                )
-            }
         }
     }
 
@@ -611,26 +715,7 @@ private extension ProtocolDetailView {
             }
             .buttonStyle(.plain)
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
 
-            Button {
-                addCompound = true
-            } label: {
-                navigationRow(
-                    "Add compound"
-                )
-            }
-            .buttonStyle(.plain)
-            .disabled(
-                !store.canEdit(
-                    record.id
-                )
-            )
         }
     }
 

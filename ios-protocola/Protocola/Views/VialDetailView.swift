@@ -25,7 +25,6 @@ struct VialDetailView: View {
 
                         recordedVial(vial)
                         recordedEntries(vial)
-                        archiveAction(vial)
                     }
                     .screenPadding()
                     .padding(
@@ -45,11 +44,42 @@ struct VialDetailView: View {
                         placement:
                             .topBarTrailing
                     ) {
-                        Button(
-                            "Edit vial",
-                            systemImage: "pencil"
-                        ) {
-                            edit = true
+                        Menu {
+                            Button {
+                                edit = true
+                            } label: {
+                                Label(
+                                    "Edit vial",
+                                    systemImage:
+                                        "pencil"
+                                )
+                            }
+
+                            Divider()
+
+                            Button {
+                                store.archiveVial(
+                                    vial
+                                )
+                            } label: {
+                                Label(
+                                    vial.lifecycleState
+                                        == .archived
+                                    ? "Restore as active"
+                                    : "Archive vial",
+                                    systemImage:
+                                        vial.lifecycleState
+                                            == .archived
+                                        ? "arrow.uturn.backward"
+                                        : "archivebox"
+                                )
+                            }
+                        } label: {
+                            Label(
+                                "Vial actions",
+                                systemImage:
+                                    "ellipsis.circle"
+                            )
                         }
                     }
                 }
