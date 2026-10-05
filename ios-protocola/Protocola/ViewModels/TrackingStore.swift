@@ -652,6 +652,8 @@ import Observation
     func clearData() { _ = perform { try repository.clear() } }
     func resyncReminders() {
         guard !isDemo else {
+            // Demo mode must never leave real-record notifications pending.
+            notifications.update([])
             return
         }
 
@@ -761,7 +763,7 @@ import Observation
             let container = try LocalPersistence.container(inMemory: true)
             let repo = TrackingRepository(container: container)
             try DemoData.seed(repo)
-            demoContainer = container; repository = repo; isDemo = true; refresh()
+            demoContainer = container; repository = repo; isDemo = true; refresh(); resyncReminders()
         } catch { self.error = "Demo records could not be loaded. Your own records are unchanged." }
     }
     func exitDemo() { repository = TrackingRepository(container: realContainer); demoContainer = nil; isDemo = false; refresh(); resyncReminders() }
