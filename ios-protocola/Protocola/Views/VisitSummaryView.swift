@@ -1,39 +1,303 @@
 import SwiftUI
 
 struct VisitSummaryView: View {
-    @Environment(TrackingStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
+    @Environment(TrackingStore.self)
+    private var store
+
+    @Environment(\.dismiss)
+    private var dismiss
+
     @State private var protocolID: UUID?
-    @State private var fullHistory: Bool = true
-    @State private var from: Date = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .now
-    @State private var to: Date = .now
+    @State private var fullHistory = true
+    @State private var from =
+        Calendar.current.date(
+            byAdding: .day,
+            value: -30,
+            to: .now
+        ) ?? .now
+    @State private var to = Date.now
     @State private var url: URL?
-    @State private var sharing: Bool = false
+    @State private var sharing = false
+
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Record scope") {
-                    Picker("Protocol", selection: $protocolID) { ForEach(store.protocols) { Text($0.name).tag(Optional($0.id)) } }
-                    Toggle("Full recorded history", isOn: $fullHistory)
-                    if !fullHistory { DatePicker("From", selection: $from, displayedComponents: .date); DatePicker("Through", selection: $to, displayedComponents: .date) }
+            ScrollView {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXL
+                ) {
+                    scopeSection
+                    contentsSection
+                    actionSection
                 }
-                Section {
-                    Text("Current protocol, key changes, entries, symptoms, consistency, and a chronological timeline. Built on this iPhone from retained records, not medical interpretation.").font(Theme.body).foregroundStyle(Theme.muted)
-                    Button("Prepare and share PDF") {
-                        guard store.isPremium, let protocolID else { return }
-                        let record = store.protocols.first { $0.id == protocolID }
-                        let start = fullHistory ? (record?.createdAt ?? from) : Calendar.current.startOfDay(for: from)
-                        let end = fullHistory ? Date.now : min(.now, Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: to)) ?? to)
-                        guard start <= end else { store.error = "Choose a valid date range."; return }
-                        do { url = try store.visitSummaryURL(protocolID: protocolID, period: AnalysisPeriod(start: start, end: end)); sharing = true }
-                        catch { store.error = "The Visit Summary could not be prepared. Please try again." }
-                    }.disabled(protocolID == nil || !store.isPremium)
+                .screenPadding()
+                .padding(
+                    .bottom,
+                    Theme.spaceXL
+                )
+            }
+            .scrollIndicators(.hidden)
+            .background(Theme.paper)
+            .navigationTitle(
+                "Visit Summary"
+            )
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+            .toolbar {
+                ToolbarItem(
+                    placement:
+                        .confirmationAction
+                ) {
+                    Button("Done") {
+                        dismiss()
+                    }
                 }
-            }.paperList().navigationTitle("Visit Summary").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-                .onAppear { protocolID = store.protocols.first?.id }
-                .sheet(isPresented: $sharing) { if let url { ActivityView(items: [url]) } }
-                .trackingErrors()
+            }
+            .onAppear {
+                protocolID =
+                    protocolID
+                    ?? store.protocols
+                        .first?
+                        .id
+            }
+            .sheet(
+                isPresented: $sharing
+            ) {
+                if let url {
+                    ActivityView(
+                        items: [url]
+                    )
+                }
+            }
+            .trackingErrors()
+        }
+    }
+}
+
+
+private extension VisitSummaryView {
+
+    var scopeSection: some View {
+        editorialSection(
+            "Record scope"
+        ) {
+            Picker(
+                "Protocol",
+                selection: $protocolID
+            ) {
+                ForEach(
+                    store.protocols
+                ) {
+                    Text($0.name)
+                        .tag(
+                            Optional($0.id)
+                        )
+                }
+            }
+
+            Toggle(
+                "Full recorded history",
+                isOn: $fullHistory
+            )
+
+            if !fullHistory {
+                DatePicker(
+                    "From",
+                    selection: $from,
+                    displayedComponents:
+                        .date
+                )
+
+                DatePicker(
+                    "Through",
+                    selection: $to,
+                    displayedComponents:
+                        .date
+                )
+            }
+        }
+    }
+
+
+    var contentsSection: some View {
+        editorialSection(
+            "Included records"
+        ) {
+            RecordRow(
+                label: "Current protocol",
+                value: "Included"
+            )
+
+            RecordRow(
+                label: "Protocol changes",
+                value: "Included"
+            )
+
+            RecordRow(
+                label: "Recorded entries",
+                value: "Included"
+            )
+
+            RecordRow(
+                label: "Symptoms",
+                value: "Included"
+            )
+
+            RecordRow(
+                label: "Consistency",
+                value: "Included"
+            )
+
+            RecordRow(
+                label: "Timeline",
+                value: "Included"
+            )
+
+            Text(
+                "Prepared on this iPhone from retained records. The document is descriptive and does not provide medical interpretation."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(
+                Theme.textSecondary
+            )
+        }
+    }
+
+
+    var actionSection: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            if !store.isPremium {
+                Text(
+                    "Visit Summary PDF is included with Pro."
+                )
+                .font(Theme.caption)
+                .foregroundStyle(
+                    Theme.textSecondary
+                )
+            }
+
+            Button {
+                prepareSummary()
+            } label: {
+                Text(
+                    store.isPremium
+                    ? "Prepare and share PDF"
+                    : "Unlock Visit Summary"
+                )
+            }
+            .buttonStyle(
+                TrackingPrimaryButtonStyle()
+            )
+            .disabled(protocolID == nil)
+        }
+    }
+
+
+    func editorialSection<
+        Content: View
+    >(
+        _ title: String,
+        @ViewBuilder content:
+            () -> Content
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceM
+        ) {
+            Eyebrow(text: title)
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+
+            content()
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(
+                    height:
+                        Theme.ruleThickness
+                )
+        }
+    }
+
+
+    func prepareSummary() {
+        guard store.isPremium else {
+            store.requestPaywall(
+                .summary
+            )
+            return
+        }
+
+        guard let protocolID else {
+            return
+        }
+
+        let record =
+            store.protocols.first {
+                $0.id == protocolID
+            }
+
+        let start =
+            fullHistory
+            ? (
+                record?.createdAt
+                ?? from
+            )
+            : Calendar.current
+                .startOfDay(
+                    for: from
+                )
+
+        let end =
+            fullHistory
+            ? Date.now
+            : min(
+                .now,
+                Calendar.current.date(
+                    byAdding: .day,
+                    value: 1,
+                    to:
+                        Calendar.current
+                            .startOfDay(
+                                for: to
+                            )
+                ) ?? to
+            )
+
+        guard start <= end else {
+            store.error =
+                "Choose a valid date range."
+            return
+        }
+
+        do {
+            url =
+                try store
+                    .visitSummaryURL(
+                        protocolID:
+                            protocolID,
+                        period:
+                            AnalysisPeriod(
+                                start: start,
+                                end: end
+                            )
+                    )
+
+            Haptics.success()
+            sharing = true
+
+        } catch {
+            store.error =
+                "The Visit Summary could not be prepared. Please try again."
         }
     }
 }

@@ -12,6 +12,7 @@ struct TrackingEmptyState: View {
 
     var body: some View {
         VStack(
+            alignment: .leading,
             spacing: Theme.spaceS
         ) {
             Image(systemName: icon)
@@ -30,17 +31,11 @@ struct TrackingEmptyState: View {
                 .foregroundStyle(
                     Theme.ink
                 )
-                .multilineTextAlignment(
-                    .center
-                )
 
             Text(message)
                 .font(Theme.body)
                 .foregroundStyle(
                     Theme.textSecondary
-                )
-                .multilineTextAlignment(
-                    .center
                 )
                 .fixedSize(
                     horizontal: false,
@@ -63,7 +58,8 @@ struct TrackingEmptyState: View {
             }
         }
         .frame(
-            maxWidth: .infinity
+            maxWidth: .infinity,
+            alignment: .leading
         )
         .padding(
             .vertical,
