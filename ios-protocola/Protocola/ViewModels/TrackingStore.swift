@@ -10,6 +10,8 @@ import Observation
     private(set) var compounds: [CompoundRecord] = []
     private(set) var revisions: [ScheduleRevision] = []
     private(set) var vials: [VialRecord] = []
+    private(set) var inventoryAdjustments:
+        [InventoryAdjustment] = []
     private(set) var logs: [DoseLog] = []
     private(set) var events: [ProtocolEvent] = []
     private(set) var labs: [LabRecord] = []
@@ -51,6 +53,15 @@ import Observation
             compounds = try repository.all(CompoundRecord.self)
             revisions = try repository.all(ScheduleRevision.self)
             vials = try repository.all(VialRecord.self).sorted { $0.createdAt > $1.createdAt }
+            inventoryAdjustments =
+                try repository
+                    .all(
+                        InventoryAdjustment.self
+                    )
+                    .sorted {
+                        $0.recordedAt
+                            > $1.recordedAt
+                    }
             logs = try repository.all(DoseLog.self).sorted { $0.loggedAt > $1.loggedAt }
             events = try repository.all(ProtocolEvent.self).sorted { $0.at > $1.at }
             labs = try repository.all(LabRecord.self).sorted { $0.collectedAt > $1.collectedAt }
