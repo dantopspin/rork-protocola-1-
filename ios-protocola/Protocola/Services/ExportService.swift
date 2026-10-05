@@ -6,7 +6,13 @@ import Foundation
     ) throws -> URL {
         let header = [
             "id",
+            "protocol_id",
+            "compound_id",
+            "occurrence_id",
+            "scheduled_at",
             "recorded_at",
+            "created_at",
+            "corrected_at",
             "protocol",
             "compound",
             "route",
@@ -14,8 +20,12 @@ import Foundation
             "scheduled_unit",
             "actual_amount",
             "unit",
+            "vial_id",
             "vial",
             "concentration_mg_ml",
+            "syringe_units_per_ml",
+            "volume_ml",
+            "consumption_mg",
             "status",
             "site",
             "symptoms",
@@ -27,8 +37,19 @@ import Foundation
             logs.map { log in
                 [
                     log.id.uuidString,
+                    log.protocolID.uuidString,
+                    log.compoundID.uuidString,
+                    log.occurrenceID ?? "",
+                    log.scheduledAt?
+                        .ISO8601Format()
+                        ?? "",
                     log.loggedAt
                         .ISO8601Format(),
+                    log.createdAt
+                        .ISO8601Format(),
+                    log.correctedAt?
+                        .ISO8601Format()
+                        ?? "",
                     log.protocolName,
                     log.compoundName,
                     log.routeText,
@@ -36,9 +57,16 @@ import Foundation
                     log.scheduledUnitText,
                     log.actualAmountText,
                     log.unitText,
+                    log.vialID?
+                        .uuidString
+                        ?? "",
                     log.vialName,
                     log.concentrationText
                         ?? "",
+                    log.unitsPerMlText,
+                    log.volumeMlText
+                        ?? "",
+                    log.consumptionMgText,
                     log.status,
                     log.site,
                     log.symptoms,
@@ -89,7 +117,9 @@ import Foundation
             "unit",
             "reference_low",
             "reference_high",
-            "notes"
+            "notes",
+            "created_at",
+            "updated_at"
         ]
 
         let rows =
@@ -108,7 +138,11 @@ import Foundation
                         ?? "",
                     lab.referenceHighText
                         ?? "",
-                    lab.notes
+                    lab.notes,
+                    lab.createdAt
+                        .ISO8601Format(),
+                    lab.updatedAt
+                        .ISO8601Format()
                 ]
             }
 
@@ -214,6 +248,14 @@ import Foundation
                 "vial_id",
                 "configured_site",
                 "schedule",
+                "schedule_kind",
+                "schedule_weekdays",
+                "schedule_interval",
+                "schedule_minutes",
+                "schedule_anchor",
+                "schedule_timezone",
+                "cycle_on_days",
+                "cycle_off_days",
                 "effective_from",
                 "effective_until",
                 "enabled",
@@ -236,6 +278,34 @@ import Foundation
                         $0.config.map(
                             ScheduleDisplay.summary
                         ) ?? "",
+                        $0.config?.kind.rawValue
+                            ?? "",
+                        $0.config?.weekdays
+                            .map(String.init)
+                            .joined(
+                                separator: "|"
+                            )
+                            ?? "",
+                        $0.config.map {
+                            String($0.interval)
+                        } ?? "",
+                        $0.config?.minutes
+                            .map(String.init)
+                            .joined(
+                                separator: "|"
+                            )
+                            ?? "",
+                        $0.config?.anchor
+                            .ISO8601Format()
+                            ?? "",
+                        $0.config?.timeZoneID
+                            ?? "",
+                        $0.config?.cycleOnDays
+                            .map(String.init)
+                            ?? "",
+                        $0.config?.cycleOffDays
+                            .map(String.init)
+                            ?? "",
                         $0.effectiveFrom
                             .ISO8601Format(),
                         $0.effectiveUntil?
