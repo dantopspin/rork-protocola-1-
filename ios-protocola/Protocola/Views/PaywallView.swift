@@ -14,9 +14,15 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var document: LegalDocument?
+    @State private var showSuccess = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationStack {
+            if showSuccess {
+                successContent
+            } else {
             ScrollView {
                 VStack(
                     alignment: .leading,
@@ -69,6 +75,7 @@ struct PaywallView: View {
                     .accessibilityLabel("Close")
                 }
             }
+            }
         }
         .presentationDetents([.large])
         .sheet(item: $document) {
@@ -90,7 +97,9 @@ struct PaywallView: View {
         }
         .onChange(of: store.isPremium) { _, active in
             if active {
-                dismiss()
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+                    showSuccess = true
+                }
             }
         }
         .sensoryFeedback(
@@ -105,6 +114,102 @@ struct PaywallView: View {
         ) { wasActive, isActive in
             isActive && !wasActive
         }
+    }
+
+
+    // MARK: - Purchase success
+
+    /// Shown once the `pro` entitlement activates. The sheet stays up until the
+    /// user continues, so the purchase conclusion is explicit rather than the
+    /// paywall vanishing mid-scroll.
+    private var successContent: some View {
+        VStack(spacing: Theme.spaceXL) {
+            Spacer(minLength: 0)
+
+            VStack(spacing: Theme.spaceM) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 56, weight: .light))
+                    .foregroundStyle(Theme.teal)
+                    .accessibilityHidden(true)
+
+                VStack(spacing: Theme.spaceS) {
+                    Text("Welcome to Pro")
+                        .font(Theme.pageTitle)
+                        .multilineTextAlignment(.center)
+
+                    Text(
+                        "Everything is unlocked: unlimited protocols, Ask Protocola, "
+                        + "comparisons, deeper analysis, and Visit Summary PDF."
+                    )
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.muted)
+                    .multilineTextAlignment(.center)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Button("Continue") {
+                dismiss()
+            }
+            .buttonStyle(TrackingPrimaryButtonStyle())
+        }
+        .screenPadding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.paper)
+        .navigationBarTitleDisplayMode(.inline)
+        .transition(.opacity)
+    }
+
+
+    // MARK: - Loading skeleton
+
+    /// Editorial placeholder rows shown while StoreKit prices load.
+    private var plansSkeleton: some View {
+        VStack(alignment: .leading, spacing: Theme.spaceM) {
+            HStack(spacing: Theme.spaceS) {
+                ProgressView()
+                    .controlSize(.small)
+
+                Text("Loading plans…")
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.muted)
+            }
+            .accessibilityElement(children: .combine)
+
+            VStack(spacing: 0) {
+                skeletonRow
+                skeletonRow
+            }
+        }
+    }
+
+
+    private var skeletonRow: some View {
+        HStack(spacing: Theme.spaceM) {
+            VStack(alignment: .leading, spacing: Theme.spaceXS) {
+                RoundedRectangle(cornerRadius: Theme.radiusBadge)
+                    .fill(Theme.neutralTint)
+                    .frame(width: 104, height: 14)
+
+                RoundedRectangle(cornerRadius: Theme.radiusBadge)
+                    .fill(Theme.neutralTint)
+                    .frame(width: 148, height: 12)
+            }
+
+            Spacer(minLength: Theme.spaceXS)
+
+            RoundedRectangle(cornerRadius: Theme.radiusButton)
+                .fill(Theme.neutralTint)
+                .frame(width: 88, height: Theme.compactButtonHeight)
+        }
+        .padding(.vertical, Theme.spaceM)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: Theme.ruleThickness)
+        }
+        .accessibilityHidden(true)
     }
 
 
@@ -176,12 +281,7 @@ struct PaywallView: View {
         if purchases.offerings.isEmpty {
             TrackingCard {
                 if purchases.isLoading {
-                    HStack(spacing: Theme.spaceS) {
-                        ProgressView()
-
-                        Text("Loading plans…")
-                            .font(Theme.body)
-                    }
+                    plansSkeleton
                 } else {
                     Text(
                         "Plans could not be loaded right now. "
