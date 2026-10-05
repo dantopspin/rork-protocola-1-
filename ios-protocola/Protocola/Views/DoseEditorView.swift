@@ -62,6 +62,7 @@ struct DoseEditorView: View {
                     correctionNotice
                 }
             }
+            .listStyle(.plain)
             .paperList()
             .scrollContentBackground(.hidden)
             .doneKeyboard()

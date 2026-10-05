@@ -64,6 +64,7 @@ struct VialEditorView: View {
                     )
                 }
             }
+            .listStyle(.plain)
             .paperList()
             .scrollContentBackground(.hidden)
             .doneKeyboard()
