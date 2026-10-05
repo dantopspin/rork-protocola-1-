@@ -2242,6 +2242,111 @@ struct ReleaseHardeningTests {
 
 
 @MainActor
+struct RelaunchHardeningTests {
+
+    @Test
+    func labsAndInventoryReloadFromTheSamePersistentContainer() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+
+        var vialDraft = VialDraft()
+        vialDraft.name = "Reload vial"
+        vialDraft.compound = "Compound"
+        vialDraft.amount = "10"
+        vialDraft.diluent = "2"
+
+        try repository.saveVial(
+            vialDraft,
+            id: nil
+        )
+
+        let vial =
+            try #require(
+                repository
+                    .all(
+                        VialRecord.self
+                    )
+                    .first
+            )
+
+        var protocolDraft =
+            ProtocolDraft()
+        protocolDraft.name =
+            "Reload protocol"
+        protocolDraft.compound =
+            "Compound"
+        protocolDraft.amount = "1"
+        protocolDraft.vialID =
+            vial.id
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let protocolRecord =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+
+        var labDraft =
+            LabDraft(
+                protocolID:
+                    protocolRecord.id
+            )
+        labDraft.marker = "Marker"
+        labDraft.value = "12"
+        labDraft.unit = "unit"
+        labDraft.collectedAt =
+            Date.now
+                .addingTimeInterval(
+                    -60
+                )
+
+        try repository.saveLab(
+            labDraft,
+            id: nil
+        )
+
+        let reopened =
+            TrackingStore(
+                container: container
+            )
+
+        #expect(
+            reopened.protocols.count == 1
+        )
+        #expect(
+            reopened.vials.count == 1
+        )
+        #expect(
+            reopened.labs.count == 1
+        )
+        #expect(
+            reopened.labs.first?
+                .marker == "Marker"
+        )
+        #expect(
+            reopened.balances[vial.id]
+                == 10
+        )
+    }
+}
+
+
+@MainActor
 struct ExportHardeningTests {
 
     @Test
