@@ -410,9 +410,11 @@ struct LabEditorView: View {
         _draft =
             State(
                 initialValue:
-                    lab.map(
-                        LabDraft.init
-                    )
+                    lab.map {
+                        LabDraft(
+                            lab: $0
+                        )
+                    }
                     ?? LabDraft(
                         protocolID:
                             protocolID
