@@ -131,18 +131,26 @@ struct PaywallView: View {
             spacing: 0
         ) {
             ForEach(
-                Array(reason.orderedBenefits.enumerated()),
+                Array(
+                    reason
+                        .orderedBenefits
+                        .enumerated()
+                ),
                 id: \.element.id
             ) { index, benefit in
                 if index > 0 {
-                    Divider()
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
                 }
 
                 TrustRow(
                     icon: benefit.icon,
                     title: benefit.title,
-                    detail: benefit.detail,
-                    compact: true
+                    detail: benefit.detail
                 )
             }
         }

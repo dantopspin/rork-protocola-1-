@@ -848,7 +848,10 @@ private extension OnboardingView {
                     )
                 }
 
-                VStack(spacing: 0) {
+                VStack(
+                    alignment: .leading,
+                    spacing: 0
+                ) {
                     trustRow(
                         icon: "iphone",
                         title: "Stored locally",
@@ -856,7 +859,12 @@ private extension OnboardingView {
                             "Your core records stay on this iPhone."
                     )
 
-                    Divider()
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
 
                     trustRow(
                         icon:
@@ -867,7 +875,12 @@ private extension OnboardingView {
                             "Start tracking without creating an account."
                     )
 
-                    Divider()
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
 
                     trustRow(
                         icon: "text.bubble",
@@ -877,21 +890,30 @@ private extension OnboardingView {
                             "Relevant records are used only when you invoke Ask Protocola."
                     )
                 }
-                .padding(
-                    .horizontal,
-                    Theme.spaceM
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
                 )
-                .background(
-                    Theme.surface,
-                    in: .rect(
-                        cornerRadius:
-                            Theme.radiusCard
-                    )
-                )
-                .inkBorder(
-                    cornerRadius:
-                        Theme.radiusCard
-                )
+                .overlay(
+                    alignment: .top
+                ) {
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
+                }
+                .overlay(
+                    alignment: .bottom
+                ) {
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
+                }
             }
             .screenPadding()
             .padding(

@@ -1,5 +1,9 @@
 import SwiftUI
 
+/// Shared editorial trust/benefit row.
+///
+/// The icon and copy columns are deliberately fixed to one grid so rows never
+/// drift horizontally as title/detail lengths change.
 struct TrustRow: View {
     let icon: String
     let title: String
@@ -9,14 +13,23 @@ struct TrustRow: View {
     var body: some View {
         HStack(
             alignment: .top,
-            spacing: Theme.spaceS
+            spacing: Theme.spaceM
         ) {
             Image(systemName: icon)
-                .font(Theme.body)
+                .font(Theme.sectionTitle)
+                .symbolRenderingMode(
+                    .monochrome
+                )
                 .foregroundStyle(
                     Theme.muted
                 )
-                .frame(width: Theme.iconColumn)
+                .frame(
+                    width:
+                        Theme.iconColumn,
+                    height:
+                        Theme.iconColumn,
+                    alignment: .top
+                )
 
             VStack(
                 alignment: .leading,
@@ -27,19 +40,35 @@ struct TrustRow: View {
                     .foregroundStyle(
                         Theme.ink
                     )
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
 
                 Text(detail)
                     .font(Theme.caption)
                     .foregroundStyle(
                         Theme.muted
                     )
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
             }
+            .frame(
+                maxWidth: .infinity,
+                alignment: .leading
+            )
         }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
         .padding(
             .vertical,
             compact
-                ? Theme.spaceXS
-                : Theme.spaceS
+                ? Theme.spaceS
+                : Theme.spaceM
         )
     }
 }
