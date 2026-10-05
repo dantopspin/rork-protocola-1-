@@ -52,7 +52,9 @@ struct ContentView: View {
                         value: 3
                     ) {
                         NavigationStack {
-                            InsightsView()
+                            InsightsView {
+                                tab = 0
+                            }
                         }
                     }
                 }
