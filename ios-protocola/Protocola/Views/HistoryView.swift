@@ -264,6 +264,7 @@ struct HistoryView: View {
         .trackingRoutes()
         .trackingErrors()
     }
+}
 
 
 // MARK: - Filters
