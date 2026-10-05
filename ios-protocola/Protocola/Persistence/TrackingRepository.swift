@@ -1228,6 +1228,210 @@ import SwiftData
             context.insert(event)
         }
     }
+    func saveLab(
+        _ draft: LabDraft,
+        id: UUID?,
+        now: Date = .now
+    ) throws {
+        let marker =
+            draft.marker
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+        let unit =
+            draft.unit
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+        let notes =
+            draft.notes
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+
+        guard !marker.isEmpty else {
+            throw TrackingError.invalidInput(
+                "Enter a lab marker."
+            )
+        }
+
+        guard draft.collectedAt <= now else {
+            throw TrackingError.invalidInput(
+                "Lab date cannot be in the future."
+            )
+        }
+
+        let value =
+            try Self.labDecimal(
+                draft.value,
+                label: "Lab value"
+            )
+        let low =
+            try Self.optionalLabDecimal(
+                draft.referenceLow,
+                label:
+                    "Reference range low"
+            )
+        let high =
+            try Self.optionalLabDecimal(
+                draft.referenceHigh,
+                label:
+                    "Reference range high"
+            )
+
+        if let low,
+           let high,
+           low > high {
+            throw TrackingError.invalidInput(
+                "Reference range low cannot exceed the high value."
+            )
+        }
+
+        if let protocolID =
+            draft.protocolID {
+            guard
+                try all(
+                    ProtocolRecord.self
+                )
+                .contains(
+                    where: {
+                        $0.id == protocolID
+                    }
+                )
+            else {
+                throw TrackingError
+                    .missingRecord
+            }
+        }
+
+        let existing =
+            try all(LabRecord.self)
+                .first {
+                    $0.id == id
+                }
+
+        if id != nil
+            && existing == nil {
+            throw TrackingError.missingRecord
+        }
+
+        try transaction {
+            let lab =
+                existing
+                ?? LabRecord(
+                    protocolID:
+                        draft.protocolID,
+                    marker: marker,
+                    value: value,
+                    unit: unit,
+                    referenceLow: low,
+                    referenceHigh: high,
+                    notes: notes,
+                    collectedAt:
+                        draft.collectedAt,
+                    now: now
+                )
+
+            if existing == nil {
+                context.insert(lab)
+            }
+
+            lab.protocolID =
+                draft.protocolID
+            lab.marker = marker
+            lab.valueText =
+                NSDecimalNumber(
+                    decimal: value
+                ).stringValue
+            lab.unit = unit
+            lab.referenceLowText =
+                low.map {
+                    NSDecimalNumber(
+                        decimal: $0
+                    ).stringValue
+                }
+            lab.referenceHighText =
+                high.map {
+                    NSDecimalNumber(
+                        decimal: $0
+                    ).stringValue
+                }
+            lab.notes = notes
+            lab.collectedAt =
+                draft.collectedAt
+            lab.updatedAt = now
+        }
+    }
+
+
+    func deleteLab(
+        _ lab: LabRecord
+    ) throws {
+        guard
+            try all(LabRecord.self)
+                .contains(
+                    where: {
+                        $0.id == lab.id
+                    }
+                )
+        else {
+            throw TrackingError.missingRecord
+        }
+
+        try transaction {
+            context.delete(lab)
+        }
+    }
+
+
+    private static func labDecimal(
+        _ text: String,
+        label: String
+    ) throws -> Decimal {
+        let clean =
+            text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard
+            !clean.isEmpty,
+            let value =
+                Decimal(
+                    string: clean
+                ),
+            NSDecimalNumber(
+                decimal: value
+            ) != .notANumber
+        else {
+            throw TrackingError.invalidInput(
+                "Enter a valid \(label.lowercased())."
+            )
+        }
+
+        return value
+    }
+
+
+    private static func optionalLabDecimal(
+        _ text: String,
+        label: String
+    ) throws -> Decimal? {
+        let clean =
+            text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !clean.isEmpty else {
+            return nil
+        }
+
+        return try labDecimal(
+            clean,
+            label: label
+        )
+    }
+
+
     func saveDose(_ draft: DoseDraft, revision: ScheduleRevision?, occurrence: ScheduledEntry?, correcting: DoseLog?, now: Date = .now) throws {
         guard ["Logged", "Skipped", "Partial", "Delayed"].contains(draft.status), draft.loggedAt <= now else { throw TrackingError.invalidInput("Choose a valid status and a recorded time that is not in the future.") }
         let amount = draft.status == "Skipped" ? Decimal.zero : try DoseCalculator.parse(draft.amount, label: "Actual amount")
@@ -1292,7 +1496,7 @@ import SwiftData
         try transaction {
             try all(DoseLog.self).forEach(context.delete); try all(ScheduleRevision.self).forEach(context.delete); try all(CompoundRecord.self).forEach(context.delete)
             try all(ProtocolRecord.self).forEach(context.delete); try all(InventoryAdjustment.self).forEach(context.delete); try all(VialRecord.self).forEach(context.delete)
-            try all(ProtocolEvent.self).forEach(context.delete); try all(PreferencesRecord.self).forEach(context.delete)
+            try all(ProtocolEvent.self).forEach(context.delete); try all(LabRecord.self).forEach(context.delete); try all(PreferencesRecord.self).forEach(context.delete)
         }
     }
 }
