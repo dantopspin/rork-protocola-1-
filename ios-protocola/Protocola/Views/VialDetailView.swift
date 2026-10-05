@@ -594,7 +594,12 @@ private extension VialDetailView {
                             Rectangle()
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(
+                        TrackingRowButtonStyle()
+                    )
+                    .trackingStagger(
+                        index: index
+                    )
 
                     if index
                         < logs.count - 1 {
