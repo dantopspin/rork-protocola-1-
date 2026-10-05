@@ -77,6 +77,70 @@ import Foundation
         return url
     }
 
+    static func labsCSV(
+        _ labs: [LabRecord]
+    ) throws -> URL {
+        let header = [
+            "id",
+            "collected_at",
+            "protocol_id",
+            "marker",
+            "value",
+            "unit",
+            "reference_low",
+            "reference_high",
+            "notes"
+        ]
+
+        let rows =
+            labs.map { lab in
+                [
+                    lab.id.uuidString,
+                    lab.collectedAt
+                        .ISO8601Format(),
+                    lab.protocolID?
+                        .uuidString
+                        ?? "",
+                    lab.marker,
+                    lab.valueText,
+                    lab.unit,
+                    lab.referenceLowText
+                        ?? "",
+                    lab.referenceHighText
+                        ?? "",
+                    lab.notes
+                ]
+            }
+
+        let csv =
+            ([header] + rows)
+                .map {
+                    $0.map(escape)
+                        .joined(
+                            separator: ","
+                        )
+                }
+                .joined(
+                    separator: "\r\n"
+                )
+
+        let url =
+            FileManager.default
+                .temporaryDirectory
+                .appendingPathComponent(
+                    "Protocola-labs-\(UUID().uuidString).csv"
+                )
+
+        try csv.write(
+            to: url,
+            atomically: true,
+            encoding: .utf8
+        )
+
+        return url
+    }
+
+
     private static func escape(
         _ value: String
     ) -> String {
