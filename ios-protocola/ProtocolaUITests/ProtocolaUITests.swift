@@ -119,7 +119,7 @@ final class ProtocolaUITests: XCTestCase {
         demo.tap()
 
         XCTAssertTrue(
-            app.navigationBars["Today"]
+            app.staticTexts["Today"]
                 .waitForExistence(timeout: 4)
         )
 
