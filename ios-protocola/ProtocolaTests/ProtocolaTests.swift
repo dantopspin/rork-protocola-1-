@@ -2435,6 +2435,93 @@ struct ExportHardeningTests {
 
 
     @Test
+    func scheduleExportPreservesExactScheduleFields() throws {
+        let protocolID = UUID()
+        let compoundID = UUID()
+        let anchor =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        let config =
+            ScheduleConfig(
+                kind: .weekdays,
+                weekdays: [2, 5],
+                interval: 1,
+                minutes: [480, 1_200],
+                anchor: anchor,
+                timeZoneID: "UTC",
+                cycleOnDays: 5,
+                cycleOffDays: 2
+            )
+
+        let revision =
+            ScheduleRevision(
+                protocolID: protocolID,
+                compoundID: compoundID,
+                protocolName: "Protocol",
+                compoundName: "Compound",
+                amount: 1,
+                unit: .mg,
+                route: .injection,
+                vialID: nil,
+                configuredSite: nil,
+                config: config,
+                effectiveFrom: anchor
+            )
+
+        let url =
+            try ExportService
+                .scheduleRevisionsCSV(
+                    [revision]
+                )
+
+        let csv =
+            try String(
+                contentsOf: url,
+                encoding: .utf8
+            )
+
+        #expect(
+            csv.contains(
+                "schedule_timezone"
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"Specific weekdays\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"2|5\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"480|1200\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"UTC\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"5\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"2\""
+            )
+        )
+    }
+
+
+    @Test
     func exportSupportsEmptyRecordSets() throws {
         let urls = [
             try ExportService
