@@ -2305,7 +2305,8 @@ struct ExportHardeningTests {
         )
         #expect(
             vialCSV.contains(
-                Data(
+                "base64:"
+                + Data(
                     [0x01, 0x02, 0x03]
                 )
                 .base64EncodedString()
