@@ -88,11 +88,13 @@ struct LabListView: View {
                 placement:
                     .topBarTrailing
             ) {
-                Button(
-                    "Add lab",
-                    systemImage: "plus"
-                ) {
-                    adding = true
+                if !records.isEmpty {
+                    Button(
+                        "Add lab",
+                        systemImage: "plus"
+                    ) {
+                        adding = true
+                    }
                 }
             }
         }
