@@ -1,6 +1,83 @@
 import SwiftUI
 
 
+/// Shared top-level page header for the four primary tabs.
+///
+/// Main tabs own their large editorial title in content while the navigation
+/// bar stays inline for real actions. This prevents large-title navigation
+/// chrome from creating an empty band above the page.
+struct PrimaryPageHeader: View {
+    let title: String
+    var subtitle: String? = nil
+
+    var body: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXS
+        ) {
+            Text(title)
+                .font(Theme.pageTitle)
+                .foregroundStyle(Theme.ink)
+
+            if let subtitle,
+               !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+}
+
+
+/// Canonical search field for editorial timelines and registries.
+struct TrackingSearchField: View {
+    let prompt: String
+    @Binding var text: String
+
+    var body: some View {
+        HStack(spacing: Theme.spaceS) {
+            Image(systemName: "magnifyingglass")
+                .font(Theme.label)
+                .foregroundStyle(Theme.textSecondary)
+                .accessibilityHidden(true)
+
+            TextField(
+                prompt,
+                text: $text
+            )
+            .font(Theme.body)
+            .foregroundStyle(Theme.ink)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+        }
+        .padding(
+            .horizontal,
+            Theme.spaceS
+        )
+        .frame(
+            minHeight:
+                Theme.minimumTapTarget
+        )
+        .background(
+            Theme.subtleFill,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusField
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusField
+        )
+    }
+}
+
+
 /// Canonical rule used by editorial sections and record groups.
 struct EditorialRule: View {
     var body: some View {
