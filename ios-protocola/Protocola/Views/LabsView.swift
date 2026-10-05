@@ -61,7 +61,12 @@ struct LabListView: View {
                             } label: {
                                 labRow(lab)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(
+                                TrackingRowButtonStyle()
+                            )
+                            .trackingStagger(
+                                index: index
+                            )
 
                             if index
                                 < records.count - 1 {
