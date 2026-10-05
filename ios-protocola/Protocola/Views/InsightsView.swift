@@ -111,9 +111,16 @@ private extension InsightsView {
                 "Add a protocol first. Insights are built from your recorded entries and changes."
         )
         .screenPadding()
+        // Grid-aligned below the shared title, matching every other page's
+        // first-content position rather than floating mid-screen.
         .frame(
             maxWidth: .infinity,
-            maxHeight: .infinity
+            maxHeight: .infinity,
+            alignment: .top
+        )
+        .padding(
+            .top,
+            Theme.spaceL
         )
         .background(Theme.paper)
     }

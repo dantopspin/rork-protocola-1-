@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import RevenueCat
+import UIKit
 
 /// Bridges RevenueCat to TrackingStore access. Only the single `pro`
 /// entitlement grants Pro.
@@ -56,6 +57,15 @@ final class StoreService {
         started = true
         lastNotice = nil
 
+        // Seed the last verified entitlement from the Keychain so premium
+        // features render immediately after relaunch; the RevenueCat stream
+        // confirms or corrects this state within moments.
+        if EntitlementCache.read() == true {
+            store?.receiveEntitlements(
+                [Self.entitlementName]
+            )
+        }
+
         Task { [weak self] in
             for await info in
                 Purchases.shared.customerInfoStream {
@@ -78,10 +88,18 @@ final class StoreService {
             managementURL = url
         }
 
-        store?.receiveEntitlements(
-            Set(
-                info.entitlements.active.keys
+        let activeEntitlements = Set(
+            info.entitlements.active.keys
+        )
+
+        EntitlementCache.write(
+            activeEntitlements.contains(
+                Self.entitlementName
             )
+        )
+
+        store?.receiveEntitlements(
+            activeEntitlements
         )
     }
 
@@ -210,12 +228,17 @@ final class StoreService {
 
             apply(info)
 
-            lastNotice =
-                info.entitlements[
-                    Self.entitlementName
-                ]?.isActive == true
-                ? "Pro restored."
-                : "No active Pro purchase found for this Apple ID."
+            // The outcome is always surfaced as a native alert with a
+            // success haptic, so restoring on a new device is explicit —
+            // not a quiet string only visible inside the paywall.
+            if info.entitlements[
+                Self.entitlementName
+            ]?.isActive == true {
+                Haptics.success()
+                alert = .restored
+            } else {
+                alert = .nothingToRestore
+            }
 
         } catch {
             self.alert = .restoreFailed

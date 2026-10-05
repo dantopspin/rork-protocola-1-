@@ -26,6 +26,18 @@ struct PurchaseAlert: Identifiable, Equatable {
         message: "Purchases could not be restored. Check your connection and try again."
     )
 
+    /// Restore reached the App Store and confirmed Pro.
+    static let restored = PurchaseAlert(
+        title: "Pro restored",
+        message: "Your subscription is active on this device. All Pro features are unlocked."
+    )
+
+    /// Restore succeeded, but this Apple ID has no active Pro purchase.
+    static let nothingToRestore = PurchaseAlert(
+        title: "Nothing to restore",
+        message: "No active Pro purchase was found for this Apple ID."
+    )
+
     /// Purchases are not wired up in this build (sandbox or CI).
     static let unavailable = PurchaseAlert(
         title: "Subscriptions unavailable",

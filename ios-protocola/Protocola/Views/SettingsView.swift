@@ -31,7 +31,6 @@ struct SettingsView: View {
             .listStyle(.plain)
             .paperList()
             .scrollContentBackground(.hidden)
-            .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
