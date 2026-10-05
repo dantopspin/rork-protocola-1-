@@ -2,7 +2,16 @@ import SwiftUI
 import Charts
 
 struct InsightsView: View {
+    let onGoToday: () -> Void
+
     @Environment(TrackingStore.self) private var store
+
+    init(
+        onGoToday:
+            @escaping () -> Void = {}
+    ) {
+        self.onGoToday = onGoToday
+    }
 
     @State private var protocolID: UUID?
     @State private var window = 7
@@ -85,7 +94,8 @@ struct InsightsView: View {
             }
         }
         .background(Theme.paper)
-        .navigationTitle("Insights")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $assistant) {
             AssistantView()
         }
@@ -104,23 +114,28 @@ struct InsightsView: View {
 private extension InsightsView {
 
     var emptyProtocolState: some View {
-        TrackingEmptyState(
-            icon: "chart.xyaxis.line",
-            title: "No protocol yet",
-            message:
-                "Add a protocol first. Insights are built from your recorded entries and changes."
-        )
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceL
+        ) {
+            PrimaryPageHeader(
+                title: "Insights"
+            )
+
+            TrackingEmptyState(
+                icon: "chart.xyaxis.line",
+                title: "No protocol yet",
+                message:
+                    "Add a protocol first. Insights are built from recorded entries and changes.",
+                actionTitle: "Go to Today",
+                action: onGoToday
+            )
+        }
         .screenPadding()
-        // Grid-aligned below the shared title, matching every other page's
-        // first-content position rather than floating mid-screen.
         .frame(
             maxWidth: .infinity,
             maxHeight: .infinity,
-            alignment: .top
-        )
-        .padding(
-            .top,
-            Theme.spaceL
+            alignment: .topLeading
         )
         .background(Theme.paper)
     }
@@ -137,8 +152,12 @@ private extension InsightsView {
         return ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.spaceL
             ) {
+                PrimaryPageHeader(
+                    title: "Insights"
+                )
+
                 if store.protocols.count > 1 {
                     protocolSelector
                 }
@@ -281,11 +300,13 @@ private extension InsightsView {
     var emptyInsightsState: some View {
         TrackingEmptyState(
             icon: "chart.xyaxis.line",
-            title: "No insights yet",
+            title:
+                "Your insights will build here",
             message:
-                "Record entries from Today. Consistency, changes, sites, and observations will appear as your history grows."
+                "Track entries over time to see consistency, changes, sites, and recorded patterns.",
+            actionTitle: "Go to Today",
+            action: onGoToday
         )
-        .frame(minHeight: Theme.emptyStateMinHeight)
     }
 }
 
