@@ -1315,6 +1315,52 @@ import SwiftData
             throw TrackingError.missingRecord
         }
 
+        let before =
+            existing.map(
+                Self.labSnapshot
+            )
+            ?? [:]
+
+        let after = [
+            "Protocol":
+                draft.protocolID?
+                    .uuidString
+                ?? "",
+            "Marker": marker,
+            "Value":
+                NSDecimalNumber(
+                    decimal: value
+                ).stringValue,
+            "Unit": unit,
+            "Reference low":
+                low.map {
+                    NSDecimalNumber(
+                        decimal: $0
+                    ).stringValue
+                } ?? "",
+            "Reference high":
+                high.map {
+                    NSDecimalNumber(
+                        decimal: $0
+                    ).stringValue
+                } ?? "",
+            "Collected":
+                draft.collectedAt
+                    .ISO8601Format(),
+            "Notes": notes
+        ]
+
+        let changes =
+            RecordChange.between(
+                before,
+                after
+            )
+
+        if existing != nil
+            && changes.isEmpty {
+            return
+        }
+
         try transaction {
             let lab =
                 existing
@@ -1360,6 +1406,25 @@ import SwiftData
             lab.collectedAt =
                 draft.collectedAt
             lab.updatedAt = now
+
+            if existing != nil {
+                let event =
+                    ProtocolEvent(
+                        protocolID:
+                            draft.protocolID,
+                        title:
+                            "Lab record corrected",
+                        detail: "",
+                        at: now
+                    )
+
+                try event.recordChanges(
+                    changes,
+                    category: "Metadata"
+                )
+
+                context.insert(event)
+            }
         }
     }
 
@@ -1378,9 +1443,55 @@ import SwiftData
             throw TrackingError.missingRecord
         }
 
+        let snapshot =
+            Self.labSnapshot(lab)
+
         try transaction {
+            let event =
+                ProtocolEvent(
+                    protocolID:
+                        lab.protocolID,
+                    title:
+                        "Lab record deleted",
+                    detail: ""
+                )
+
+            try event.recordChanges(
+                RecordChange.between(
+                    snapshot,
+                    [:]
+                ),
+                category: "Metadata"
+            )
+
+            context.insert(event)
             context.delete(lab)
         }
+    }
+
+
+    private static func labSnapshot(
+        _ lab: LabRecord
+    ) -> [String: String] {
+        [
+            "Protocol":
+                lab.protocolID?
+                    .uuidString
+                ?? "",
+            "Marker": lab.marker,
+            "Value": lab.valueText,
+            "Unit": lab.unit,
+            "Reference low":
+                lab.referenceLowText
+                ?? "",
+            "Reference high":
+                lab.referenceHighText
+                ?? "",
+            "Collected":
+                lab.collectedAt
+                    .ISO8601Format(),
+            "Notes": lab.notes
+        ]
     }
 
 
