@@ -152,8 +152,6 @@ struct HistoryView: View {
 
     var body: some View {
         List {
-            filterBar
-
             if groupedDays.isEmpty {
                 Section {
                     TrackingEmptyState(
@@ -190,7 +188,7 @@ struct HistoryView: View {
             prompt: "Search your timeline"
         )
         .toolbar {
-            ToolbarItemGroup(
+            ToolbarItem(
                 placement: .topBarTrailing
             ) {
                 Button {
@@ -199,33 +197,49 @@ struct HistoryView: View {
                     Label(
                         "Filter history",
                         systemImage:
-                            "line.3.horizontal.decrease"
+                            hasActiveFilters
+                            ? "line.3.horizontal.decrease.circle.fill"
+                            : "line.3.horizontal.decrease.circle"
                     )
                 }
+            }
 
-                if !injectionSiteLogs.isEmpty {
+            ToolbarItem(
+                placement: .topBarTrailing
+            ) {
+                Menu {
+                    if !injectionSiteLogs.isEmpty {
+                        Button {
+                            siteHistory = true
+                        } label: {
+                            Label(
+                                "Injection site history",
+                                systemImage:
+                                    "figure.stand"
+                            )
+                        }
+                    }
+
                     Button {
-                        siteHistory = true
+                        if store.isPremium {
+                            summary = true
+                        } else {
+                            store.requestPaywall(
+                                .summary
+                            )
+                        }
                     } label: {
                         Label(
-                            "Injection site history",
+                            "Visit Summary",
                             systemImage:
-                                "figure.stand"
+                                "doc.text"
                         )
-                    }
-                }
-
-                Button {
-                    if store.isPremium {
-                        summary = true
-                    } else {
-                        store.requestPaywall(.summary)
                     }
                 } label: {
                     Label(
-                        "Visit Summary",
+                        "History actions",
                         systemImage:
-                            "square.and.arrow.up"
+                            "ellipsis.circle"
                     )
                 }
             }
@@ -265,104 +279,25 @@ struct HistoryView: View {
 
 private extension HistoryView {
 
-    var filterBar: some View {
-        ScrollView(
-            .horizontal,
-            showsIndicators: false
-        ) {
-            HStack(spacing: Theme.spaceXS) {
-                historyChip(
-                    title: "All",
-                    value: "Timeline"
-                )
-
-                historyChip(
-                    title: "Entries",
-                    value: "Dose"
-                )
-
-                historyChip(
-                    title: "Changes",
-                    value: "Protocol"
-                )
-
-                historyChip(
-                    title: "Notes",
-                    value: "Notes"
-                )
-            }
-        }
-        .listRowBackground(Color.clear)
-        .listRowInsets(
-            EdgeInsets(
-                top: Theme.spaceXXS,
-                leading: 0,
-                bottom: Theme.spaceXXS,
-                trailing: 0
-            )
-        )
-    }
-
-
-    func historyChip(
-        title: String,
-        value: String
-    ) -> some View {
-        let selected =
-            category == value
-
-        return Button(title) {
-            withAnimation(
-                .spring(
-                    response: 0.24,
-                    dampingFraction: 0.84
-                )
-            ) {
-                category = value
-            }
-        }
-        .font(Theme.label)
-        .foregroundStyle(
-            selected
-                ? Theme.onDarkPrimary
-                : Theme.ink
-        )
-        .padding(
-            .horizontal,
-            Theme.spaceM
-        )
-        .frame(
-            minHeight:
-                Theme.minimumTapTarget
-        )
-        .background(
-            selected
-                ? Theme.teal
-                : Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusBadge
-            )
-        )
-        .overlay {
-            if !selected {
-                RoundedRectangle(
-                    cornerRadius:
-                        Theme.radiusBadge
-                )
-                .stroke(
-                    Theme.border,
-                    lineWidth: 1
-                )
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
     var dateFilterSheet: some View {
         NavigationStack {
             Form {
-                Section("Protocol") {
+                Section {
+                    Picker(
+                        "Type",
+                        selection: $category
+                    ) {
+                        ForEach(eventFilters) {
+                            filter in
+                            Text(filter.label)
+                                .tag(filter.value)
+                        }
+                    }
+                } header: {
+                    Eyebrow(text: "Record type")
+                }
+
+                Section {
                     Picker(
                         "Protocol",
                         selection: $protocolID
@@ -376,6 +311,10 @@ private extension HistoryView {
                                 .tag(Optional(record.id))
                         }
                     }
+                }
+
+                } header: {
+                    Eyebrow(text: "Protocol")
                 }
 
                 Section {
@@ -401,7 +340,7 @@ private extension HistoryView {
                         )
                     }
                 } header: {
-                    Text("Date range")
+                    Eyebrow(text: "Date range")
                 } footer: {
                     Text(
                         "Date filters change what appears in History only. "
@@ -490,6 +429,10 @@ private extension HistoryView {
             .init(
                 label: "Symptoms",
                 value: "Symptoms"
+            ),
+            .init(
+                label: "Notes",
+                value: "Notes"
             ),
             .init(
                 label: "Vials",

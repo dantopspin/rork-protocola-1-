@@ -234,7 +234,7 @@ struct TodayView: View {
 private extension TodayView {
 
     var todayEmptyState: some View {
-        VStack(spacing: Theme.spaceM) {
+        Group {
             if store.protocols.isEmpty {
                 TrackingEmptyState(
                     icon: "calendar",
@@ -246,39 +246,273 @@ private extension TodayView {
                     create = true
                 }
 
-            } else {
+            } else if store.today.isEmpty {
                 TrackingEmptyState(
-                    icon:
-                        store.today.isEmpty
-                        ? "calendar"
-                        : "checkmark.circle",
-                    title:
-                        store.today.isEmpty
-                        ? "Nothing scheduled today"
-                        : "Today's entries are recorded",
+                    icon: "calendar",
+                    title: "Nothing scheduled today",
                     message:
                         !asNeededRevisions.isEmpty
                         ? "No scheduled entries. As-needed protocols are available below."
                         : "Your recorded schedule is clear for today."
                 )
+
+            } else {
+                resolvedDayState
+            }
+        }
+    }
+
+
+    var resolvedDayState: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceL
+        ) {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceS
+            ) {
+                Image(
+                    systemName:
+                        "checkmark.circle"
+                )
+                .font(
+                    .system(
+                        size: Theme.iconLarge,
+                        weight: .regular
+                    )
+                )
+                .foregroundStyle(Theme.teal)
+
+                Eyebrow(text: "Today resolved")
+
+                Text("Today's schedule is complete")
+                    .font(Theme.modalTitle)
+                    .foregroundStyle(Theme.ink)
+
+                Text(resolvedSummaryText)
+                    .font(Theme.body)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
             }
 
-            if !store.today.isEmpty,
-               !store.isDemo {
+            if let log = lastResolvedTodayLog {
+                NavigationLink(
+                    value:
+                        TrackingRoute
+                            .logDetail(log.id)
+                ) {
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceS
+                    ) {
+                        HStack(
+                            alignment:
+                                .firstTextBaseline,
+                            spacing: Theme.spaceM
+                        ) {
+                            VStack(
+                                alignment: .leading,
+                                spacing:
+                                    Theme.spaceXXS
+                            ) {
+                                Eyebrow(
+                                    text:
+                                        "Latest record"
+                                )
+
+                                Text(
+                                    log.compoundName
+                                )
+                                .font(
+                                    Theme.sectionTitle
+                                )
+                                .foregroundStyle(
+                                    Theme.ink
+                                )
+                            }
+
+                            Spacer()
+
+                            Text(
+                                log.actualAmountText
+                                + " "
+                                + log.unitText
+                            )
+                            .font(
+                                Theme.metricCompact
+                            )
+                            .foregroundStyle(
+                                Theme.ink
+                            )
+                            .monospacedDigit()
+                        }
+
+                        RecordRow(
+                            label: "Recorded",
+                            value:
+                                log.loggedAt
+                                    .formatted(
+                                        date: .omitted,
+                                        time: .shortened
+                                    )
+                        )
+
+                        HStack {
+                            Text("View recorded entry")
+                                .font(Theme.label)
+                                .foregroundStyle(
+                                    Theme.teal
+                                )
+
+                            Spacer()
+
+                            Image(
+                                systemName:
+                                    "chevron.right"
+                            )
+                            .font(Theme.micro)
+                            .foregroundStyle(
+                                Theme.muted
+                            )
+                        }
+                    }
+                    .padding(
+                        .vertical,
+                        Theme.spaceM
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .overlay(
+                    alignment: .top
+                ) {
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
+                }
+                .overlay(
+                    alignment: .bottom
+                ) {
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(
+                            height:
+                                Theme.ruleThickness
+                        )
+                }
+            }
+
+            if let next = nextUpcomingEntry {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Eyebrow(text: "Next")
+
+                    Text(
+                        next.revision.compoundName
+                        + " · "
+                        + next.at.formatted(
+                            date: .abbreviated,
+                            time: .shortened
+                        )
+                    )
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.ink)
+                    .monospacedDigit()
+                }
+            }
+
+            if !store.isDemo {
                 Button {
                     shareCard = true
                 } label: {
                     Label(
                         "Share this week",
-                        systemImage: "square.and.arrow.up"
+                        systemImage:
+                            "square.and.arrow.up"
                     )
                 }
-                .buttonStyle(TrackingCompactButtonStyle())
-                .tint(Theme.ink)
+                .buttonStyle(
+                    TrackingSecondaryButtonStyle()
+                )
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Theme.spaceS)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .padding(
+            .vertical,
+            Theme.spaceM
+        )
+    }
+
+
+    var resolvedTodayLogs: [DoseLog] {
+        store.today.compactMap(\.log)
+    }
+
+
+    var lastResolvedTodayLog: DoseLog? {
+        resolvedTodayLogs
+            .sorted {
+                $0.loggedAt > $1.loggedAt
+            }
+            .first
+    }
+
+
+    var resolvedSummaryText: String {
+        let recorded =
+            resolvedTodayLogs.filter {
+                $0.status != "Skipped"
+            }.count
+        let skipped =
+            resolvedTodayLogs.filter {
+                $0.status == "Skipped"
+            }.count
+
+        if skipped == 0 {
+            return
+                String(recorded)
+                + (
+                    recorded == 1
+                    ? " entry recorded today."
+                    : " entries recorded today."
+                )
+        }
+
+        return
+            String(recorded)
+            + " recorded · "
+            + String(skipped)
+            + " skipped"
+    }
+
+
+    var nextUpcomingEntry: ScheduledEntry? {
+        let now = Date.now
+        let end =
+            Calendar.current.date(
+                byAdding: .day,
+                value: 90,
+                to: now
+            ) ?? now
+
+        return store.entries(
+            start: now,
+            end: end
+        )
+        .first {
+            $0.at > now
+            && $0.log == nil
+        }
     }
 
 
@@ -865,7 +1099,8 @@ private extension TodayView {
             spacing: Theme.spaceM
         ) {
             HStack(
-                alignment: .firstTextBaseline
+                alignment: .center,
+                spacing: Theme.spaceS
             ) {
                 Eyebrow(
                     text: "Next entry"
@@ -874,6 +1109,53 @@ private extension TodayView {
                 Spacer()
 
                 dueTag(for: next)
+
+                Menu {
+                    Button {
+                        open(
+                            next,
+                            prefill:
+                                repeatDraft(
+                                    for: next
+                                )
+                        )
+                    } label: {
+                        Label(
+                            "Adjust details",
+                            systemImage:
+                                "slider.horizontal.3"
+                        )
+                    }
+
+                    Button {
+                        skipEntry(next)
+                    } label: {
+                        Label(
+                            "Skip entry",
+                            systemImage:
+                                "forward.end"
+                        )
+                    }
+                } label: {
+                    Image(
+                        systemName:
+                            "ellipsis.circle"
+                    )
+                    .font(Theme.sectionTitle)
+                    .foregroundStyle(
+                        Theme.ink
+                    )
+                    .frame(
+                        minWidth:
+                            Theme.minimumTapTarget,
+                        minHeight:
+                            Theme.minimumTapTarget
+                    )
+                    .contentShape(Rectangle())
+                }
+                .accessibilityLabel(
+                    "Entry actions"
+                )
             }
 
             Text(next.revision.compoundName)
@@ -933,36 +1215,7 @@ private extension TodayView {
                 TrackingPrimaryButtonStyle()
             )
 
-            HStack(
-                spacing: Theme.spaceS
-            ) {
-                Button {
-                    open(
-                        next,
-                        prefill:
-                            repeatDraft(
-                                for: next
-                            )
-                    )
-                } label: {
-                    Text("Adjust details")
-                }
-                .buttonStyle(
-                    TrackingSecondaryButtonStyle()
-                )
 
-                Button(
-                    "Skip",
-                    role: .destructive
-                ) {
-                    skipEntry(next)
-                }
-                .font(Theme.label)
-                .frame(
-                    minHeight:
-                        Theme.minimumTapTarget
-                )
-            }
         }
         .padding(
             .vertical,
@@ -1223,12 +1476,12 @@ private extension TodayView {
             Text(next.revision.amountText)
                 .font(Theme.metric)
                 .monospacedDigit()
-                .foregroundStyle(Theme.onDarkPrimary)
+                .foregroundStyle(Theme.ink)
 
             Text(next.revision.unitText)
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Theme.onDarkPrimary.opacity(0.68)
+                    Theme.textSecondary
                 )
         }
     }
@@ -1241,7 +1494,7 @@ private extension TodayView {
             .font(Theme.sectionTitle)
             .monospacedDigit()
             .foregroundStyle(
-                Theme.onDarkPrimary.opacity(0.94)
+                Theme.ink
             )
     }
 
@@ -1259,7 +1512,7 @@ private extension TodayView {
         .foregroundStyle(
             text == "Overdue"
                 ? Theme.amber
-                : Theme.onDarkPrimary.opacity(0.76)
+                : Theme.teal
         )
         .padding(
             .horizontal,
@@ -1270,8 +1523,11 @@ private extension TodayView {
             Theme.spaceXXS
         )
         .background(
-            Theme.onDarkPrimary.opacity(0.12),
-            in: .capsule
+            Theme.tealTint,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusBadge
+            )
         )
     }
 
