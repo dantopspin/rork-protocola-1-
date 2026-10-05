@@ -649,7 +649,14 @@ import Observation
         return try VisitSummaryService.generate(protocols: selectedProtocols, compounds: compounds, revisions: revisions, logs: selectedLogs, events: selectedEvents, labs: selectedLabs, period: period, summary: period.map { InsightsSummary(store: self, period: $0, protocolID: protocolID) })
     }
 
-    func clearData() { _ = perform { try repository.clear() } }
+    func clearData() {
+        ReminderDeliveryLedgerStore
+            .clear()
+
+        _ = perform {
+            try repository.clear()
+        }
+    }
     func resyncReminders() {
         guard !isDemo else {
             // Demo mode must never leave real-record notifications pending.
