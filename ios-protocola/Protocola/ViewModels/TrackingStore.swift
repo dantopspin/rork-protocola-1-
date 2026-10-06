@@ -753,7 +753,8 @@ import Observation
                         CycleDisplay
                             .restartNoticeDate(
                                 config,
-                                restart: restart
+                                restart: restart,
+                                now: now
                             )
                 else {
                     return nil
