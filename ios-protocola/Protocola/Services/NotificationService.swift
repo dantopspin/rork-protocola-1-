@@ -58,6 +58,22 @@ final class NotificationService:
             .authorizationStatus
     }
 
+    nonisolated static func allowsDelivery(
+        _ status: UNAuthorizationStatus
+    ) -> Bool {
+        switch status {
+        case .authorized,
+             .provisional,
+             .ephemeral:
+            return true
+        case .notDetermined,
+             .denied:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
     func update(
         _ reminders:
             [ReminderPlanner.Candidate]
@@ -107,10 +123,9 @@ final class NotificationService:
             }
 
         guard
-            settings.authorizationStatus
-                == .authorized
-            || settings.authorizationStatus
-                == .provisional
+            Self.allowsDelivery(
+                settings.authorizationStatus
+            )
         else {
             center.removePendingNotificationRequests(
                 withIdentifiers:
