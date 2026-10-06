@@ -5,11 +5,28 @@ struct RecordRow: View {
     let value: String
     var onDark = false
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// Label beside value at regular sizes; label above value at
+    /// accessibility sizes so neither is truncated.
+    private var layout: AnyLayout {
+        typeSize.isAccessibilitySize
+            ? AnyLayout(
+                VStackLayout(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                )
+            )
+            : AnyLayout(
+                HStackLayout(
+                    alignment: .firstTextBaseline,
+                    spacing: Theme.spaceM
+                )
+            )
+    }
+
     var body: some View {
-        HStack(
-            alignment: .firstTextBaseline,
-            spacing: Theme.spaceM
-        ) {
+        layout {
             Text(label)
                 .font(Theme.body)
                 .foregroundStyle(
@@ -18,15 +35,19 @@ struct RecordRow: View {
                         : Theme.textSecondary
                 )
 
-            Spacer(
-                minLength:
-                    Theme.spaceM
-            )
+            if !typeSize.isAccessibilitySize {
+                Spacer(
+                    minLength:
+                        Theme.spaceM
+                )
+            }
 
             Text(value)
                 .font(Theme.body)
                 .multilineTextAlignment(
-                    .trailing
+                    typeSize.isAccessibilitySize
+                        ? .leading
+                        : .trailing
                 )
                 .monospacedDigit()
                 .foregroundStyle(

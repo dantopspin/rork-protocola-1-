@@ -871,10 +871,22 @@ private extension TodayView {
 
 
     var summaryTiles: some View {
-        HStack(
-            alignment: .top,
-            spacing: Theme.spaceXS
-        ) {
+        let layout =
+            usesStackedHero
+            ? AnyLayout(
+                VStackLayout(
+                    alignment: .leading,
+                    spacing: Theme.sectionHeaderGap
+                )
+            )
+            : AnyLayout(
+                HStackLayout(
+                    alignment: .top,
+                    spacing: Theme.spaceXS
+                )
+            )
+
+        return layout {
             if let log = lastRecordedLog {
                 NavigationLink(
                     value:
@@ -1284,7 +1296,7 @@ private extension TodayView {
                 .foregroundStyle(
                     Theme.onDarkPrimary
                 )
-                .lineLimit(1)
+                .lineLimit(usesStackedHero ? 3 : 1)
 
                 Image(
                     systemName:
@@ -1338,7 +1350,7 @@ private extension TodayView {
                         .foregroundStyle(
                             Theme.onDarkPrimary
                         )
-                        .lineLimit(1)
+                        .lineLimit(usesStackedHero ? 3 : 1)
 
                     Image(
                         systemName:

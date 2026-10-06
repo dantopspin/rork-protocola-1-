@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct ProtocolsView: View {
+    @Environment(\.dynamicTypeSize)
+    private var typeSize
+
     @Environment(TrackingStore.self)
     private var store
 
@@ -329,10 +332,7 @@ private extension ProtocolsView {
             }
 
             if emphasized {
-                HStack(
-                    spacing:
-                        Theme.spaceXXL
-                ) {
+                metricsLayout {
                     editorialMetric(
                         label: "Next entry",
                         value:
@@ -364,6 +364,23 @@ private extension ProtocolsView {
             Theme.rowPadding
         )
         .contentShape(Rectangle())
+    }
+
+
+    /// Side by side at regular sizes, stacked at accessibility sizes.
+    var metricsLayout: AnyLayout {
+        typeSize.isAccessibilitySize
+            ? AnyLayout(
+                VStackLayout(
+                    alignment: .leading,
+                    spacing: Theme.spaceS
+                )
+            )
+            : AnyLayout(
+                HStackLayout(
+                    spacing: Theme.spaceXXL
+                )
+            )
     }
 
 
