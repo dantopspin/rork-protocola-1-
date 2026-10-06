@@ -8,99 +8,105 @@ final class ProtocolaUITests: XCTestCase {
 
 
     @MainActor
-    func testOnboardingRequiresIntentAndAcknowledgement() throws {
+    func testOnboardingRequiresAcknowledgementBeforeProtocolSetup() throws {
         let app = freshApp()
 
-        let getStarted = app.buttons["Get started"]
+        let getStarted =
+            app.buttons["Get started"]
+
         XCTAssertTrue(
-            getStarted.waitForExistence(timeout: 8)
+            getStarted.waitForExistence(
+                timeout: 8
+            )
         )
+
         getStarted.tap()
 
         XCTAssertTrue(
-            app.staticTexts["Make it yours."]
-                .waitForExistence(timeout: 3)
+            app.staticTexts[
+                "One record. Every change preserved."
+            ]
+            .waitForExistence(
+                timeout: 3
+            )
         )
 
         let continueButton =
             app.buttons["Continue"]
 
-        // Tapping before choosing an intent must not advance.
-        continueButton.tap()
         XCTAssertTrue(
-            app.staticTexts["Make it yours."].exists
-        )
-
-        // Required steps cannot be bypassed by horizontal paging either.
-        app.swipeLeft()
-        XCTAssertTrue(
-            app.staticTexts["Make it yours."].exists
-        )
-
-        let scheduleChoice =
-            app.buttons["onboarding.intent.schedule"]
-
-        XCTAssertTrue(
-            scheduleChoice.waitForExistence(timeout: 2)
-        )
-        scheduleChoice.tap()
-
-        XCTAssertTrue(continueButton.isEnabled)
-        continueButton.tap()
-
-        XCTAssertTrue(
-            app.staticTexts[
-                "Never wonder what's next."
-            ]
-            .waitForExistence(timeout: 3)
-        )
-
-        app.buttons["Continue"].tap()
-
-        XCTAssertTrue(
-            app.staticTexts["Private by design."]
-                .waitForExistence(timeout: 3)
-        )
-
-        let setupButton =
-            app.buttons["Set up my protocol"]
-
-        // The required acknowledgement must gate protocol setup.
-        setupButton.tap()
-        XCTAssertTrue(
-            app.staticTexts["Private by design."].exists
-        )
-        XCTAssertFalse(
-            app.navigationBars["Set up your protocol"].exists
-        )
-
-        let acknowledgement =
-            app.buttons["onboarding.acknowledgement"]
-
-        XCTAssertTrue(
-            acknowledgement.waitForExistence(
+            continueButton.waitForExistence(
                 timeout: 2
             )
         )
 
+        continueButton.tap()
+
+        XCTAssertTrue(
+            app.staticTexts[
+                "Private by design."
+            ]
+            .waitForExistence(
+                timeout: 3
+            )
+        )
+
+        let setupButton =
+            app.buttons[
+                "onboarding.setupProtocol"
+            ]
+
+        XCTAssertTrue(
+            setupButton.waitForExistence(
+                timeout: 2
+            )
+        )
+
+        XCTAssertFalse(
+            setupButton.isEnabled
+        )
+
+        let acknowledgement =
+            app.buttons[
+                "onboarding.acknowledgement"
+            ]
+
+        XCTAssertTrue(
+            acknowledgement
+                .waitForExistence(
+                    timeout: 2
+                )
+        )
+
         acknowledgement.tap()
 
-        XCTAssertTrue(setupButton.isEnabled)
+        XCTAssertTrue(
+            setupButton.isEnabled
+        )
+
         setupButton.tap()
 
         XCTAssertTrue(
-            app.navigationBars["Set up your protocol"]
-                .waitForExistence(timeout: 3)
+            app.navigationBars[
+                "Set up your protocol"
+            ]
+            .waitForExistence(
+                timeout: 3
+            )
         )
 
         XCTAssertTrue(
-            app.textFields["protocolName"]
-                .exists
+            app.textFields[
+                "protocolName"
+            ]
+            .exists
         )
 
         XCTAssertTrue(
-            app.textFields["compoundName"]
-                .exists
+            app.textFields[
+                "compoundName"
+            ]
+            .exists
         )
     }
 
@@ -110,22 +116,30 @@ final class ProtocolaUITests: XCTestCase {
         let app = freshApp()
 
         let demo =
-            app.buttons["Explore sample records"]
+            app.buttons[
+                "Explore sample records"
+            ]
 
         XCTAssertTrue(
-            demo.waitForExistence(timeout: 8)
+            demo.waitForExistence(
+                timeout: 8
+            )
         )
 
         demo.tap()
 
         XCTAssertTrue(
             app.staticTexts["Today"]
-                .waitForExistence(timeout: 4)
+                .waitForExistence(
+                    timeout: 4
+                )
         )
 
         XCTAssertTrue(
             app.buttons["Exit"]
-                .waitForExistence(timeout: 2)
+                .waitForExistence(
+                    timeout: 2
+                )
         )
     }
 
@@ -186,9 +200,11 @@ final class ProtocolaUITests: XCTestCase {
     @MainActor
     private func freshApp() -> XCUIApplication {
         let app = XCUIApplication()
+
         app.launchArguments = [
             "-ui-testing-reset"
         ]
+
         app.launch()
         return app
     }
