@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import SwiftData
+import UserNotifications
 @testable import Protocola
 
 @MainActor
@@ -135,6 +136,41 @@ struct BugFixRegressionTests {
         #expect(TrackingStore.wholeCount(Decimal(-1)) == 0)
     }
 
+    @Test
+    func notificationAuthorizationDeliveryStatesAreExplicit() {
+        #expect(
+            NotificationService
+                .allowsDelivery(
+                    .authorized
+                )
+        )
+        #expect(
+            NotificationService
+                .allowsDelivery(
+                    .provisional
+                )
+        )
+        #expect(
+            NotificationService
+                .allowsDelivery(
+                    .ephemeral
+                )
+        )
+        #expect(
+            !NotificationService
+                .allowsDelivery(
+                    .notDetermined
+                )
+        )
+        #expect(
+            !NotificationService
+                .allowsDelivery(
+                    .denied
+                )
+        )
+    }
+
+
     // Cycle-restart notices were delivered at midnight of the restart day.
     @Test
     func cycleRestartNoticeIsEveningBefore() throws {
@@ -161,5 +197,76 @@ struct BugFixRegressionTests {
         #expect(notice < restart)
         #expect(restart.timeIntervalSince(notice) == 4 * 3_600)
         #expect(calendar.component(.hour, from: notice) == 20)
+    }
+
+
+    @Test
+    func cycleRestartNoticeFallsForwardAfterEightPM() throws {
+        var calendar =
+            Calendar(identifier: .gregorian)
+        calendar.timeZone =
+            TimeZone(identifier: "UTC")!
+
+        let restart =
+            try #require(
+                calendar.date(
+                    from:
+                        DateComponents(
+                            year: 2027,
+                            month: 1,
+                            day: 16
+                        )
+                )
+            )
+        let now =
+            try #require(
+                calendar.date(
+                    from:
+                        DateComponents(
+                            year: 2027,
+                            month: 1,
+                            day: 15,
+                            hour: 21,
+                            minute: 17
+                        )
+                )
+            )
+
+        let config =
+            ScheduleConfig(
+                kind: .daily,
+                weekdays: [],
+                interval: 1,
+                minutes: [480],
+                anchor: now,
+                timeZoneID: "UTC",
+                cycleOnDays: 2,
+                cycleOffDays: 2
+            )
+
+        let notice =
+            try #require(
+                CycleDisplay
+                    .restartNoticeDate(
+                        config,
+                        restart: restart,
+                        now: now
+                    )
+            )
+
+        #expect(notice > now)
+        #expect(notice < restart)
+        #expect(
+            calendar.component(
+                .hour,
+                from: notice
+            ) == 22
+        )
+        #expect(
+            calendar.component(
+                .minute,
+                from: notice
+            ) == 0
+        )
     }
 }
