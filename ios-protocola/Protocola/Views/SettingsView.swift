@@ -58,8 +58,10 @@ struct SettingsView: View {
                                 .authorizationStatus()
 
                         guard
-                            status == .authorized
-                            || status == .provisional
+                            NotificationService
+                                .allowsDelivery(
+                                    status
+                                )
                         else {
                             return
                         }
