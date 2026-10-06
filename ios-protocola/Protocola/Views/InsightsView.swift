@@ -73,6 +73,16 @@ struct InsightsView: View {
         }
     }
 
+    private var hasRecordedHistory: Bool {
+        guard let selected else {
+            return false
+        }
+
+        return store.logs.contains {
+            $0.protocolID == selected.id
+        }
+    }
+
     private var weeklyShareData: ShareCardData? {
         guard
             let summary = store.insights[7],
@@ -164,26 +174,28 @@ private extension InsightsView {
                     protocolSelector
                 }
 
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXS
-                ) {
-                    Picker(
-                        "Period",
-                        selection: $window
+                if hasRecordedHistory {
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceXS
                     ) {
-                        Text("7D").tag(7)
-                        Text("30D").tag(30)
-                        Text("90D").tag(90)
-                        Text("1Y").tag(365)
-                    }
-                    .pickerStyle(.segmented)
-                    .tint(Theme.ink)
+                        Picker(
+                            "Period",
+                            selection: $window
+                        ) {
+                            Text("7D").tag(7)
+                            Text("30D").tag(30)
+                            Text("90D").tag(90)
+                            Text("1Y").tag(365)
+                        }
+                        .pickerStyle(.segmented)
+                        .tint(Theme.ink)
 
-                    Text(periodLabel)
-                        .font(Theme.caption)
-                        .foregroundStyle(Theme.muted)
-                        .monospacedDigit()
+                        Text(periodLabel)
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.muted)
+                            .monospacedDigit()
+                    }
                 }
 
                 Group {

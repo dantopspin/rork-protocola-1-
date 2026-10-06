@@ -227,3 +227,76 @@ struct ReminderPlannerTests {
         #expect(scheduleWins.vialID == vial.id)
     }
 }
+
+
+@MainActor
+struct AIPrivacyHardeningTests {
+
+    @Test
+    func timelineAIExcludesLabsAndHiddenMetadata() throws {
+        let protocolID = UUID()
+
+        let lab =
+            LabRecord(
+                protocolID: protocolID,
+                marker: "Private marker",
+                value: 999,
+                unit: "unit",
+                collectedAt: .now
+            )
+
+        let metadata =
+            ProtocolEvent(
+                protocolID: protocolID,
+                title:
+                    "Lab record corrected",
+                detail: ""
+            )
+
+        try metadata.recordChanges(
+            [
+                RecordChange(
+                    field: "Value",
+                    before: "1",
+                    after: "999"
+                )
+            ],
+            category: "Metadata"
+        )
+
+        let records =
+            TimelineRecord.build(
+                logs: [],
+                events: [metadata],
+                labs: [lab],
+                includeMetadata: true
+            )
+
+        let context =
+            AssistantViewModel
+                .timelineContext(
+                    records
+                )
+
+        #expect(
+            !context.text.contains(
+                "Private marker"
+            )
+        )
+        #expect(
+            !context.text.contains(
+                "Lab record corrected"
+            )
+        )
+        #expect(
+            !context.text.contains(
+                "999"
+            )
+        )
+        #expect(
+            context.text.contains(
+                "private metadata and lab records are excluded"
+            )
+        )
+    }
+}

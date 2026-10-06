@@ -2073,3 +2073,477 @@ struct LabTrackingTests {
         )
     }
 }
+
+
+struct ReleaseHardeningTests {
+
+    @Test
+    func cachedEntitlementDoesNotGrantAfterKnownExpiration() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        let valid =
+            EntitlementCache.Record(
+                active: true,
+                expirationDate:
+                    now.addingTimeInterval(
+                        3_600
+                    ),
+                verifiedAt:
+                    now.addingTimeInterval(
+                        -60
+                    )
+            )
+
+        let expired =
+            EntitlementCache.Record(
+                active: true,
+                expirationDate:
+                    now.addingTimeInterval(
+                        -1
+                    ),
+                verifiedAt:
+                    now.addingTimeInterval(
+                        -60
+                    )
+            )
+
+        let inactive =
+            EntitlementCache.Record(
+                active: false,
+                expirationDate: nil,
+                verifiedAt: now
+            )
+
+        #expect(
+            valid.grantsAccess(
+                at: now
+            )
+        )
+        #expect(
+            !expired.grantsAccess(
+                at: now
+            )
+        )
+        #expect(
+            !inactive.grantsAccess(
+                at: now
+            )
+        )
+    }
+
+
+    @Test
+    func nonExpiringVerifiedEntitlementCanSeedAccess() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+
+        let lifetime =
+            EntitlementCache.Record(
+                active: true,
+                expirationDate: nil,
+                verifiedAt: now
+            )
+
+        #expect(
+            lifetime.grantsAccess(
+                at: now
+            )
+        )
+    }
+
+
+    @Test
+    func reminderLedgerSuppressesFingerprintAfterItsWindowPasses() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let id = "vial-low:test"
+        let scheduled =
+            now.addingTimeInterval(
+                -60
+            )
+
+        var ledger =
+            ReminderDeliveryLedger()
+        ledger.markScheduled(
+            id: id,
+            at: scheduled
+        )
+
+        #expect(
+            !ledger.shouldSchedule(
+                id: id,
+                at:
+                    now.addingTimeInterval(
+                        3_600
+                    ),
+                now: now
+            )
+        )
+
+        ledger.prune(
+            keeping: []
+        )
+
+        #expect(
+            ledger.shouldSchedule(
+                id: id,
+                at:
+                    now.addingTimeInterval(
+                        3_600
+                    ),
+                now: now
+            )
+        )
+    }
+
+
+    @Test
+    func reminderLedgerAllowsPendingFingerprintToBeReplaced() {
+        let now =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let id = "vial-expiry:test"
+        let future =
+            now.addingTimeInterval(
+                3_600
+            )
+
+        var ledger =
+            ReminderDeliveryLedger()
+        ledger.markScheduled(
+            id: id,
+            at: future
+        )
+
+        #expect(
+            ledger.shouldSchedule(
+                id: id,
+                at:
+                    future.addingTimeInterval(
+                        60
+                    ),
+                now: now
+            )
+        )
+    }
+}
+
+
+@MainActor
+struct RelaunchHardeningTests {
+
+    @Test
+    func labsAndInventoryReloadFromTheSamePersistentContainer() throws {
+        let container =
+            try LocalPersistence
+                .container(
+                    inMemory: true
+                )
+        let repository =
+            TrackingRepository(
+                container: container
+            )
+
+        var vialDraft = VialDraft()
+        vialDraft.name = "Reload vial"
+        vialDraft.compound = "Compound"
+        vialDraft.amount = "10"
+        vialDraft.diluent = "2"
+
+        try repository.saveVial(
+            vialDraft,
+            id: nil
+        )
+
+        let vial =
+            try #require(
+                repository
+                    .all(
+                        VialRecord.self
+                    )
+                    .first
+            )
+
+        var protocolDraft =
+            ProtocolDraft()
+        protocolDraft.name =
+            "Reload protocol"
+        protocolDraft.compound =
+            "Compound"
+        protocolDraft.amount = "1"
+        protocolDraft.vialID =
+            vial.id
+
+        try repository.saveProtocol(
+            protocolDraft,
+            protocolID: nil,
+            compoundID: nil
+        )
+
+        let protocolRecord =
+            try #require(
+                repository
+                    .all(
+                        ProtocolRecord.self
+                    )
+                    .first
+            )
+
+        var labDraft =
+            LabDraft(
+                protocolID:
+                    protocolRecord.id
+            )
+        labDraft.marker = "Marker"
+        labDraft.value = "12"
+        labDraft.unit = "unit"
+        labDraft.collectedAt =
+            Date.now
+                .addingTimeInterval(
+                    -60
+                )
+
+        try repository.saveLab(
+            labDraft,
+            id: nil
+        )
+
+        let reopened =
+            TrackingStore(
+                container: container
+            )
+
+        #expect(
+            reopened.protocols.count == 1
+        )
+        #expect(
+            reopened.vials.count == 1
+        )
+        #expect(
+            reopened.labs.count == 1
+        )
+        #expect(
+            reopened.labs.first?
+                .marker == "Marker"
+        )
+        #expect(
+            reopened.balances[vial.id]
+                == 10
+        )
+    }
+}
+
+
+@MainActor
+struct ExportHardeningTests {
+
+    @Test
+    func completeExportFilesAreCreatedAndEscaped() throws {
+        let protocolRecord =
+            ProtocolRecord(
+                name: "=unsafe name",
+                instructionSource:
+                    "Recorded source",
+                notes: "note"
+            )
+
+        let vial =
+            VialRecord(
+                name: "Vial 1",
+                compoundName:
+                    "Compound",
+                originalMg: 10,
+                diluentMl: 2
+            )
+
+        vial.photoData =
+            Data([0x01, 0x02, 0x03])
+
+        let protocolURL =
+            try ExportService
+                .protocolsCSV(
+                    [protocolRecord]
+                )
+        let vialURL =
+            try ExportService
+                .vialsCSV(
+                    [vial],
+                    balances: [
+                        vial.id: 8
+                    ]
+                )
+
+        let protocolCSV =
+            try String(
+                contentsOf:
+                    protocolURL,
+                encoding: .utf8
+            )
+        let vialCSV =
+            try String(
+                contentsOf:
+                    vialURL,
+                encoding: .utf8
+            )
+
+        #expect(
+            protocolCSV.contains(
+                "\"'=unsafe name\""
+            )
+        )
+        #expect(
+            vialCSV.contains(
+                "photo_base64"
+            )
+        )
+        #expect(
+            vialCSV.contains(
+                "base64:"
+                + Data(
+                    [0x01, 0x02, 0x03]
+                )
+                .base64EncodedString()
+            )
+        )
+        #expect(
+            FileManager.default
+                .fileExists(
+                    atPath:
+                        protocolURL.path
+                )
+        )
+        #expect(
+            FileManager.default
+                .fileExists(
+                    atPath:
+                        vialURL.path
+                )
+        )
+    }
+
+
+    @Test
+    func scheduleExportPreservesExactScheduleFields() throws {
+        let protocolID = UUID()
+        let anchor =
+            Date(
+                timeIntervalSince1970:
+                    1_800_000_000
+            )
+        let compound =
+            CompoundRecord(
+                protocolID: protocolID,
+                name: "Compound"
+            )
+
+        let config =
+            ScheduleConfig(
+                kind: .weekdays,
+                weekdays: [2, 5],
+                interval: 1,
+                minutes: [480, 1_200],
+                anchor: anchor,
+                timeZoneID: "UTC",
+                cycleOnDays: 5,
+                cycleOffDays: 2
+            )
+
+        let revision =
+            try ScheduleRevision(
+                compound: compound,
+                protocolName: "Protocol",
+                amount: 1,
+                unit: .mg,
+                route: .injection,
+                vialID: nil,
+                config: config,
+                effectiveFrom: anchor
+            )
+
+        let url =
+            try ExportService
+                .scheduleRevisionsCSV(
+                    [revision]
+                )
+
+        let csv =
+            try String(
+                contentsOf: url,
+                encoding: .utf8
+            )
+
+        #expect(
+            csv.contains(
+                "schedule_timezone"
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"Specific weekdays\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"2|5\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"480|1200\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"UTC\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"5\""
+            )
+        )
+        #expect(
+            csv.contains(
+                "\"2\""
+            )
+        )
+    }
+
+
+    @Test
+    func exportSupportsEmptyRecordSets() throws {
+        let urls = [
+            try ExportService
+                .protocolsCSV([]),
+            try ExportService
+                .compoundsCSV([]),
+            try ExportService
+                .scheduleRevisionsCSV([]),
+            try ExportService
+                .inventoryCSV([]),
+            try ExportService
+                .eventsCSV([])
+        ]
+
+        #expect(
+            urls.allSatisfy {
+                FileManager.default
+                    .fileExists(
+                        atPath: $0.path
+                    )
+            }
+        )
+    }
+}

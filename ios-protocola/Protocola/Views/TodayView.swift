@@ -172,11 +172,13 @@ struct TodayView: View {
             ToolbarItem(
                 placement: .topBarTrailing
             ) {
-                Button(
-                    "Stack calendar",
-                    systemImage: "calendar"
-                ) {
-                    stackCalendar = true
+                if !store.protocols.isEmpty {
+                    Button(
+                        "Stack calendar",
+                        systemImage: "calendar"
+                    ) {
+                        stackCalendar = true
+                    }
                 }
             }
 

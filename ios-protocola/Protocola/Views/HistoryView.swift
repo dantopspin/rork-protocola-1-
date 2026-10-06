@@ -125,6 +125,13 @@ struct HistoryView: View {
         }
     }
 
+    private var hasAnyHistory: Bool {
+        !store.logs.isEmpty
+        || !store.labs.isEmpty
+        || !store.events.isEmpty
+    }
+
+
     private var groupedDays: [TimelineDay] {
         let grouped =
             Dictionary(
@@ -161,11 +168,13 @@ struct HistoryView: View {
                     title: "History"
                 )
 
-                TrackingSearchField(
-                    prompt:
-                        "Search your timeline",
-                    text: $search
-                )
+                if hasAnyHistory {
+                    TrackingSearchField(
+                        prompt:
+                            "Search your timeline",
+                        text: $search
+                    )
+                }
 
                 if groupedDays.isEmpty {
                     TrackingEmptyState(
@@ -207,56 +216,61 @@ struct HistoryView: View {
             ToolbarItem(
                 placement: .topBarTrailing
             ) {
-                Button {
-                    filtersPresented = true
-                } label: {
-                    Label(
-                        "Filter history",
-                        systemImage:
-                            hasActiveFilters
-                            ? "line.3.horizontal.decrease.circle.fill"
-                            : "line.3.horizontal.decrease.circle"
-                    )
+                if hasAnyHistory
+                    || hasActiveFilters {
+                    Button {
+                        filtersPresented = true
+                    } label: {
+                        Label(
+                            "Filter history",
+                            systemImage:
+                                hasActiveFilters
+                                ? "line.3.horizontal.decrease.circle.fill"
+                                : "line.3.horizontal.decrease.circle"
+                        )
+                    }
                 }
             }
 
             ToolbarItem(
                 placement: .topBarTrailing
             ) {
-                Menu {
-                    if !injectionSiteLogs.isEmpty {
+                if hasAnyHistory {
+                    Menu {
+                        if !injectionSiteLogs.isEmpty {
+                            Button {
+                                siteHistory = true
+                            } label: {
+                                Label(
+                                    "Injection site history",
+                                    systemImage:
+                                        "figure.stand"
+                                )
+                            }
+                        }
+
                         Button {
-                            siteHistory = true
+                            if store.isPremium {
+                                summary = true
+                            } else {
+                                store.requestPaywall(
+                                    .summary
+                                )
+                            }
                         } label: {
                             Label(
-                                "Injection site history",
+                                "Visit Summary",
                                 systemImage:
-                                    "figure.stand"
-                            )
-                        }
-                    }
-
-                    Button {
-                        if store.isPremium {
-                            summary = true
-                        } else {
-                            store.requestPaywall(
-                                .summary
+                                    "doc.text"
                             )
                         }
                     } label: {
                         Label(
-                            "Visit Summary",
+                            "History actions",
                             systemImage:
-                                "doc.text"
+                                "ellipsis.circle"
                         )
                     }
-                } label: {
-                    Label(
-                        "History actions",
-                        systemImage:
-                            "ellipsis.circle"
-                    )
                 }
             }
         }

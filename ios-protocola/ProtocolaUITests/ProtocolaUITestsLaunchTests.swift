@@ -10,7 +10,10 @@ import XCTest
 final class ProtocolaUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
-        true
+        // One deterministic launch is enough for CI. Running the generated
+        // launch test once per UI configuration caused simulator termination
+        // races between configurations without adding product coverage.
+        false
     }
 
     override func setUpWithError() throws {
@@ -20,10 +23,10 @@ final class ProtocolaUITestsLaunchTests: XCTestCase {
     @MainActor
     func testLaunch() throws {
         let app = XCUIApplication()
+        app.launchArguments = [
+            "-ui-testing-reset"
+        ]
         app.launch()
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"

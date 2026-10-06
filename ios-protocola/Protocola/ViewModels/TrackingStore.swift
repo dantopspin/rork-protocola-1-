@@ -10,6 +10,8 @@ import Observation
     private(set) var compounds: [CompoundRecord] = []
     private(set) var revisions: [ScheduleRevision] = []
     private(set) var vials: [VialRecord] = []
+    private(set) var inventoryAdjustments:
+        [InventoryAdjustment] = []
     private(set) var logs: [DoseLog] = []
     private(set) var events: [ProtocolEvent] = []
     private(set) var labs: [LabRecord] = []
@@ -51,6 +53,15 @@ import Observation
             compounds = try repository.all(CompoundRecord.self)
             revisions = try repository.all(ScheduleRevision.self)
             vials = try repository.all(VialRecord.self).sorted { $0.createdAt > $1.createdAt }
+            inventoryAdjustments =
+                try repository
+                    .all(
+                        InventoryAdjustment.self
+                    )
+                    .sorted {
+                        $0.recordedAt
+                            > $1.recordedAt
+                    }
             logs = try repository.all(DoseLog.self).sorted { $0.loggedAt > $1.loggedAt }
             events = try repository.all(ProtocolEvent.self).sorted { $0.at > $1.at }
             labs = try repository.all(LabRecord.self).sorted { $0.collectedAt > $1.collectedAt }
@@ -594,10 +605,31 @@ import Observation
     /// permission first mirrors the protocol-reminder flow in the editor.
     func setInventoryAlerts(_ enabled: Bool) async {
         if enabled {
-            _ = await notifications.requestPermission()
+            let allowed =
+                await notifications
+                    .requestPermission()
+
+            guard allowed else {
+                error =
+                    "Inventory alerts were not enabled because notifications are disabled for Protocola."
+                return
+            }
         }
 
-        guard perform({ let prefs = try repository.preferences(); try repository.transaction { prefs.inventoryAlerts = enabled } }) else { return }
+        guard
+            perform({
+                let prefs =
+                    try repository
+                        .preferences()
+
+                try repository.transaction {
+                    prefs.inventoryAlerts =
+                        enabled
+                }
+            })
+        else {
+            return
+        }
 
         resyncReminders()
     }
@@ -617,9 +649,18 @@ import Observation
         return try VisitSummaryService.generate(protocols: selectedProtocols, compounds: compounds, revisions: revisions, logs: selectedLogs, events: selectedEvents, labs: selectedLabs, period: period, summary: period.map { InsightsSummary(store: self, period: $0, protocolID: protocolID) })
     }
 
-    func clearData() { _ = perform { try repository.clear() } }
+    func clearData() {
+        ReminderDeliveryLedgerStore
+            .clear()
+
+        _ = perform {
+            try repository.clear()
+        }
+    }
     func resyncReminders() {
         guard !isDemo else {
+            // Demo mode must never leave real-record notifications pending.
+            notifications.update([])
             return
         }
 
@@ -729,7 +770,7 @@ import Observation
             let container = try LocalPersistence.container(inMemory: true)
             let repo = TrackingRepository(container: container)
             try DemoData.seed(repo)
-            demoContainer = container; repository = repo; isDemo = true; refresh()
+            demoContainer = container; repository = repo; isDemo = true; refresh(); resyncReminders()
         } catch { self.error = "Demo records could not be loaded. Your own records are unchanged." }
     }
     func exitDemo() { repository = TrackingRepository(container: realContainer); demoContainer = nil; isDemo = false; refresh(); resyncReminders() }

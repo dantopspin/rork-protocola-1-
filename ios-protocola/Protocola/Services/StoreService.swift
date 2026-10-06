@@ -60,7 +60,9 @@ final class StoreService {
         // Seed the last verified entitlement from the Keychain so premium
         // features render immediately after relaunch; the RevenueCat stream
         // confirms or corrects this state within moments.
-        if EntitlementCache.read() == true {
+        if let cached =
+            EntitlementCache.read(),
+           cached.grantsAccess() {
             store?.receiveEntitlements(
                 [Self.entitlementName]
             )
@@ -84,19 +86,28 @@ final class StoreService {
 
 
     func apply(_ info: CustomerInfo) {
-        if let url = info.managementURL {
-            managementURL = url
-        }
+        managementURL =
+            info.managementURL
 
         let activeEntitlements = Set(
             info.entitlements.active.keys
         )
 
-        EntitlementCache.write(
-            activeEntitlements.contains(
+        let pro =
+            info.entitlements[
                 Self.entitlementName
-            )
+            ]
+
+        EntitlementCache.write(
+            active:
+                pro?.isActive == true,
+            expirationDate:
+                pro?.expirationDate
         )
+
+        if pro?.isActive == true {
+            lastNotice = nil
+        }
 
         store?.receiveEntitlements(
             activeEntitlements

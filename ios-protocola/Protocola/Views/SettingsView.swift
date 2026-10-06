@@ -43,7 +43,11 @@ struct SettingsView: View {
             .sheet(item: $document) { document in
                 LegalDocumentView(document: document)
             }
-            .sheet(isPresented: $shareCSV) {
+            .sheet(
+                isPresented: $shareCSV,
+                onDismiss:
+                    cleanupExportFiles
+            ) {
                 if !exportURLs.isEmpty {
                     ActivityView(
                         items: exportURLs
@@ -146,9 +150,6 @@ private extension SettingsView {
             Button {
                 Task {
                     await purchases.restore()
-                    if store.isPremium {
-                        Haptics.success()
-                    }
                 }
             } label: {
                 HStack {
@@ -199,22 +200,51 @@ private extension SettingsView {
             Button {
                 openNotificationSettings()
             } label: {
-                HStack(spacing: Theme.spaceS) {
-                    Label(
-                        "Notifications",
-                        systemImage: "bell"
+                HStack(
+                    alignment: .center,
+                    spacing: Theme.spaceS
+                ) {
+                    VStack(
+                        alignment: .leading,
+                        spacing:
+                            Theme.spaceXXS
+                    ) {
+                        Label(
+                            "Notifications",
+                            systemImage: "bell"
+                        )
+
+                        Text(
+                            store.notifications
+                                .status
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.muted
+                        )
+                        .lineLimit(2)
+                    }
+
+                    Spacer(
+                        minLength:
+                            Theme.spaceS
                     )
 
-                    Spacer()
-
-                    Text(store.notifications.status)
-                        .foregroundStyle(Theme.muted)
-
-                    Image(systemName: "chevron.right")
-                        .font(Theme.micro)
-                        .foregroundStyle(Theme.muted)
-                        .accessibilityHidden(true)
+                    Image(
+                        systemName:
+                            "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.muted
+                    )
+                    .accessibilityHidden(
+                        true
+                    )
                 }
+                .contentShape(
+                    Rectangle()
+                )
             }
             .foregroundStyle(Theme.ink)
 
@@ -244,12 +274,33 @@ private extension SettingsView {
 
     var dataPrivacySection: some View {
         Section {
+            Toggle(
+                isOn: Binding(
+                    get: {
+                        store.aiSharing
+                    },
+                    set: { enabled in
+                        store.setAISharing(
+                            enabled
+                        )
+                    }
+                )
+            ) {
+                Label(
+                    "Ask Protocola record sharing",
+                    systemImage:
+                        "lock.shield"
+                )
+            }
+
             Button {
-                document = LegalContent.aiDataUse
+                document =
+                    LegalContent.aiDataUse
             } label: {
                 Label(
                     "AI & Data Use",
-                    systemImage: "lock.shield"
+                    systemImage:
+                        "doc.text.magnifyingglass"
                 )
             }
 
@@ -258,17 +309,21 @@ private extension SettingsView {
             } label: {
                 Label(
                     "Export My Data",
-                    systemImage: "square.and.arrow.up"
+                    systemImage:
+                        "square.and.arrow.up"
                 )
             }
+            .disabled(
+                !hasExportableData
+            )
 
         } header: {
             Eyebrow(text: "Data & Privacy")
         } footer: {
             Text(
-                "Your core records are stored on this iPhone. "
-                + "Relevant information leaves the device only when required "
-                + "for a feature you choose to use, such as Ask Protocola."
+                "Ask Protocola sharing is optional and can be turned off here at any time. "
+                + "When enabled, only the scoped record fields described in AI & Data Use are sent when you actively ask a question; nothing is sent in the background. "
+                + "Export My Data creates portable CSV copies of your protocols, schedules, entries, vial and inventory records, audit events, and labs."
             )
         }
     }
@@ -346,6 +401,19 @@ private extension SettingsView {
 
 private extension SettingsView {
 
+    var hasExportableData: Bool {
+        !store.protocols.isEmpty
+        || !store.compounds.isEmpty
+        || !store.revisions.isEmpty
+        || !store.logs.isEmpty
+        || !store.vials.isEmpty
+        || !store.inventoryAdjustments
+            .isEmpty
+        || !store.events.isEmpty
+        || !store.labs.isEmpty
+    }
+
+
     func openNotificationSettings() {
         guard let url = URL(
             string: UIApplication.openSettingsURLString
@@ -358,11 +426,40 @@ private extension SettingsView {
 
 
     func exportData() {
+        cleanupExportFiles()
+
         do {
             var urls = [
                 try ExportService
+                    .protocolsCSV(
+                        store.protocols
+                    ),
+                try ExportService
+                    .compoundsCSV(
+                        store.compounds
+                    ),
+                try ExportService
+                    .scheduleRevisionsCSV(
+                        store.revisions
+                    ),
+                try ExportService
                     .historyCSV(
                         store.logs
+                    ),
+                try ExportService
+                    .vialsCSV(
+                        store.vials,
+                        balances:
+                            store.balances
+                    ),
+                try ExportService
+                    .inventoryCSV(
+                        store
+                            .inventoryAdjustments
+                    ),
+                try ExportService
+                    .eventsCSV(
+                        store.events
                     )
             ]
 
@@ -382,6 +479,16 @@ private extension SettingsView {
             store.error =
                 "Your export could not be prepared. Please try again."
         }
+    }
+
+
+    func cleanupExportFiles() {
+        for url in exportURLs {
+            try? FileManager.default
+                .removeItem(at: url)
+        }
+
+        exportURLs = []
     }
 
 
