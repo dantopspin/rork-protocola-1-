@@ -161,11 +161,10 @@ import Observation
         }
 
         let entries =
-            NSDecimalNumber(
-                decimal:
-                    (balances[vial.id] ?? 0)
-                    / mass
-            ).intValue
+            Self.wholeCount(
+                (balances[vial.id] ?? 0)
+                / mass
+            )
 
         return max(0, entries)
     }
@@ -185,12 +184,36 @@ import Observation
         }
 
         let entries =
-            NSDecimalNumber(
-                decimal:
-                    vial.originalMg / mass
-            ).intValue
+            Self.wholeCount(
+                vial.originalMg / mass
+            )
 
         return max(0, entries)
+    }
+
+    /// Floors a Decimal quotient to an Int. A full-precision quotient such as
+    /// 10 / 3 carries a 38-digit mantissa, and NSDecimalNumber.intValue is
+    /// unreliable once the mantissa exceeds 64 bits, so round to scale 0
+    /// before converting.
+    nonisolated static func wholeCount(
+        _ value: Decimal
+    ) -> Int {
+        guard !value.isNaN, value > 0 else {
+            return 0
+        }
+
+        var source = value
+        var floored = Decimal()
+        NSDecimalRound(
+            &floored,
+            &source,
+            0,
+            .down
+        )
+
+        return NSDecimalNumber(
+            decimal: floored
+        ).intValue
     }
 
     func estimatedDepletionDate(
@@ -716,7 +739,22 @@ import Observation
                                 config,
                                 after: now
                             ),
-                    restart <= end
+                    restart <= end,
+                    // The restart must fall inside this revision's own
+                    // window. Otherwise a revision that a planned change
+                    // replaces (or that a planned revision only starts
+                    // after) still announces restarts it no longer owns,
+                    // duplicating or contradicting the successor's notice.
+                    restart >= revision.effectiveFrom,
+                    revision.effectiveUntil.map({
+                        restart < $0
+                    }) ?? true,
+                    let noticeAt =
+                        CycleDisplay
+                            .restartNoticeDate(
+                                config,
+                                restart: restart
+                            )
                 else {
                     return nil
                 }
@@ -734,11 +772,11 @@ import Observation
                                         .timeIntervalSince1970
                                 )
                             ),
-                        at: restart,
+                        at: noticeAt,
                         title:
                             "Protocola · cycle restart",
                         body:
-                            "A recorded cycle is scheduled to resume. Open Protocola to review it."
+                            "A recorded cycle is scheduled to resume tomorrow. Open Protocola to review it."
                     )
             }
 

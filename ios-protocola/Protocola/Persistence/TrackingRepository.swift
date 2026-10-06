@@ -595,15 +595,19 @@ import SwiftData
                                 < $1.effectiveFrom
                         }
 
-                guard let predecessor else {
+                // A protocol recorded with a future start date has its
+                // first revision in the planned state and nothing before
+                // it. That revision must stay editable before it starts;
+                // otherwise the protocol is locked until its start date.
+                if let predecessor {
+                    predecessor.effectiveUntil =
+                        effectiveFrom
+                } else if oldIndex != 0 {
                     throw TrackingError
                         .invalidInput(
                             "A planned change needs an existing earlier revision."
                         )
                 }
-
-                predecessor.effectiveUntil =
-                    effectiveFrom
 
                 target.protocolName =
                     record.name
@@ -1504,12 +1508,50 @@ import SwiftData
                 in: .whitespacesAndNewlines
             )
 
+        // Decimal(string:) accepts a numeric prefix and silently drops the
+        // rest, so "5,4" in a comma-decimal locale stored 5 and "12abc"
+        // stored 12. Normalize the locale separator and require the whole
+        // field to be a number, mirroring DoseCalculator.parse (labs may be
+        // signed, e.g. base excess).
+        let separator =
+            Locale.current.decimalSeparator ?? "."
+        var canonical =
+            clean.replacingOccurrences(
+                of: separator,
+                with: "."
+            )
+
+        // Accept ".5" / "-.5" by restoring the leading zero.
+        for prefix in [".", "-.", "+."]
+        where canonical.hasPrefix(prefix) {
+            canonical.insert(
+                "0",
+                at: canonical.index(
+                    canonical.startIndex,
+                    offsetBy: prefix.count - 1
+                )
+            )
+            break
+        }
+
+        if canonical.hasPrefix("+") {
+            canonical.removeFirst()
+        }
+
         guard
             !clean.isEmpty,
+            canonical.range(
+                of: "^[-+]?[0-9]+(?:\\.[0-9]{1,12})?$",
+                options: .regularExpression
+            ) != nil,
             let value =
                 Decimal(
-                    string: clean
-                )
+                    string: canonical,
+                    locale: Locale(
+                        identifier: "en_US_POSIX"
+                    )
+                ),
+            !value.isNaN
         else {
             throw TrackingError.invalidInput(
                 "Enter a valid \(label.lowercased())."
