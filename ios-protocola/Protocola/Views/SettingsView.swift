@@ -48,15 +48,18 @@ struct SettingsView: View {
             .sheet(
                 isPresented: $explainingInventoryAlerts,
                 onDismiss: {
-                    // "Not now" leaves the status undetermined: keep alerts
-                    // off without triggering the system prompt. Otherwise
-                    // setInventoryAlerts enables them only when allowed.
+                    // Enable only after a grant. "Not now" and a denial
+                    // both leave alerts off; the sheet already explained a
+                    // denial, so no second error is shown.
                     Task {
-                        guard
+                        let status =
                             await store
                                 .notifications
                                 .authorizationStatus()
-                                != .notDetermined
+
+                        guard
+                            status == .authorized
+                            || status == .provisional
                         else {
                             return
                         }

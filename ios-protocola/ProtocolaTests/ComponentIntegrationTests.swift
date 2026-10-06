@@ -49,3 +49,43 @@ struct ComponentIntegrationTests {
         }
     }
 }
+
+@MainActor
+struct HeatmapGridTests {
+
+    @Test
+    func levelsScaleToBusiestDay() {
+        #expect(RecordedEntriesHeatmap.level(count: 0, maximum: 4) == 0)
+        #expect(RecordedEntriesHeatmap.level(count: 1, maximum: 4) == 1)
+        #expect(RecordedEntriesHeatmap.level(count: 2, maximum: 4) == 2)
+        #expect(RecordedEntriesHeatmap.level(count: 4, maximum: 4) == 4)
+        #expect(RecordedEntriesHeatmap.level(count: 1, maximum: 1) == 4)
+        #expect(RecordedEntriesHeatmap.level(count: 5, maximum: 0) == 0)
+    }
+
+    @Test
+    func gridCoversWholeWeeksEndingThisWeek() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        calendar.firstWeekday = 2
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let today = calendar.startOfDay(for: now)
+        let old = calendar.date(byAdding: .day, value: -400, to: today)!
+
+        let grid = HeatmapGrid(
+            counts: [today: 2, old: 9],
+            weeks: 20,
+            now: now,
+            calendar: calendar
+        )
+
+        #expect(grid.days.count == 140)
+        #expect(calendar.component(.weekday, from: try #require(grid.days.first)) == 2)
+        #expect(grid.days.contains(today))
+        // Out-of-range days are ignored, so they never set the scale.
+        #expect(grid.maximum == 2)
+        #expect(grid.count(on: today) == 2)
+        #expect(grid.shift(today, by: 1) == nil)
+        #expect(grid.shift(today, by: -1) != nil)
+    }
+}

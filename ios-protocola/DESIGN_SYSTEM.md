@@ -131,11 +131,11 @@ Surface fill, controlBorder outline, ink label, radius 2, 44pt minimum height.
 ### TrackingEmptyState
 28pt tertiary icon, 20pt title, 15pt supporting copy, left aligned to the page grid.
 
-### Vendored components (SwiftPieces)
-`Protocola/ThirdParty/SwiftPieces` holds third-party sources; any local change is noted in the file header (license: `THIRD_PARTY_NOTICES.md`). They sit outside `Views/` and the source gate; product wrappers in `Views/` must pass only `Theme` tokens into their style structs.
+### NotificationPermissionSheet
+Pre-permission sheet before the one-time iOS notification prompt (protocol reminders, inventory alerts). 56pt teal icon tile (amber after denial), pageTitle headline, benefit rows in an EditorialSection, PrimaryButton + SecondaryButton.
 
-- `NotificationPermissionSheet` wraps `PermissionSheet`: shown before the one-time iOS notification prompt (protocol reminders, inventory alerts).
-- `RecordedEntriesHeatmap` wraps `ActivityHeatmap`: per-day recorded entries in Insights, streak summary hidden.
+### RecordedEntriesHeatmap
+Insights calendar of non-skipped entries per day, 20 week columns. Cells use radiusCard, `heatmapGap`, `line` for empty and teal at `heatmapLevelOpacities` / solid for levels 1-4. No streak summary.
 
 ## Screen first-read hierarchy
 
