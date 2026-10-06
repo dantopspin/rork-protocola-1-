@@ -84,9 +84,7 @@ final class DesignSnapshotTests: XCTestCase {
                         settings.tap()
                         settle()
                         shot(app, "\(prefix)-05-settings")
-                        let done = app.buttons["Done"]
-                        if done.waitForExistence(timeout: 2) { done.tap() }
-                        settle()
+                        dismissSheets(app)
                     }
                 }
 
@@ -95,15 +93,12 @@ final class DesignSnapshotTests: XCTestCase {
                     log.tap()
                     settle()
                     shot(app, "\(prefix)-06-dose-editor")
-                    let cancel = app.buttons["Cancel"]
-                    if cancel.waitForExistence(timeout: 2) { cancel.tap() }
-                    settle()
+                    dismissSheets(app)
                 }
             }
         }
 
-        if wants("Protocols") {
-            tabBar.buttons["Protocols"].tap()
+        if wants("Protocols"), openTab(app, "Protocols") {
             settle()
             shot(app, "\(prefix)-07-protocols")
 
@@ -124,14 +119,12 @@ final class DesignSnapshotTests: XCTestCase {
             }
         }
 
-        if wants("History") {
-            tabBar.buttons["History"].tap()
+        if wants("History"), openTab(app, "History") {
             settle()
             shot(app, "\(prefix)-10-history")
         }
 
-        if wants("Insights") {
-            tabBar.buttons["Insights"].tap()
+        if wants("Insights"), openTab(app, "Insights") {
             settle()
             shot(app, "\(prefix)-11-insights")
             app.swipeUp()
@@ -144,6 +137,37 @@ final class DesignSnapshotTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    /// Closes any open sheet so the tab bar is reachable again.
+    @MainActor
+    private func dismissSheets(_ app: XCUIApplication) {
+        for _ in 0..<3 {
+            if app.tabBars.firstMatch.isHittable { return }
+            for title in ["Cancel", "Done", "Close"] {
+                let button = app.navigationBars.buttons[title]
+                if button.exists, button.isHittable {
+                    button.tap()
+                    settle()
+                    break
+                }
+            }
+            if app.tabBars.firstMatch.isHittable { return }
+            app.swipeDown(velocity: .fast)
+            settle()
+        }
+    }
+
+    @MainActor
+    private func openTab(_ app: XCUIApplication, _ title: String) -> Bool {
+        dismissSheets(app)
+        let tab = app.tabBars.firstMatch.buttons[title]
+        guard tab.waitForExistence(timeout: 3), tab.isHittable else {
+            shot(app, "zz-missing-tab-\(title)")
+            return false
+        }
+        tab.tap()
+        return true
+    }
 
     private func settle() {
         Thread.sleep(forTimeInterval: 0.8)
