@@ -1667,11 +1667,9 @@ private extension TodayView {
             systemImage: "clock"
         )
         .font(Theme.micro)
-        .foregroundStyle(
-            text == "Overdue"
-                ? Theme.onDarkPrimary
-                : Theme.onDarkPrimary
-        )
+        .foregroundStyle(Theme.onDarkPrimary)
+        .lineLimit(1)
+        .fixedSize()
         .padding(
             .horizontal,
             Theme.spaceXS
