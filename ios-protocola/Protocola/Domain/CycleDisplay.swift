@@ -53,13 +53,15 @@ enum CycleDisplay {
     }
 
 
-    /// Delivery time for a cycle-restart notice. `nextRestart` is the start
-    /// of the restart day (midnight in the schedule's time zone), which is
-    /// not a sensible moment for a sounding notification, so the notice is
-    /// delivered at 20:00 on the evening before the cycle resumes.
+    /// Delivery time for a cycle-restart notice. The preferred slot is
+    /// 20:00 on the evening before the cycle resumes. If Protocola is opened
+    /// after that slot but before midnight, use the next stable whole-hour
+    /// slot that still leaves a small buffer before the restart. This keeps
+    /// the reminder future-dated without moving it on every app resync.
     static func restartNoticeDate(
         _ config: ScheduleConfig,
-        restart: Date
+        restart: Date,
+        now: Date = .now
     ) -> Date? {
         var calendar =
             Calendar(identifier: .gregorian)
@@ -70,26 +72,54 @@ enum CycleDisplay {
                     config.timeZoneID
             ) ?? .current
 
+        let restartDay =
+            calendar.startOfDay(
+                for: restart
+            )
+
         guard
+            now < restartDay,
             let dayBefore =
                 calendar.date(
                     byAdding: .day,
                     value: -1,
-                    to:
-                        calendar.startOfDay(
-                            for: restart
-                        )
+                    to: restartDay
+                ),
+            let preferred =
+                calendar.date(
+                    bySettingHour: 20,
+                    minute: 0,
+                    second: 0,
+                    of: dayBefore
                 )
         else {
             return nil
         }
 
-        return calendar.date(
-            bySettingHour: 20,
-            minute: 0,
-            second: 0,
-            of: dayBefore
-        )
+        if preferred > now {
+            return preferred
+        }
+
+        let deadline =
+            restartDay
+                .addingTimeInterval(
+                    -5 * 60
+                )
+
+        guard deadline > now else {
+            return nil
+        }
+
+        if let hour =
+            calendar.dateInterval(
+                of: .hour,
+                for: now
+            )?.end,
+           hour <= deadline {
+            return hour
+        }
+
+        return deadline
     }
 
 
