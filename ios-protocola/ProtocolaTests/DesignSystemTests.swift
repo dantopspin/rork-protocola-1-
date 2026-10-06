@@ -105,6 +105,18 @@ struct DesignSystemTests {
                 #"Color\s*\("#
             ),
             (
+                "hand-drawn horizontal rule (use EditorialRule)",
+                #"\.fill\(\s*Theme\.hairline\s*\)\s*\.frame\(\s*height:"#
+            ),
+            (
+                "rounded grouped list (product lists are plain)",
+                #"\.listStyle\(\s*\.insetGrouped\s*\)"#
+            ),
+            (
+                "sentence-case form header (use Eyebrow)",
+                #"header:\s*\{\s*Text\("#
+            ),
+            (
                 "literal white/black product color",
                 #"Color\.(white|black|red|green|orange|blue|gray)"#
             )

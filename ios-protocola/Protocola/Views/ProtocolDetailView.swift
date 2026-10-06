@@ -67,7 +67,7 @@ private extension ProtocolDetailView {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.sectionGap
             ) {
                 if !store.canEdit(
                     record.id
@@ -296,7 +296,7 @@ private extension ProtocolDetailView {
                     systemName: "lock"
                 )
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
 
                 Text(
@@ -652,15 +652,7 @@ private extension ProtocolDetailView {
 
                 if index
                     < revisions.count - 1 {
-                    Rectangle()
-                        .fill(
-                            Theme.hairline
-                        )
-                        .frame(
-                            height:
-                                Theme
-                                    .ruleThickness
-                        )
+                    EditorialRule()
                 }
             }
 
@@ -734,12 +726,7 @@ private extension ProtocolDetailView {
             }
             .buttonStyle(TrackingRowButtonStyle())
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
+            EditorialRule()
 
             NavigationLink {
                 InventoryView()
@@ -750,12 +737,7 @@ private extension ProtocolDetailView {
             }
             .buttonStyle(TrackingRowButtonStyle())
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
+            EditorialRule()
 
             NavigationLink {
                 LabListView(
@@ -768,12 +750,7 @@ private extension ProtocolDetailView {
             }
             .buttonStyle(TrackingRowButtonStyle())
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
+            EditorialRule()
 
             Button {
                 calculator = true
@@ -869,12 +846,12 @@ private extension ProtocolDetailView {
             )
             .font(Theme.micro)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
         }
         .padding(
             .vertical,
-            Theme.spaceS
+            Theme.rowPadding
         )
         .contentShape(Rectangle())
     }
@@ -941,8 +918,8 @@ struct ProtocolEvolutionView: View {
                     }
 
                 } header: {
-                    Text("Evolution analysis")
-                } footer: {
+            Eyebrow(text: "Evolution analysis")
+        } footer: {
                     Text(
                         "Pro adds deterministic before/after, since-change, and cycle-history analysis."
                     )
@@ -1067,8 +1044,8 @@ private extension ProtocolEvolutionView {
                 }
 
             } header: {
-                Text("Since last change")
-            } footer: {
+            Eyebrow(text: "Since last change")
+        } footer: {
                 Text(
                     "Descriptive record summary only. Changes in consistency or observations do not establish medical effect or causation."
                 )
@@ -1192,12 +1169,7 @@ private extension ProtocolEvolutionView {
                         spacing:
                             Theme.spaceS
                     ) {
-                        Text(
-                            "Labs around change"
-                        )
-                        .font(
-                            Theme.sectionTitle
-                        )
+                        Eyebrow(text: "Labs around change")
 
                         ForEach(
                             labPairs
@@ -1248,8 +1220,8 @@ private extension ProtocolEvolutionView {
                 .monospacedDigit()
 
             } header: {
-                Text("Before / after")
-            } footer: {
+            Eyebrow(text: "Before / after")
+        } footer: {
                 Text(
                     "Equal-duration windows, up to 30 days each. Differences are descriptive and do not establish causation."
                 )
@@ -1343,7 +1315,7 @@ private extension ProtocolEvolutionView {
             }
 
         } header: {
-            Text("Cycle history")
+            Eyebrow(text: "Cycle history")
         } footer: {
             Text(
                 "Cycle history reflects the ON/OFF schedule you recorded and entries logged against it. It does not recommend a cycle."
@@ -1393,11 +1365,10 @@ private extension ProtocolEvolutionView {
                     RecordRow(
                         label: "Amount",
                         value:
-                            revision
-                                .amountText
-                            + " "
-                            + revision
-                                .unitText
+                            DoseText.amount(
+                                revision.amountText,
+                                revision.unitText
+                            )
                     )
 
                     RecordRow(

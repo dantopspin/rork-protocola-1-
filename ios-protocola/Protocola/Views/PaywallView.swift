@@ -372,11 +372,7 @@ struct PaywallView: View {
                 .foregroundStyle(
                     Theme.textSecondary
                 )
-                .lineLimit(
-                    density == .regular
-                        ? 2
-                        : 1
-                )
+                .lineLimit(2)
                 .fixedSize(
                     horizontal: false,
                     vertical: true
@@ -474,7 +470,7 @@ struct PaywallView: View {
                     Theme.radiusCard
             )
             .stroke(
-                Theme.border,
+                Theme.hairline,
                 lineWidth:
                     Theme.ruleThickness
             )
@@ -515,19 +511,15 @@ struct PaywallView: View {
                 Theme.textSecondary
             )
             .lineLimit(1)
+            // Natural width so the connectors shrink instead of the label
+            // ("Chan…", "Patt…" in the default-size screenshot).
+            .fixedSize()
         }
     }
 
 
     private var proofConnector: some View {
-    Rectangle()
-        .fill(
-            Theme.hairline
-        )
-        .frame(
-            height:
-                Theme.ruleThickness
-        )
+    EditorialRule()
         .frame(
             maxWidth: .infinity
         )
@@ -926,7 +918,7 @@ struct PaywallView: View {
                 .stroke(
                     selected
                         ? Theme.teal
-                        : Theme.border,
+                        : Theme.hairline,
                     lineWidth:
                         Theme.ruleThickness
                 )
@@ -1024,7 +1016,7 @@ struct PaywallView: View {
                     Theme.radiusCard
             )
             .stroke(
-                Theme.border,
+                Theme.hairline,
                 lineWidth:
                     Theme.ruleThickness
             )

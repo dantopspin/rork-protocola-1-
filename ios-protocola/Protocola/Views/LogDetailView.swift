@@ -23,7 +23,7 @@ struct LogDetailView: View {
                 ScrollView {
                     VStack(
                         alignment: .leading,
-                        spacing: Theme.spaceXL
+                        spacing: Theme.sectionGap
                     ) {
                         recordedEntry(log)
                         historicalSnapshot(log)

@@ -153,7 +153,7 @@ private extension SettingsView {
 
                     Text(store.isPremium ? "Active" : "Free plan")
                         .font(Theme.body)
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -219,7 +219,7 @@ private extension SettingsView {
 
                 if let notice = purchases.lastNotice {
                     Text(notice)
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
         }
@@ -251,7 +251,7 @@ private extension SettingsView {
                         )
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.textSecondary
                         )
                         .lineLimit(2)
                     }
@@ -267,7 +267,7 @@ private extension SettingsView {
                     )
                     .font(Theme.micro)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                     .accessibilityHidden(
                         true
@@ -429,7 +429,7 @@ private extension SettingsView {
 
                 Text(appVersionText)
                     .font(Theme.caption)
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.textSecondary)
                     .padding(.top, Theme.spaceXXS)
             }
         }

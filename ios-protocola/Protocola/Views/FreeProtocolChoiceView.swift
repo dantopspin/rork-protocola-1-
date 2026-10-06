@@ -19,7 +19,7 @@ struct FreeProtocolChoiceView: View {
             ScrollView {
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceXL
+                    spacing: Theme.sectionGap
                 ) {
                     Text(
                         "Free includes one actively tracked protocol. Choose which one stays editable and available for logging. All other protocols and their history remain on this iPhone as read-only records."
@@ -31,20 +31,13 @@ struct FreeProtocolChoiceView: View {
 
                     VStack(
                         alignment: .leading,
-                        spacing: Theme.spaceS
+                        spacing: Theme.sectionHeaderGap
                     ) {
                         Eyebrow(
                             text: "Track on Free"
                         )
 
-                        Rectangle()
-                            .fill(
-                                Theme.hairline
-                            )
-                            .frame(
-                                height:
-                                    Theme.ruleThickness
-                            )
+                        EditorialRule()
 
                         ForEach(
                             Array(
@@ -74,10 +67,7 @@ struct FreeProtocolChoiceView: View {
                                         Text(
                                             record.name
                                         )
-                                        .font(
-                                            Theme
-                                                .sectionTitle
-                                        )
+                                        .font(Theme.cardTitle)
                                         .foregroundStyle(
                                             Theme.ink
                                         )
@@ -89,22 +79,22 @@ struct FreeProtocolChoiceView: View {
                                                 )
                                                 .first {
                                             Text(
-                                                revision
-                                                    .compoundName
-                                                + " · "
-                                                + revision
-                                                    .amountText
-                                                + " "
-                                                + revision
-                                                    .unitText
+                                                DoseText.line(
+                                                    compound:
+                                                        revision.compoundName,
+                                                    amount:
+                                                        revision.amountText,
+                                                    unit:
+                                                        revision.unitText
+                                                )
                                             )
                                             .font(
                                                 Theme.body
                                             )
                                             .foregroundStyle(
-                                                Theme
-                                                    .textSecondary
+                                                Theme.ink
                                             )
+                                            .monospacedDigit()
                                         }
                                     }
 
@@ -129,13 +119,13 @@ struct FreeProtocolChoiceView: View {
                                             Theme.micro
                                         )
                                         .foregroundStyle(
-                                            Theme.muted
+                                            Theme.textSecondary
                                         )
                                     }
                                 }
                                 .padding(
                                     .vertical,
-                                    Theme.spaceM
+                                    Theme.rowPadding
                                 )
                                 .contentShape(
                                     Rectangle()
@@ -146,31 +136,16 @@ struct FreeProtocolChoiceView: View {
                             if index
                                 < activeProtocols
                                     .count - 1 {
-                                Rectangle()
-                                    .fill(
-                                        Theme.hairline
-                                    )
-                                    .frame(
-                                        height:
-                                            Theme
-                                                .ruleThickness
-                                    )
+                                EditorialRule()
                             }
                         }
 
-                        Rectangle()
-                            .fill(
-                                Theme.hairline
-                            )
-                            .frame(
-                                height:
-                                    Theme.ruleThickness
-                            )
+                        EditorialRule()
                     }
 
                     VStack(
                         alignment: .leading,
-                        spacing: Theme.spaceS
+                        spacing: Theme.sectionHeaderGap
                     ) {
                         Eyebrow(
                             text: "Need more than one?"

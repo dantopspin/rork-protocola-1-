@@ -15,7 +15,7 @@ struct VialDetailView: View {
                 ScrollView {
                     VStack(
                         alignment: .leading,
-                        spacing: Theme.spaceXL
+                        spacing: Theme.sectionGap
                     ) {
                         inventoryOverview(vial)
 
@@ -583,12 +583,12 @@ private extension VialDetailView {
                             )
                             .font(Theme.micro)
                             .foregroundStyle(
-                                Theme.muted
+                                Theme.textSecondary
                             )
                         }
                         .padding(
                             .vertical,
-                            Theme.spaceS
+                            Theme.rowPadding
                         )
                         .contentShape(
                             Rectangle()
@@ -603,15 +603,7 @@ private extension VialDetailView {
 
                     if index
                         < logs.count - 1 {
-                        Rectangle()
-                            .fill(
-                                Theme.hairline
-                            )
-                            .frame(
-                                height:
-                                    Theme
-                                        .ruleThickness
-                            )
+                        EditorialRule()
                     }
                 }
             }

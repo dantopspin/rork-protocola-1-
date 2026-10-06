@@ -224,7 +224,7 @@ private extension DoseEditorView {
             )
 
         } header: {
-            Text("Entry as recorded")
+            Eyebrow(text: "Entry as recorded")
         } footer: {
             Text(
                 "Values reflect your own records, not an administration recommendation."
@@ -275,7 +275,7 @@ private extension DoseEditorView {
             }
 
         } header: {
-            Text("Vial")
+            Eyebrow(text: "Vial")
         } footer: {
             if correcting == nil {
                 Text(
@@ -319,7 +319,7 @@ private extension DoseEditorView {
             )
 
         } header: {
-            Text("Calculated from recorded values")
+            Eyebrow(text: "Calculated from recorded values")
         } footer: {
             Text(
                 "Arithmetic only. Protocola converts the amount, vial concentration, and syringe scale you entered. It does not choose or recommend a dose."
@@ -780,7 +780,7 @@ struct InjectionSitePickerView: View {
             ScrollView {
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceL
+                    spacing: Theme.sectionGap
                 ) {
                     Picker(
                         "Body view",
@@ -841,9 +841,7 @@ struct InjectionSitePickerView: View {
     private var siteRecencyCard:
         some View {
         TrackingCard {
-            Text("Recorded recency")
-                .font(Theme.sectionTitle)
-                .foregroundStyle(Theme.ink)
+            Eyebrow(text: "Recorded recency")
 
             ForEach(
                 sites(for: face)
@@ -959,7 +957,7 @@ struct InjectionSiteHistoryView: View {
             ScrollView {
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceL
+                    spacing: Theme.sectionGap
                 ) {
                     Picker(
                         "Body view",
@@ -985,13 +983,7 @@ struct InjectionSiteHistoryView: View {
                     }
 
                     TrackingCard {
-                        Text(
-                            "Most recent by site"
-                        )
-                        .font(Theme.sectionTitle)
-                        .foregroundStyle(
-                            Theme.ink
-                        )
+                        Eyebrow(text: "Most recent by site")
 
                         ForEach(
                             sites(for: face)
@@ -1032,13 +1024,7 @@ struct InjectionSiteHistoryView: View {
 
                     if !recordedLogs.isEmpty {
                         TrackingCard {
-                            Text("Recent entries")
-                                .font(
-                                    Theme.sectionTitle
-                                )
-                                .foregroundStyle(
-                                    Theme.ink
-                                )
+                            Eyebrow(text: "Recent entries")
 
                             ForEach(
                                 recordedLogs

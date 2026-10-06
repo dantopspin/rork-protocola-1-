@@ -162,7 +162,7 @@ struct HistoryView: View {
         ScrollView {
             LazyVStack(
                 alignment: .leading,
-                spacing: Theme.spaceL
+                spacing: Theme.sectionGap
             ) {
                 PrimaryPageHeader(
                     title: "History"
@@ -485,7 +485,7 @@ private extension HistoryView {
     ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.sectionHeaderGap
         ) {
             Eyebrow(
                 text: dayTitle(day.date)
@@ -635,11 +635,11 @@ private extension HistoryView {
         if let log = record.log {
             var parts = [
                 log.protocolName,
-                log.compoundName
-                    + " "
-                    + log.actualAmountText
-                    + " "
-                    + log.unitText
+                DoseText.line(
+                    compound: log.compoundName,
+                    amount: log.actualAmountText,
+                    unit: log.unitText
+                )
             ]
 
             if !log.site.isEmpty,
@@ -696,25 +696,39 @@ private extension HistoryView {
 
             if let compound,
                !compound.isEmpty {
-                var dose = compound
-
                 if let amount,
                    !amount.isEmpty {
-                    dose += " " + amount
-
-                    if let unit,
-                       !unit.isEmpty {
-                        dose += " " + unit
-                    }
+                    parts.append(
+                        DoseText.line(
+                            compound: compound,
+                            amount: amount,
+                            unit: unit ?? ""
+                        )
+                    )
+                } else {
+                    parts.append(compound)
                 }
-
-                parts.append(dose)
             }
 
             if !parts.isEmpty {
                 return parts.joined(
                     separator: " · "
                 )
+            }
+        }
+
+        if event.title == "Vial added" {
+            let parts = [
+                afterValue("Name", in: event),
+                afterValue("Compound", in: event),
+                afterValue("Amount", in: event)
+                    .map { DoseText.amount($0, "mg") }
+            ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+
+            if !parts.isEmpty {
+                return parts.joined(separator: " · ")
             }
         }
 
@@ -745,13 +759,20 @@ private extension HistoryView {
             )
         }
 
-        if let protocolName,
-           !protocolName.isEmpty,
-           !event.detail.isEmpty {
-            return
-                protocolName
-                + " · "
-                + event.detail
+        // Any other event: its first two changes in plain words, never the
+        // raw "Field: Not recorded → value" log text.
+        let summaries =
+            event.changes
+                .prefix(2)
+                .map(humanChange)
+
+        if !summaries.isEmpty {
+            return (
+                [protocolName ?? ""]
+                + summaries
+            )
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
         }
 
         return
@@ -761,18 +782,33 @@ private extension HistoryView {
     }
 
 
+    /// Strips the internal record id that vial values carry, e.g.
+    /// "Sample vial 01 (CDE7C24F-…)" → "Sample vial 01".
+    static func displayValue(
+        _ value: String
+    ) -> String {
+        value.replacingOccurrences(
+            of: #" \([0-9A-Fa-f]{8}-[0-9A-Fa-f-]{27}\)$"#,
+            with: "",
+            options: .regularExpression
+        )
+    }
+
+
     func humanChange(
         _ change: RecordChange
     ) -> String {
-        let old =
-            change.before.isEmpty
-            ? "Not recorded"
-            : change.before
+        let old = Self.displayValue(change.before)
+        let new = Self.displayValue(change.after)
 
-        let new =
-            change.after.isEmpty
-            ? "Not recorded"
-            : change.after
+        // A value set for the first time or cleared is not a "from → to".
+        if old.isEmpty {
+            return change.field + ": " + new
+        }
+
+        if new.isEmpty {
+            return change.field + " cleared"
+        }
 
         switch change.field {
         case "Amount":
@@ -861,7 +897,7 @@ private extension HistoryView {
         for record: TimelineRecord
     ) -> Color {
         if record.log?.status == "Skipped" {
-            return Theme.muted
+            return Theme.textSecondary
         }
 
         switch record.category {
@@ -878,7 +914,7 @@ private extension HistoryView {
             return Theme.teal
 
         default:
-            return Theme.muted
+            return Theme.textSecondary
         }
     }
 
@@ -954,7 +990,7 @@ private struct TimelineRow: View {
                 spacing: Theme.spaceXXS
             ) {
                 Text(title)
-                    .font(Theme.label)
+                    .font(Theme.cardTitle)
                     .foregroundStyle(Theme.ink)
                     .lineLimit(2)
 
@@ -962,6 +998,7 @@ private struct TimelineRow: View {
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(2)
+                    .monospacedDigit()
             }
 
             Spacer(
@@ -980,7 +1017,7 @@ private struct TimelineRow: View {
         }
         .padding(
             .vertical,
-            Theme.spaceS
+            Theme.rowPadding
         )
     }
 }

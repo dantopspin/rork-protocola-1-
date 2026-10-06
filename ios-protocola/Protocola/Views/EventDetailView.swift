@@ -7,7 +7,7 @@ struct EventDetailView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.sectionGap
             ) {
                 headerBlock
 
@@ -58,12 +58,7 @@ private extension EventDetailView {
             )
             .monospacedDigit()
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
+            EditorialRule()
         }
     }
 
@@ -83,7 +78,7 @@ private extension EventDetailView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
         }
     }

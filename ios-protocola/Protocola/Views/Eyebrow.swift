@@ -13,7 +13,7 @@ struct Eyebrow: View {
             .foregroundStyle(
                 onDark
                     ? Theme.onDarkSecondary
-                    : Theme.muted
+                    : Theme.textSecondary
             )
     }
 }

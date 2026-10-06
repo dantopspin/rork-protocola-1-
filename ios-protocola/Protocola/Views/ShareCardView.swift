@@ -13,28 +13,23 @@ struct ShareCardView: View {
             primaryMetric
             adherenceBars
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
+            EditorialRule()
 
             HStack {
                 Text(
                     "Tracked with Protocola"
                 )
-                .font(Theme.caption)
+                .font(Theme.shareCaption)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
 
                 Spacer()
 
                 Text(data.periodLabel)
-                    .font(Theme.caption)
+                    .font(Theme.shareCaption)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                     .monospacedDigit()
             }
@@ -58,12 +53,7 @@ private extension ShareCardView {
         ) {
             Eyebrow(text: "Protocola")
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    height:
-                        Theme.ruleThickness
-                )
+            EditorialRule()
         }
     }
 
@@ -83,7 +73,7 @@ private extension ShareCardView {
             Text(
                 "\(data.recorded) of \(data.scheduled) scheduled entries recorded"
             )
-            .font(Theme.sectionTitle)
+            .font(Theme.shareTitle)
             .foregroundStyle(
                 Theme.textSecondary
             )
@@ -101,7 +91,7 @@ private extension ShareCardView {
                 bar in
 
                 Rectangle()
-                    .fill(Theme.line)
+                    .fill(Theme.inactiveFill)
                     .frame(
                         width: data.barWidth,
                         height:

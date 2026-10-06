@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Fixed visual tokens for the entire app.
 ///
@@ -22,8 +23,6 @@ enum Theme {
         blue: 0.9686
     )
 
-    static let surfaceRaised = Color.white
-
     /// #121211 — primary type and rules.
     static let ink = Color(
         red: 0.0706,
@@ -44,8 +43,6 @@ enum Theme {
         green: 0.4431,
         blue: 0.4118
     )
-
-    static let muted = textSecondary
 
     /// #30536B — the single product accent from the original Peptide Lens
     /// direction. Used for primary actions, progress, selection, and charts.
@@ -90,14 +87,12 @@ enum Theme {
     // MARK: - Structural colors
 
     static let hairline = ink.opacity(0.16)
-    static let border = hairline
     static let controlBorder = ink.opacity(0.46)
-    static let line = ink.opacity(0.12)
+    /// Fill for empty or inactive marks (unrecorded status dots, empty
+    /// heatmap days). Never a rule; rules use `hairline`.
+    static let inactiveFill = ink.opacity(0.12)
     static let subtleFill = ink.opacity(0.025)
-    static let neutralTint = subtleFill
     static let tealTint = teal.opacity(0.08)
-    static let amberTint = amber.opacity(0.08)
-    static let dangerTint = danger.opacity(0.08)
     static let shadow = ink.opacity(0.035)
 
     // Interaction-state values live here so controls do not invent local
@@ -129,7 +124,6 @@ enum Theme {
 
     // MARK: - Typography
 
-    static let displaySize: CGFloat = 38
     static let pageTitleSize: CGFloat = 34
     static let metricLargeSize: CGFloat = 34
     static let metricCompactSize: CGFloat = 26
@@ -146,88 +140,101 @@ enum Theme {
     static let shareMetricSize: CGFloat = 64
     static let eyebrowTracking: CGFloat = 2.0
 
-    static let display =
-        Font.system(
-            size: displaySize,
-            weight: .bold
-        )
+    // Fonts scale with the user's text-size setting from the sizes above:
+    // at the default setting they are exactly these sizes; larger settings
+    // grow them along the matching iOS text style. Large display sizes are
+    // capped so hero numbers stay inside their layouts.
 
-    static let pageTitle =
-        Font.system(
-            size: pageTitleSize,
-            weight: .bold
-        )
+    static var pageTitle: Font {
+        scaled(pageTitleSize, .bold, .largeTitle, max: 52)
+    }
 
-    static let metricLarge =
-        Font.system(
-            size: metricLargeSize,
-            weight: .semibold,
-            design: .monospaced
-        )
+    static var metricLarge: Font {
+        scaled(metricLargeSize, .semibold, .largeTitle, max: 52, design: .monospaced)
+    }
 
-    static let metric = metricLarge
+    static var metricCompact: Font {
+        scaled(metricCompactSize, .semibold, .title1, max: 40, design: .monospaced)
+    }
 
-    static let metricCompact =
-        Font.system(
-            size: metricCompactSize,
-            weight: .semibold,
-            design: .monospaced
-        )
+    static var modalTitle: Font {
+        scaled(modalTitleSize, .semibold, .title3, max: 34)
+    }
 
-    static let modalTitle =
-        Font.system(
-            size: modalTitleSize,
-            weight: .semibold
-        )
+    static var sectionTitle: Font {
+        scaled(sectionTitleSize, .semibold, .headline)
+    }
 
-    static let sectionTitle =
-        Font.system(
-            size: sectionTitleSize,
-            weight: .semibold
-        )
+    /// Title of a record row (protocol, entry, vial, lab, tool).
+    static var cardTitle: Font {
+        scaled(cardTitleSize, .semibold, .callout)
+    }
 
-    static let cardTitle =
-        Font.system(
-            size: cardTitleSize,
-            weight: .semibold
-        )
+    static var body: Font {
+        scaled(bodySize, .regular, .body)
+    }
 
-    static let body =
-        Font.system(
-            size: bodySize,
-            weight: .regular
-        )
+    static var label: Font {
+        scaled(labelSize, .medium, .subheadline)
+    }
 
-    static let label =
-        Font.system(
-            size: labelSize,
-            weight: .medium
-        )
+    static var buttonLabel: Font {
+        scaled(buttonLabelSize, .medium, .body)
+    }
 
-    static let buttonLabel =
-        Font.system(
-            size: buttonLabelSize,
-            weight: .medium
-        )
+    static var caption: Font {
+        scaled(captionSize, .regular, .caption1)
+    }
 
-    static let caption =
-        Font.system(
-            size: captionSize,
-            weight: .regular
-        )
+    static var micro: Font {
+        scaled(microSize, .semibold, .caption2)
+    }
 
-    static let micro =
-        Font.system(
-            size: microSize,
-            weight: .semibold
-        )
-
+    /// Share images are rendered at a fixed size, never scaled.
     static let shareMetric =
         Font.system(
             size: shareMetricSize,
             weight: .semibold,
             design: .monospaced
         )
+
+    static let shareTitle =
+        Font.system(
+            size: sectionTitleSize,
+            weight: .semibold
+        )
+
+    static let shareCaption =
+        Font.system(
+            size: captionSize,
+            weight: .regular
+        )
+
+    /// Point size for a token at the current text-size setting.
+    static func scaledSize(
+        _ size: CGFloat,
+        _ style: UIFont.TextStyle,
+        max: CGFloat? = nil
+    ) -> CGFloat {
+        let value =
+            UIFontMetrics(forTextStyle: style)
+                .scaledValue(for: size)
+        return max.map { Swift.min(value, $0) } ?? value
+    }
+
+    private static func scaled(
+        _ size: CGFloat,
+        _ weight: Font.Weight,
+        _ style: UIFont.TextStyle,
+        max: CGFloat? = nil,
+        design: Font.Design = .default
+    ) -> Font {
+        Font.system(
+            size: scaledSize(size, style, max: max),
+            weight: weight,
+            design: design
+        )
+    }
 
 
     // MARK: - Spacing
@@ -301,6 +308,16 @@ enum Theme {
     static let paywallSkeletonDetailWidth: CGFloat = 148
     static let paywallSkeletonDetailHeight: CGFloat = 12
     static let paywallSkeletonActionWidth: CGFloat = 88
+
+
+    // MARK: - Rhythm
+
+    /// Gap between top-level sections of a scrolling screen.
+    static let sectionGap: CGFloat = 32
+    /// Gap between a section's eyebrow/rule and its content.
+    static let sectionHeaderGap: CGFloat = 16
+    /// Vertical padding inside a tappable record or navigation row.
+    static let rowPadding: CGFloat = 12
 
 
     // MARK: - Layout
