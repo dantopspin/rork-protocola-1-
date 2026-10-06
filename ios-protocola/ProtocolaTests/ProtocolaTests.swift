@@ -2503,7 +2503,7 @@ struct DailyUserTests {
         config.followsDeviceTimeZone = true
         let at = Date(timeIntervalSince1970: 1_800_000_000)
         let key = SchedulingEngine.occurrenceKey(compoundID: compound, revisionID: revision, at: at, config: config)
-        #expect(key.contains(":L "))
+        #expect(key.contains(":L"))
         #expect(key == SchedulingEngine.occurrenceKey(compoundID: compound, revisionID: revision, at: at, config: config))
     }
 
