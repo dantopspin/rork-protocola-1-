@@ -50,6 +50,14 @@ final class NotificationService:
         }
     }
 
+    /// Current system authorization, so callers can explain the permission
+    /// before iOS shows its one-time prompt.
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await center
+            .notificationSettings()
+            .authorizationStatus
+    }
+
     func update(
         _ reminders:
             [ReminderPlanner.Candidate]

@@ -286,6 +286,14 @@ enum Theme {
     static let sharePreviewMinHeight: CGFloat = 240
     static let calendarDayWidth: CGFloat = 64
 
+    // Permission sheet and recorded-entries heatmap
+    static let iconTileSize: CGFloat = 56
+    static let heatmapCellMin: CGFloat = 8
+    static let heatmapCellMax: CGFloat = 20
+    static let heatmapGap: CGFloat = 4
+    /// Teal opacity for heatmap levels 1-3; level 4 is solid teal.
+    static let heatmapLevelOpacities: [Double] = [0.28, 0.52, 0.76]
+
     // Paywall loading/success geometry
     static let paywallSuccessIconSize: CGFloat = 56
     static let paywallSkeletonTitleWidth: CGFloat = 104

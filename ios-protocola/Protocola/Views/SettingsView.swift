@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// Native Settings for Protocola.
 ///
@@ -17,6 +18,7 @@ struct SettingsView: View {
     @State private var shareCSV = false
 
     @State private var confirmClear = false
+    @State private var explainingInventoryAlerts = false
 
     var body: some View {
         NavigationStack {
@@ -42,6 +44,35 @@ struct SettingsView: View {
             }
             .sheet(item: $document) { document in
                 LegalDocumentView(document: document)
+            }
+            .sheet(
+                isPresented: $explainingInventoryAlerts,
+                onDismiss: {
+                    // Enable only after a grant. "Not now" and a denial
+                    // both leave alerts off; the sheet already explained a
+                    // denial, so no second error is shown.
+                    Task {
+                        let status =
+                            await store
+                                .notifications
+                                .authorizationStatus()
+
+                        guard
+                            status == .authorized
+                            || status == .provisional
+                        else {
+                            return
+                        }
+
+                        await store.setInventoryAlerts(true)
+                    }
+                }
+            ) {
+                NotificationPermissionSheet(
+                    context: .inventory
+                ) {
+                    explainingInventoryAlerts = false
+                }
             }
             .sheet(
                 isPresented: $shareCSV,
@@ -252,6 +283,15 @@ private extension SettingsView {
                 get: { store.inventoryAlerts },
                 set: { enabled in
                     Task {
+                        if enabled,
+                           await store
+                            .notifications
+                            .authorizationStatus()
+                            == .notDetermined {
+                            explainingInventoryAlerts = true
+                            return
+                        }
+
                         await store.setInventoryAlerts(enabled)
                     }
                 }
