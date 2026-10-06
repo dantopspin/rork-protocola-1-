@@ -190,8 +190,17 @@ struct BugFixRegressionTests {
         let restart = calendar.startOfDay(
             for: Date(timeIntervalSince1970: 1_800_400_000)
         )
+        let now =
+            restart.addingTimeInterval(
+                -2 * 86_400
+            )
+
         let notice = try #require(
-            CycleDisplay.restartNoticeDate(config, restart: restart)
+            CycleDisplay.restartNoticeDate(
+                config,
+                restart: restart,
+                now: now
+            )
         )
 
         #expect(notice < restart)
