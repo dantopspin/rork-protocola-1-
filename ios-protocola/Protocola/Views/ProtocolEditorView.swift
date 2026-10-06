@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct ProtocolEditorView: View {
     let record: ProtocolRecord?
@@ -13,6 +14,8 @@ struct ProtocolEditorView: View {
     @State private var draft: ProtocolDraft
     @State private var addVial = false
     @State private var saving = false
+    @State private var askingPermission = false
+    @State private var permissionExplained = false
     @State private var effectiveDate: Date
 
     init(
@@ -157,6 +160,22 @@ struct ProtocolEditorView: View {
             }
             .sheet(isPresented: $addVial) {
                 VialEditorView()
+            }
+            .sheet(
+                isPresented: $askingPermission,
+                onDismiss: {
+                    // Continue the save whatever the answer; the protocol
+                    // records the reminder choice and delivery follows the
+                    // system setting.
+                    permissionExplained = true
+                    save()
+                }
+            ) {
+                NotificationPermissionSheet(
+                    context: .reminders
+                ) {
+                    askingPermission = false
+                }
             }
             .trackingErrors()
         }
@@ -644,10 +663,19 @@ private extension ProtocolEditorView {
             if draft.reminders,
                draft.kind != .asRecorded,
                !store.isDemo {
-                _ =
-                    await store
-                        .notifications
-                        .requestPermission()
+                // Explain reminders before iOS shows its one-time prompt.
+                // The sheet runs the system request itself; after "Not now"
+                // the status stays undetermined and the save goes ahead
+                // without prompting.
+                if !permissionExplained,
+                   await store
+                    .notifications
+                    .authorizationStatus()
+                    == .notDetermined {
+                    saving = false
+                    askingPermission = true
+                    return
+                }
             }
 
             let saved: Bool

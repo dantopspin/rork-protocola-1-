@@ -210,6 +210,14 @@ private extension InsightsView {
 
                         supportingStats(summary)
 
+                        RecordedEntriesHeatmap(
+                            logs:
+                                store.logs.filter {
+                                    $0.protocolID
+                                        == selected?.id
+                                }
+                        )
+
                         if let latest {
                             changeContext(latest)
                         }

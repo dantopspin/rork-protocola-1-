@@ -131,6 +131,12 @@ Surface fill, controlBorder outline, ink label, radius 2, 44pt minimum height.
 ### TrackingEmptyState
 28pt tertiary icon, 20pt title, 15pt supporting copy, left aligned to the page grid.
 
+### Vendored components (SwiftPieces)
+`Protocola/ThirdParty/SwiftPieces` holds unmodified third-party sources (license: `THIRD_PARTY_NOTICES.md`). They sit outside `Views/` and the source gate; product wrappers in `Views/` must pass only `Theme` tokens into their style structs.
+
+- `NotificationPermissionSheet` wraps `PermissionSheet`: shown before the one-time iOS notification prompt (protocol reminders, inventory alerts).
+- `RecordedEntriesHeatmap` wraps `ActivityHeatmap`: per-day recorded entries in Insights, streak summary hidden.
+
 ## Screen first-read hierarchy
 
 - Today -> next entry / resolved-day state

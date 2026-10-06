@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// Native Settings for Protocola.
 ///
@@ -17,6 +18,7 @@ struct SettingsView: View {
     @State private var shareCSV = false
 
     @State private var confirmClear = false
+    @State private var explainingInventoryAlerts = false
 
     var body: some View {
         NavigationStack {
@@ -42,6 +44,32 @@ struct SettingsView: View {
             }
             .sheet(item: $document) { document in
                 LegalDocumentView(document: document)
+            }
+            .sheet(
+                isPresented: $explainingInventoryAlerts,
+                onDismiss: {
+                    // "Not now" leaves the status undetermined: keep alerts
+                    // off without triggering the system prompt. Otherwise
+                    // setInventoryAlerts enables them only when allowed.
+                    Task {
+                        guard
+                            await store
+                                .notifications
+                                .authorizationStatus()
+                                != .notDetermined
+                        else {
+                            return
+                        }
+
+                        await store.setInventoryAlerts(true)
+                    }
+                }
+            ) {
+                NotificationPermissionSheet(
+                    context: .inventory
+                ) {
+                    explainingInventoryAlerts = false
+                }
             }
             .sheet(
                 isPresented: $shareCSV,
@@ -252,6 +280,15 @@ private extension SettingsView {
                 get: { store.inventoryAlerts },
                 set: { enabled in
                     Task {
+                        if enabled,
+                           await store
+                            .notifications
+                            .authorizationStatus()
+                            == .notDetermined {
+                            explainingInventoryAlerts = true
+                            return
+                        }
+
                         await store.setInventoryAlerts(enabled)
                     }
                 }
