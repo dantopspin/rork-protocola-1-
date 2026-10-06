@@ -696,19 +696,18 @@ private extension HistoryView {
 
             if let compound,
                !compound.isEmpty {
-                var dose = compound
-
                 if let amount,
                    !amount.isEmpty {
-                    dose += " " + amount
-
-                    if let unit,
-                       !unit.isEmpty {
-                        dose += " " + unit
-                    }
+                    parts.append(
+                        DoseText.line(
+                            compound: compound,
+                            amount: amount,
+                            unit: unit ?? ""
+                        )
+                    )
+                } else {
+                    parts.append(compound)
                 }
-
-                parts.append(dose)
             }
 
             if !parts.isEmpty {
@@ -745,13 +744,35 @@ private extension HistoryView {
             )
         }
 
-        if let protocolName,
-           !protocolName.isEmpty,
-           !event.detail.isEmpty {
-            return
-                protocolName
-                + " · "
-                + event.detail
+        if event.title == "Vial added" {
+            let parts = [
+                afterValue("Name", in: event),
+                afterValue("Compound", in: event),
+                afterValue("Amount", in: event)
+                    .map { DoseText.amount($0, "mg") }
+            ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+
+            if !parts.isEmpty {
+                return parts.joined(separator: " · ")
+            }
+        }
+
+        // Any other event: its first two changes in plain words, never the
+        // raw "Field: Not recorded → value" log text.
+        let summaries =
+            event.changes
+                .prefix(2)
+                .map(humanChange)
+
+        if !summaries.isEmpty {
+            return (
+                [protocolName ?? ""]
+                + summaries
+            )
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
         }
 
         return
@@ -761,18 +782,33 @@ private extension HistoryView {
     }
 
 
+    /// Strips the internal record id that vial values carry, e.g.
+    /// "Sample vial 01 (CDE7C24F-…)" → "Sample vial 01".
+    static func displayValue(
+        _ value: String
+    ) -> String {
+        value.replacingOccurrences(
+            of: #" \([0-9A-Fa-f]{8}-[0-9A-Fa-f-]{27}\)$"#,
+            with: "",
+            options: .regularExpression
+        )
+    }
+
+
     func humanChange(
         _ change: RecordChange
     ) -> String {
-        let old =
-            change.before.isEmpty
-            ? "Not recorded"
-            : change.before
+        let old = Self.displayValue(change.before)
+        let new = Self.displayValue(change.after)
 
-        let new =
-            change.after.isEmpty
-            ? "Not recorded"
-            : change.after
+        // A value set for the first time or cleared is not a "from → to".
+        if old.isEmpty {
+            return change.field + ": " + new
+        }
+
+        if new.isEmpty {
+            return change.field + " cleared"
+        }
 
         switch change.field {
         case "Amount":

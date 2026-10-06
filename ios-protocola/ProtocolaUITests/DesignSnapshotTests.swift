@@ -43,6 +43,9 @@ final class DesignSnapshotTests: XCTestCase {
             shot(app, "\(prefix)-00-onboarding")
             return
         }
+        if screens == nil {
+            shot(app, "\(prefix)-00-onboarding")
+        }
         demo.tap()
 
         let tabBar = app.tabBars.firstMatch
@@ -70,6 +73,10 @@ final class DesignSnapshotTests: XCTestCase {
                     inventory.tap()
                     settle()
                     shot(app, "\(prefix)-04-inventory")
+                    if tapIfPresent(app.buttons["Add vial"]) {
+                        shot(app, "\(prefix)-04b-vial-editor")
+                        dismissSheets(app)
+                    }
                     app.navigationBars.buttons.firstMatch.tap()
                     settle()
                 }
@@ -84,6 +91,20 @@ final class DesignSnapshotTests: XCTestCase {
                         settings.tap()
                         settle()
                         shot(app, "\(prefix)-05-settings")
+                        let alerts = app.switches
+                            .matching(NSPredicate(format: "label CONTAINS[c] 'Inventory alerts'"))
+                            .firstMatch
+                        if alerts.waitForExistence(timeout: 2) {
+                            alerts.tap()
+                            settle()
+                            shot(app, "\(prefix)-05b-permission-sheet")
+                            tapIfPresent(app.buttons["Not now"])
+                        }
+                        if tapIfPresent(app.buttons["Upgrade"]) {
+                            shot(app, "\(prefix)-05c-paywall")
+                            app.swipeDown(velocity: .fast)
+                            settle()
+                        }
                         dismissSheets(app)
                     }
                 }
@@ -103,6 +124,21 @@ final class DesignSnapshotTests: XCTestCase {
             shot(app, "\(prefix)-07-protocols")
 
             if screens == nil {
+                if tapIfPresent(app.buttons["Add protocol"]) {
+                    shot(app, "\(prefix)-07b-protocol-editor")
+                    dismissSheets(app)
+                }
+                if tapIfPresent(
+                    app.buttons
+                        .matching(NSPredicate(format: "label BEGINSWITH 'Calculator'"))
+                        .firstMatch
+                ) {
+                    shot(app, "\(prefix)-07c-calculator")
+                    dismissSheets(app)
+                }
+            }
+
+            if screens == nil {
                 let row = app.buttons
                     .matching(NSPredicate(format: "label CONTAINS 'Active'"))
                     .firstMatch
@@ -113,6 +149,15 @@ final class DesignSnapshotTests: XCTestCase {
                     app.swipeUp()
                     settle()
                     shot(app, "\(prefix)-09-protocol-detail-scrolled")
+                    if tapIfPresent(
+                        app.buttons
+                            .matching(NSPredicate(format: "label BEGINSWITH 'Labs'"))
+                            .firstMatch
+                    ) {
+                        shot(app, "\(prefix)-09b-labs")
+                        app.navigationBars.buttons.firstMatch.tap()
+                        settle()
+                    }
                     app.navigationBars.buttons.firstMatch.tap()
                     settle()
                 }
@@ -137,6 +182,17 @@ final class DesignSnapshotTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    @MainActor
+    @discardableResult
+    private func tapIfPresent(_ element: XCUIElement) -> Bool {
+        guard element.waitForExistence(timeout: 2), element.isHittable else {
+            return false
+        }
+        element.tap()
+        settle()
+        return true
+    }
 
     /// Closes any open sheet so the tab bar is reachable again.
     @MainActor
