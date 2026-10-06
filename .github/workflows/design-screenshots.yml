@@ -1,0 +1,82 @@
+name: Design screenshots
+
+# Renders the main screens with demo data and publishes the PNGs to the
+# `design-screenshots` branch under <commit sha>/, so visual changes can be
+# reviewed without a local simulator. Runs on design/* branches or manually.
+
+on:
+  push:
+    branches:
+      - 'design/**'
+  workflow_dispatch:
+
+concurrency:
+  group: design-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26.6
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      - name: Capture screens
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ios-protocola/Protocola.xcodeproj \
+            -scheme Protocola \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -only-testing:ProtocolaUITests/DesignSnapshotTests \
+            -parallel-testing-enabled NO \
+            -resultBundlePath Shots.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
+
+      - name: Export attachments
+        if: always()
+        run: |
+          mkdir -p raw shots
+          xcrun xcresulttool export attachments --path Shots.xcresult --output-path raw
+          python3 - <<'EOF'
+          import json, os, shutil
+          manifest = json.load(open("raw/manifest.json"))
+          for test in manifest:
+              for a in test.get("attachments", []):
+                  name = a.get("suggestedHumanReadableName") or a["exportedFileName"]
+                  base = name.split("_")[0] if name.startswith(("default", "ax-")) else name
+                  if not base.endswith(".png"):
+                      base += ".png"
+                  shutil.copy(os.path.join("raw", a["exportedFileName"]), os.path.join("shots", base))
+          print(sorted(os.listdir("shots")))
+          EOF
+
+      - name: Publish to design-screenshots branch
+        if: always()
+        run: |
+          set -e
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          SHA=${GITHUB_SHA::7}
+          if git ls-remote --exit-code --heads origin design-screenshots >/dev/null; then
+            git fetch --depth 1 origin design-screenshots
+            git worktree add out FETCH_HEAD
+          else
+            git worktree add --detach out
+            (cd out && git checkout --orphan design-screenshots && git rm -rfq .)
+          fi
+          mkdir -p "out/$SHA"
+          cp shots/*.png "out/$SHA/" || true
+          cd out
+          git add -A
+          git commit -qm "Screenshots for $SHA" || exit 0
+          git push origin HEAD:design-screenshots
