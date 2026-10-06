@@ -15,19 +15,14 @@ struct ShareCardPreviewView: View {
             ScrollView {
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceXL
+                    spacing: Theme.sectionGap
                 ) {
                     if let image {
                         Eyebrow(
                             text: "Preview"
                         )
 
-                        Rectangle()
-                            .fill(Theme.hairline)
-                            .frame(
-                                height:
-                                    Theme.ruleThickness
-                            )
+                        EditorialRule()
 
                         Image(uiImage: image)
                             .resizable()
@@ -37,12 +32,7 @@ struct ShareCardPreviewView: View {
                                     .infinity
                             )
 
-                        Rectangle()
-                            .fill(Theme.hairline)
-                            .frame(
-                                height:
-                                    Theme.ruleThickness
-                            )
+                        EditorialRule()
 
                         Button {
                             sharing = true
@@ -106,7 +96,7 @@ struct ShareCardPreviewView: View {
             .toolbar {
                 ToolbarItem(
                     placement:
-                        .cancellationAction
+                        .confirmationAction
                 ) {
                     Button("Done") {
                         dismiss()

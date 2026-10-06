@@ -38,7 +38,7 @@ struct InventoryView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.sectionGap
             ) {
                 if availableVials.isEmpty,
                    (
@@ -157,7 +157,7 @@ private extension InventoryView {
         if !vials.isEmpty {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceS
+                spacing: Theme.sectionHeaderGap
             ) {
                 Eyebrow(text: title)
 
@@ -173,33 +173,19 @@ private extension InventoryView {
 
                         if index
                             < vials.count - 1 {
-                            Rectangle()
-                                .fill(
-                                    Theme.hairline
-                                )
-                                .frame(
-                                    height: Theme.ruleThickness
-                                )
+                            EditorialRule()
                         }
                     }
                 }
                 .overlay(
                     alignment: .top
                 ) {
-                    Rectangle()
-                        .fill(
-                            Theme.hairline
-                        )
-                        .frame(height: Theme.ruleThickness)
+                    EditorialRule()
                 }
                 .overlay(
                     alignment: .bottom
                 ) {
-                    Rectangle()
-                        .fill(
-                            Theme.hairline
-                        )
-                        .frame(height: Theme.ruleThickness)
+                    EditorialRule()
                 }
             }
         }
@@ -229,10 +215,7 @@ private extension InventoryView {
                             Theme.spaceXXS
                     ) {
                         Text(vial.name)
-                            .font(
-                                Theme
-                                    .sectionTitle
-                            )
+                            .font(Theme.cardTitle)
                             .foregroundStyle(
                                 Theme.ink
                             )
@@ -282,7 +265,7 @@ private extension InventoryView {
                     )
                     .font(Theme.micro)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                 }
 
@@ -351,7 +334,7 @@ private extension InventoryView {
             }
             .padding(
                 .vertical,
-                Theme.spaceM
+                Theme.rowPadding
             )
             .contentShape(Rectangle())
         }

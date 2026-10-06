@@ -11,16 +11,25 @@ enum ProtocolaAppearance {
 
 
     private static func configureNavigation() {
+        // Scaled at launch with the user's text size, like Theme's fonts.
         let large =
             UIFont.systemFont(
                 ofSize:
-                    Theme.pageTitleSize,
+                    Theme.scaledSize(
+                        Theme.pageTitleSize,
+                        .largeTitle,
+                        max: 52
+                    ),
                 weight: .bold
             )
         let inline =
             UIFont.systemFont(
                 ofSize:
-                    Theme.sectionTitleSize,
+                    Theme.scaledSize(
+                        Theme.sectionTitleSize,
+                        .headline,
+                        max: 28
+                    ),
                 weight: .semibold
             )
 
@@ -66,7 +75,11 @@ enum ProtocolaAppearance {
         let font =
             UIFont.systemFont(
                 ofSize:
-                    Theme.segmentLabelSize,
+                    Theme.scaledSize(
+                        Theme.segmentLabelSize,
+                        .footnote,
+                        max: 22
+                    ),
                 weight: .medium
             )
 

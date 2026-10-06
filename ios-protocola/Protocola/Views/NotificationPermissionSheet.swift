@@ -45,7 +45,7 @@ struct NotificationPermissionSheet: View {
                         ? "Notifications are off"
                         : title
                 )
-                .font(Theme.pageTitle)
+                .font(Theme.modalTitle)
                 .foregroundStyle(Theme.ink)
 
                 Text(

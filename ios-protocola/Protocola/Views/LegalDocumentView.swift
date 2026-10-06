@@ -12,7 +12,7 @@ struct LegalDocumentView: View {
             ScrollView {
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceXL
+                    spacing: Theme.sectionGap
                 ) {
                     Eyebrow(
                         text:
@@ -20,12 +20,7 @@ struct LegalDocumentView: View {
                             + document.updated
                     )
 
-                    Rectangle()
-                        .fill(Theme.hairline)
-                        .frame(
-                            height:
-                                Theme.ruleThickness
-                        )
+                    EditorialRule()
 
                     ForEach(
                         Array(
@@ -63,15 +58,7 @@ struct LegalDocumentView: View {
                         if index
                             < document.sections
                                 .count - 1 {
-                            Rectangle()
-                                .fill(
-                                    Theme.hairline
-                                )
-                                .frame(
-                                    height:
-                                        Theme
-                                            .ruleThickness
-                                )
+                            EditorialRule()
                         }
                     }
                 }

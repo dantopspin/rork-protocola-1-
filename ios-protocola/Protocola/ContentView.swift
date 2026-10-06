@@ -20,6 +20,7 @@ struct ContentView: View {
                     ) {
                         NavigationStack {
                             TodayView()
+                                .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
                     }
 
@@ -31,6 +32,7 @@ struct ContentView: View {
                     ) {
                         NavigationStack {
                             ProtocolsView()
+                                .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
                     }
 
@@ -42,6 +44,7 @@ struct ContentView: View {
                     ) {
                         NavigationStack {
                             HistoryView()
+                                .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
                     }
 
@@ -55,15 +58,8 @@ struct ContentView: View {
                             InsightsView {
                                 tab = 0
                             }
+                            .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
-                    }
-                }
-                .safeAreaInset(
-                    edge: .top,
-                    spacing: 0
-                ) {
-                    if store.isDemo {
-                        demoBanner
                     }
                 }
             }
@@ -144,5 +140,26 @@ struct ContentView: View {
             Theme.spaceXS
         )
         .background(Theme.subtleFill)
+        // Opaque so scrolled content never shows through the banner.
+        .background(Theme.paper)
+    }
+}
+
+
+private extension View {
+    /// The demo banner sits inside each tab's navigation stack, below the
+    /// navigation bar, so it never collides with toolbar buttons.
+    func demoBannerInset<Banner: View>(
+        _ banner: Banner,
+        shown: Bool
+    ) -> some View {
+        safeAreaInset(
+            edge: .top,
+            spacing: 0
+        ) {
+            if shown {
+                banner
+            }
+        }
     }
 }

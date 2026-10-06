@@ -61,7 +61,7 @@ struct TodayView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceL
+                spacing: Theme.sectionGap
             ) {
                 PrimaryPageHeader(
                     title: "Today",
@@ -442,7 +442,7 @@ private extension TodayView {
                             )
                             .font(Theme.micro)
                             .foregroundStyle(
-                                Theme.muted
+                                Theme.textSecondary
                             )
                         }
                     }
@@ -456,22 +456,12 @@ private extension TodayView {
                 .overlay(
                     alignment: .top
                 ) {
-                    Rectangle()
-                        .fill(Theme.hairline)
-                        .frame(
-                            height:
-                                Theme.ruleThickness
-                        )
+                    EditorialRule()
                 }
                 .overlay(
                     alignment: .bottom
                 ) {
-                    Rectangle()
-                        .fill(Theme.hairline)
-                        .frame(
-                            height:
-                                Theme.ruleThickness
-                        )
+                    EditorialRule()
                 }
             }
 
@@ -587,7 +577,7 @@ private extension TodayView {
     var asNeededSection: some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.sectionHeaderGap
         ) {
             Eyebrow(text: "As needed")
 
@@ -608,24 +598,25 @@ private extension TodayView {
                                 Theme.spaceXXS
                         ) {
                             Text(
-                                revision
-                                    .compoundName
+                                DoseText.line(
+                                    compound:
+                                        revision.compoundName,
+                                    amount:
+                                        revision.amountText,
+                                    unit:
+                                        revision.unitText
+                                )
                             )
-                            .font(Theme.label)
+                            .font(Theme.cardTitle)
                             .foregroundStyle(
                                 Theme.ink
                             )
+                            .monospacedDigit()
 
-                            Text(
-                                revision.amountText
-                                + " "
-                                + revision.unitText
-                                + " · "
-                                + revision.routeText
-                            )
+                            Text(revision.routeText)
                             .font(Theme.caption)
                             .foregroundStyle(
-                                Theme.muted
+                                Theme.textSecondary
                             )
                         }
 
@@ -641,29 +632,25 @@ private extension TodayView {
                     }
                     .padding(
                         .vertical,
-                        Theme.spaceS
+                        Theme.rowPadding
                     )
 
                     if index
                         < asNeededRevisions
                             .count - 1 {
-                        Divider()
+                        EditorialRule()
                     }
                 }
             }
             .overlay(
                 alignment: .top
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
             .overlay(
                 alignment: .bottom
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
         }
     }
@@ -672,7 +659,7 @@ private extension TodayView {
     var demoCard: some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.sectionHeaderGap
         ) {
             Eyebrow(text: "Sample records")
 
@@ -701,16 +688,12 @@ private extension TodayView {
         .overlay(
             alignment: .top
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
         .overlay(
             alignment: .bottom
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 
@@ -730,7 +713,7 @@ private extension TodayView {
                     spacing: Theme.spaceXXS
                 ) {
                     Text("Add your first vial")
-                        .font(Theme.label)
+                        .font(Theme.cardTitle)
                         .foregroundStyle(Theme.ink)
 
                     Text(
@@ -748,7 +731,7 @@ private extension TodayView {
             }
             .padding(
                 .vertical,
-                Theme.spaceM
+                Theme.rowPadding
             )
             .contentShape(Rectangle())
         }
@@ -756,16 +739,12 @@ private extension TodayView {
         .overlay(
             alignment: .top
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
         .overlay(
             alignment: .bottom
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 
@@ -773,7 +752,7 @@ private extension TodayView {
     var todayEntriesSection: some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.sectionHeaderGap
         ) {
             HStack {
                 Eyebrow(text: "Today")
@@ -867,25 +846,19 @@ private extension TodayView {
                         }
 
                     if index < remainingTodayEntries.count - 1 {
-                        Rectangle()
-                            .fill(Theme.hairline)
-                            .frame(height: Theme.ruleThickness)
+                        EditorialRule()
                     }
                 }
             }
             .overlay(
                 alignment: .top
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
             .overlay(
                 alignment: .bottom
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
             .animation(
                 reduceMotion
@@ -912,9 +885,10 @@ private extension TodayView {
                         title: "Last entry",
                         value: relativeDate(log.loggedAt),
                         detail:
-                            log.actualAmountText
-                            + " "
-                            + log.unitText
+                            DoseText.amount(
+                                log.actualAmountText,
+                                log.unitText
+                            )
                     )
                 }
                 .buttonStyle(.plain)
@@ -988,14 +962,14 @@ private extension TodayView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
             }
 
             Text(detail)
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
                 .lineLimit(1)
         }
@@ -1010,9 +984,7 @@ private extension TodayView {
         .overlay(
             alignment: .top
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 
@@ -1091,7 +1063,7 @@ private extension TodayView {
                     spacing: Theme.spaceXXS
                 ) {
                     Text("Vial inventory")
-                        .font(Theme.label)
+                        .font(Theme.cardTitle)
                         .foregroundStyle(Theme.ink)
 
                     Text(inventorySummary)
@@ -1162,16 +1134,14 @@ private extension TodayView {
     func nextEntryHero(
         _ next: ScheduledEntry
     ) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
-        ) {
+        TrackingHeroCard {
             HStack(
                 alignment: .center,
                 spacing: Theme.spaceS
             ) {
                 Eyebrow(
-                    text: "Next entry"
+                    text: "Next entry",
+                    onDark: true
                 )
 
                 Spacer()
@@ -1211,7 +1181,7 @@ private extension TodayView {
                     )
                     .font(Theme.sectionTitle)
                     .foregroundStyle(
-                        Theme.ink
+                        Theme.onDarkPrimary
                     )
                     .frame(
                         minWidth:
@@ -1228,7 +1198,7 @@ private extension TodayView {
 
             Text(next.revision.compoundName)
                 .font(Theme.modalTitle)
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.onDarkPrimary)
 
             if usesStackedHero {
                 VStack(
@@ -1251,9 +1221,7 @@ private extension TodayView {
                 }
             }
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule(onDark: true)
 
             protocolActionLight(next)
 
@@ -1265,41 +1233,21 @@ private extension TodayView {
                     label: "Route",
                     value:
                         next.revision
-                            .routeText
+                            .routeText,
+                    onDark: true
                 )
             }
 
             Button {
                 logAsScheduled(next)
             } label: {
-                Text("Log entry")
+                Text("Log")
             }
             .buttonStyle(
-                TrackingPrimaryButtonStyle()
+                TrackingPrimaryButtonStyle(inverted: true)
             )
 
 
-        }
-        .padding(
-            .vertical,
-            Theme.spaceL
-        )
-        .overlay(
-            alignment: .top
-        ) {
-            Rectangle()
-                .fill(Theme.teal)
-                .frame(
-                    height:
-                        Theme.insertionLineHeight
-                )
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
         }
     }
 
@@ -1323,7 +1271,7 @@ private extension TodayView {
                 Text("Protocol")
                     .font(Theme.body)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.onDarkSecondary
                     )
 
                 Spacer()
@@ -1334,7 +1282,7 @@ private extension TodayView {
                 )
                 .font(Theme.body)
                 .foregroundStyle(
-                    Theme.ink
+                    Theme.onDarkPrimary
                 )
                 .lineLimit(1)
 
@@ -1344,7 +1292,7 @@ private extension TodayView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.onDarkSecondary
                 )
                 .accessibilityHidden(true)
             }
@@ -1380,7 +1328,7 @@ private extension TodayView {
                     Text("Vial")
                         .font(Theme.body)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.onDarkSecondary
                         )
 
                     Spacer()
@@ -1388,7 +1336,7 @@ private extension TodayView {
                     Text(vial.name)
                         .font(Theme.body)
                         .foregroundStyle(
-                            Theme.ink
+                            Theme.onDarkPrimary
                         )
                         .lineLimit(1)
 
@@ -1398,9 +1346,13 @@ private extension TodayView {
                     )
                     .font(Theme.micro)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.onDarkSecondary
                     )
                 }
+                .frame(
+                    minHeight:
+                        Theme.minimumTapTarget
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -1421,7 +1373,7 @@ private extension TodayView {
                     Text("Vial")
                         .font(Theme.body)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.onDarkSecondary
                         )
 
                     Spacer()
@@ -1432,9 +1384,7 @@ private extension TodayView {
                         : "Choose vial"
                     )
                     .font(Theme.body)
-                    .foregroundStyle(
-                        Theme.teal
-                    )
+                    .foregroundStyle(Theme.onDarkPrimary)
 
                     Image(
                         systemName:
@@ -1442,9 +1392,13 @@ private extension TodayView {
                     )
                     .font(Theme.micro)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.onDarkSecondary
                     )
                 }
+                .frame(
+                    minHeight:
+                        Theme.minimumTapTarget
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -1462,7 +1416,7 @@ private extension TodayView {
                 Text("Off period")
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
 
                 Spacer()
@@ -1489,7 +1443,7 @@ private extension TodayView {
             )
             .font(Theme.body)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
 
             Text(
@@ -1497,7 +1451,7 @@ private extension TodayView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
         }
         .padding(Theme.spaceM)
@@ -1528,14 +1482,14 @@ private extension TodayView {
             spacing: Theme.spaceXXS
         ) {
             Text(next.revision.amountText)
-                .font(Theme.metric)
+                .font(Theme.metricLarge)
                 .monospacedDigit()
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.onDarkPrimary)
 
             Text(next.revision.unitText)
                 .font(Theme.sectionTitle)
                 .foregroundStyle(
-                    Theme.textSecondary
+                    Theme.onDarkSecondary
                 )
         }
     }
@@ -1557,9 +1511,7 @@ private extension TodayView {
                 )
                 .font(Theme.sectionTitle)
                 .monospacedDigit()
-                .foregroundStyle(
-                    Theme.teal
-                )
+                .foregroundStyle(Theme.onDarkPrimary)
 
                 Image(
                     systemName:
@@ -1567,7 +1519,7 @@ private extension TodayView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Theme.textTertiary
+                    Theme.onDarkSecondary
                 )
                 .accessibilityHidden(true)
             }
@@ -1599,8 +1551,8 @@ private extension TodayView {
         .font(Theme.micro)
         .foregroundStyle(
             text == "Overdue"
-                ? Theme.amber
-                : Theme.teal
+                ? Theme.onDarkPrimary
+                : Theme.onDarkPrimary
         )
         .padding(
             .horizontal,
@@ -1611,7 +1563,7 @@ private extension TodayView {
             Theme.spaceXXS
         )
         .background(
-            Theme.tealTint,
+            Theme.onDarkHairline,
             in: .rect(
                 cornerRadius:
                     Theme.radiusBadge
@@ -1686,13 +1638,17 @@ private extension TodayView {
                 spacing: Theme.spaceXXS
             ) {
                 Text(
-                    entry.revision.compoundName
-                        + " "
-                        + entry.revision.amountText
-                        + " "
-                        + entry.revision.unitText
+                    DoseText.line(
+                        compound:
+                            entry.revision.compoundName,
+                        amount:
+                            entry.revision.amountText,
+                        unit:
+                            entry.revision.unitText
+                    )
                 )
-                .font(Theme.label)
+                .font(Theme.cardTitle)
+                .monospacedDigit()
 
                 Text(
                     entry.at.formatted(
@@ -1720,7 +1676,7 @@ private extension TodayView {
                 .controlSize(.small)
             }
         }
-        .padding(.vertical, Theme.spaceS)
+        .padding(.vertical, Theme.rowPadding)
     }
 
 
@@ -1740,7 +1696,7 @@ private extension TodayView {
         .foregroundStyle(
             recorded
                 ? Theme.teal
-                : Theme.line
+                : Theme.inactiveFill
         )
         .animation(
             reduceMotion
@@ -1922,7 +1878,7 @@ private extension TodayView {
             )
             .foregroundStyle(
                 log.status == "Skipped"
-                    ? Theme.muted
+                    ? Theme.textSecondary
                     : Theme.teal
             )
 
@@ -2168,7 +2124,7 @@ struct StackCalendarView: View {
             ScrollView {
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceL
+                    spacing: Theme.sectionGap
                 ) {
                     weekNavigation
                     dayStrip
@@ -2470,9 +2426,10 @@ struct StackCalendarView: View {
                 spacing: Theme.spaceS
             ) {
                 Label(
-                    entry.revision.amountText
-                    + " "
-                    + entry.revision.unitText,
+                    DoseText.amount(
+                        entry.revision.amountText,
+                        entry.revision.unitText
+                    ),
                     systemImage:
                         "number"
                 )

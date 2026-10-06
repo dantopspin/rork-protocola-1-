@@ -318,7 +318,7 @@ private extension RecordedEntriesHeatmap {
     static func fill(level: Int) -> Color {
         switch level {
         case 0:
-            Theme.line
+            Theme.inactiveFill
         case 1...3:
             Theme.teal.opacity(
                 Theme.heatmapLevelOpacities[level - 1]

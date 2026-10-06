@@ -40,10 +40,8 @@ struct VialEditorView: View {
                                 + " mg/mL"
                         )
                     } header: {
-                        Text(
-                            "Calculated from recorded values"
-                        )
-                    } footer: {
+            Eyebrow(text: "Calculated from recorded values")
+        } footer: {
                         Text(
                             "Arithmetic only. This is calculated from the vial amount and diluent you entered."
                         )
@@ -177,7 +175,7 @@ private extension VialEditorView {
             }
 
         } header: {
-            Text("Label values")
+            Eyebrow(text: "Label values")
         } footer: {
             Text(
                 "Record the values printed on the vial or provided in your existing instructions."
@@ -234,7 +232,7 @@ private extension VialEditorView {
             }
 
         } header: {
-            Text("Lifecycle")
+            Eyebrow(text: "Lifecycle")
         } footer: {
             Text(
                 "State and dates are your own inventory records. Protocola does not infer when a vial should be opened, reconstituted, or discarded."
@@ -284,7 +282,7 @@ private extension VialEditorView {
                 }
             }
         } header: {
-            Text("Reference photo")
+            Eyebrow(text: "Reference photo")
         } footer: {
             Text(
                 "Optional. The photo stays with this local vial record and is not interpreted as dosing guidance."
@@ -315,7 +313,7 @@ private extension VialEditorView {
             .keyboardType(.decimalPad)
 
         } header: {
-            Text("Manual correction")
+            Eyebrow(text: "Manual correction")
         } footer: {
             Text(
                 "Leave blank to keep the current estimate. A correction is recorded as an adjustment; later entry corrections and deletions still reconcile the balance."

@@ -23,7 +23,7 @@ struct StatusBadge: View {
             return Theme.danger
 
         default:
-            return Theme.muted
+            return Theme.textSecondary
         }
     }
 

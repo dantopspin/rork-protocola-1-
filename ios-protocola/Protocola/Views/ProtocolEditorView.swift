@@ -110,7 +110,7 @@ struct ProtocolEditorView: View {
                         )
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.textSecondary
                         )
                     }
 
@@ -121,7 +121,7 @@ struct ProtocolEditorView: View {
                         )
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.textSecondary
                         )
                     }
                 }
@@ -201,8 +201,7 @@ private extension ProtocolEditorView {
             )
 
         } header: {
-            Text("Future change")
-
+            Eyebrow(text: "Future change")
         } footer: {
             Text(
                 "Choose when these recorded instructions should become effective. This is scheduling of your own record, not a recommendation."
@@ -287,8 +286,7 @@ private extension ProtocolEditorView {
             .disabled(planningFuture)
 
         } header: {
-            Text("Recorded instructions")
-
+            Eyebrow(text: "Recorded instructions")
         } footer: {
             Text(
                 "Enter values from instructions you already have. Protocola records them; it does not generate a dose, route, or schedule."
@@ -390,8 +388,7 @@ private extension ProtocolEditorView {
             }
 
         } header: {
-            Text("Recorded schedule")
-
+            Eyebrow(text: "Recorded schedule")
         } footer: {
             if draft.kind == .asRecorded {
                 Text(
@@ -536,8 +533,7 @@ private extension ProtocolEditorView {
             )
 
         } header: {
-            Text("Injection context")
-
+            Eyebrow(text: "Injection context")
         } footer: {
             Text(
                 "A vial is optional. Leave the site blank to record the actual site only when logging."

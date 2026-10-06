@@ -26,7 +26,7 @@ struct ProtocolsView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceL
+                spacing: Theme.sectionGap
             ) {
                 PrimaryPageHeader(
                     title: "Protocols"
@@ -150,21 +150,19 @@ private extension ProtocolsView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
             }
             .padding(
                 .vertical,
-                Theme.spaceS
+                Theme.rowPadding
             )
         }
         .buttonStyle(.plain)
         .overlay(
             alignment: .bottom
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 
@@ -176,7 +174,7 @@ private extension ProtocolsView {
     ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.sectionHeaderGap
         ) {
             Eyebrow(text: title)
 
@@ -198,7 +196,6 @@ private extension ProtocolsView {
                             record,
                             emphasized:
                                 featured
-                                && index == 0
                         )
                     }
                     .buttonStyle(
@@ -210,27 +207,19 @@ private extension ProtocolsView {
 
                     if index
                         < records.count - 1 {
-                        Rectangle()
-                            .fill(
-                                Theme.hairline
-                            )
-                            .frame(height: Theme.ruleThickness)
+                        EditorialRule()
                     }
                 }
             }
             .overlay(
                 alignment: .top
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
             .overlay(
                 alignment: .bottom
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
         }
     }
@@ -249,10 +238,7 @@ private extension ProtocolsView {
 
         return VStack(
             alignment: .leading,
-            spacing:
-                emphasized
-                ? Theme.spaceM
-                : Theme.spaceS
+            spacing: Theme.spaceS
         ) {
             HStack(
                 alignment:
@@ -265,11 +251,7 @@ private extension ProtocolsView {
                         Theme.spaceXXS
                 ) {
                     Text(record.name)
-                        .font(
-                            emphasized
-                            ? Theme.modalTitle
-                            : Theme.sectionTitle
-                        )
+                        .font(Theme.cardTitle)
                         .foregroundStyle(
                             Theme.ink
                         )
@@ -277,16 +259,20 @@ private extension ProtocolsView {
 
                     if let primary {
                         Text(
-                            primary.compoundName
-                            + " · "
-                            + primary.amountText
-                            + " "
-                            + primary.unitText
+                            DoseText.line(
+                                compound:
+                                    primary.compoundName,
+                                amount:
+                                    primary.amountText,
+                                unit:
+                                    primary.unitText
+                            )
                         )
                         .font(Theme.body)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.ink
                         )
+                        .monospacedDigit()
                     }
                 }
 
@@ -312,7 +298,7 @@ private extension ProtocolsView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
             }
 
@@ -325,7 +311,7 @@ private extension ProtocolsView {
                 )
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
 
                 if let config =
@@ -337,7 +323,7 @@ private extension ProtocolsView {
                     Text(cycle)
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.textSecondary
                         )
                 }
             }
@@ -375,9 +361,7 @@ private extension ProtocolsView {
         }
         .padding(
             .vertical,
-            emphasized
-                ? Theme.spaceM
-                : Theme.spaceS
+            Theme.rowPadding
         )
         .contentShape(Rectangle())
     }
@@ -406,7 +390,7 @@ private extension ProtocolsView {
     var toolsSection: some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.sectionHeaderGap
         ) {
             Eyebrow(text: "Tools")
 
@@ -423,9 +407,7 @@ private extension ProtocolsView {
                 }
                 .buttonStyle(.plain)
 
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
 
                 Button {
                     calculator = true
@@ -442,16 +424,12 @@ private extension ProtocolsView {
             .overlay(
                 alignment: .top
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
             .overlay(
                 alignment: .bottom
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
         }
     }
@@ -470,7 +448,7 @@ private extension ProtocolsView {
                     Theme.spaceXXS
             ) {
                 Text(title)
-                    .font(Theme.label)
+                    .font(Theme.cardTitle)
                     .foregroundStyle(
                         Theme.ink
                     )
@@ -478,7 +456,7 @@ private extension ProtocolsView {
                 Text(detail)
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
             }
 
@@ -490,12 +468,12 @@ private extension ProtocolsView {
             )
             .font(Theme.micro)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
         }
         .padding(
             .vertical,
-            Theme.spaceS
+            Theme.rowPadding
         )
         .contentShape(Rectangle())
     }

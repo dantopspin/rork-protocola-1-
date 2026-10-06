@@ -474,7 +474,7 @@ struct PaywallView: View {
                     Theme.radiusCard
             )
             .stroke(
-                Theme.border,
+                Theme.hairline,
                 lineWidth:
                     Theme.ruleThickness
             )
@@ -520,14 +520,7 @@ struct PaywallView: View {
 
 
     private var proofConnector: some View {
-    Rectangle()
-        .fill(
-            Theme.hairline
-        )
-        .frame(
-            height:
-                Theme.ruleThickness
-        )
+    EditorialRule()
         .frame(
             maxWidth: .infinity
         )
@@ -926,7 +919,7 @@ struct PaywallView: View {
                 .stroke(
                     selected
                         ? Theme.teal
-                        : Theme.border,
+                        : Theme.hairline,
                     lineWidth:
                         Theme.ruleThickness
                 )
@@ -1024,7 +1017,7 @@ struct PaywallView: View {
                     Theme.radiusCard
             )
             .stroke(
-                Theme.border,
+                Theme.hairline,
                 lineWidth:
                     Theme.ruleThickness
             )

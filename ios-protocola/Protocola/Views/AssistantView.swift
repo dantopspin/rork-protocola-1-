@@ -216,7 +216,7 @@ private extension AssistantView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
             .monospacedDigit()
 
@@ -268,7 +268,7 @@ private extension AssistantView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
 
         } header: {
@@ -377,7 +377,7 @@ private extension AssistantView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
 
         } header: {

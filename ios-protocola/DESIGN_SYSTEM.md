@@ -18,18 +18,18 @@ The product is intentionally **light-only** in v4. `ContentView` pins `.preferre
 | surface | #FBFAF7 | quiet product surface |
 | surfaceRaised | #FFFFFF | rare foreground surface |
 | ink | #121211 | primary text/icons |
-| textSecondary / muted | #67655F | supporting copy |
+| textSecondary | #67655F | supporting copy |
 | textTertiary | #747169 | quiet metadata; >=4.5:1 on paper |
 | teal / darkSurface | #30536B | primary action, selection, charts, dark module |
 | amber | #876832 | attention; >=4.5:1 in status text |
 | danger | #A6534D | destructive semantics |
 | onDarkPrimary | #FDFCF9 | primary content on teal |
 | onDarkSecondary | onDarkPrimary @ 72% | supporting content on teal |
-| hairline / border | ink @ 16% | decorative rules/card borders |
+| hairline | ink @ 16% | every rule and card border |
 | controlBorder | ink @ 46% | interactive outlined-control boundary |
-| line | ink @ 12% | quiet internal rule |
-| subtleFill / neutralTint | ink @ 2.5% | quiet fill |
-| tealTint / amberTint / dangerTint | semantic color @ 8% | semantic background |
+| inactiveFill | ink @ 12% | fill for empty/inactive marks (status dots, empty heatmap days); never a rule |
+| subtleFill | ink @ 2.5% | quiet fill |
+| tealTint | teal @ 8% | selected/positive background |
 | shadow | ink @ 3.5% | transient elevation only |
 
 No local product colors. No decorative gradients or extra accent families.
@@ -38,15 +38,20 @@ No local product colors. No decorative gradients or extra accent families.
 
 Apple system sans-serif throughout product content.
 
+Sizes below are the default text size. Every token scales with the user's text-size setting through `UIFontMetrics` along a matching iOS text style (pageTitle/metrics capped so heroes fit). Share images use the fixed `share*` tokens.
+
+**Headings:** a section is labelled with `Eyebrow` (via `EditorialSection` or a form `header:`), never with sentence-case `sectionTitle` text.
+
+**Doses:** outside a hero metric a dose is spelled with `DoseText` (`Compound · 250 mcg`) and rendered with `.monospacedDigit()`.
+
 | Token | Size | Weight |
 | --- | ---: | --- |
-| display | 38 | bold |
 | pageTitle | 34 | bold |
-| metricLarge / metric | 34 | semibold monospaced |
+| metricLarge | 34 | semibold monospaced |
 | metricCompact | 26 | semibold monospaced |
 | modalTitle | 20 | semibold |
-| sectionTitle | 18 | semibold |
-| cardTitle | 16 | semibold |
+| sectionTitle | 18 | semibold — the name of a thing (compound in a hero, a chart series), never a section label |
+| cardTitle | 16 | semibold — title of every record or tool row |
 | body | 15 | regular |
 | buttonLabel | 15 | medium |
 | label | 14 | medium |
@@ -63,7 +68,9 @@ Technical values, doses, times, and calculations use monospaced digits/design. P
 4pt grid only: **4, 8, 12, 16, 20, 24, 32, 40, 48**.
 
 - page inset: 24
-- major section gap: 32
+- section gap (`sectionGap`): 32 on every scrolling screen, tabs included
+- section label to content (`sectionHeaderGap`): 16
+- tappable row vertical padding (`rowPadding`): 12, minimum height 44
 - standard surface inset: 16
 - hero inset: 20
 - row gap: 12
@@ -111,7 +118,10 @@ Tracked uppercase `Eyebrow`, 1pt hairline, content, 1pt hairline; spacing 16. Us
 Surface background, radius 2, 16pt inset, hairline border, no shadow.
 
 ### TrackingHeroCard
-Teal dark surface, radius 2, 20pt inset. Rare: only for the highest-value context.
+Teal dark surface, radius 2, 20pt inset. Used once: Today's next entry. Everything inside uses the on-dark tokens and the inverted primary button.
+
+### EditorialRule
+The only horizontal rule (1pt, hairline; `onDark` variant on teal). `Divider()` is reserved for menu separators.
 
 ### RecordRow
 Label left, value right, body typography, monospaced digits for values.
@@ -153,10 +163,16 @@ Secondary actions should use the pattern **object -> menu -> focused sheet -> re
 
 ## Native chrome
 
+Titles: the four tab roots draw `PrimaryPageHeader` (34pt) in content with an empty bar title; every pushed screen and sheet uses the standard inline bar title. Sheet confirmation ("Done", "Save") sits top-right.
+
+Forms (editors, Settings, Calculator) keep native row insets; their section headers are `Eyebrow`.
+
 Native tab bars, navigation bars, menus, system sheets/popovers, confirmation dialogs, and the transient Today undo material may remain native. Product content itself should use tokens/components.
 
 ## Enforcement
 
 No local font sizes, product colors, non-grid spacing, line widths, opacities, animation timing, corner radii, shadows, or arbitrary frame dimensions in product views. Add a token first when a new visual value is genuinely required.
+
+The source gate also rejects hand-drawn horizontal rules, `.insetGrouped` lists and sentence-case form headers.
 
 `DesignSystemTests.swift` is the source-level regression gate.

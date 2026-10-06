@@ -162,7 +162,7 @@ struct HistoryView: View {
         ScrollView {
             LazyVStack(
                 alignment: .leading,
-                spacing: Theme.spaceL
+                spacing: Theme.sectionGap
             ) {
                 PrimaryPageHeader(
                     title: "History"
@@ -485,7 +485,7 @@ private extension HistoryView {
     ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceS
+            spacing: Theme.sectionHeaderGap
         ) {
             Eyebrow(
                 text: dayTitle(day.date)
@@ -635,11 +635,11 @@ private extension HistoryView {
         if let log = record.log {
             var parts = [
                 log.protocolName,
-                log.compoundName
-                    + " "
-                    + log.actualAmountText
-                    + " "
-                    + log.unitText
+                DoseText.line(
+                    compound: log.compoundName,
+                    amount: log.actualAmountText,
+                    unit: log.unitText
+                )
             ]
 
             if !log.site.isEmpty,
@@ -861,7 +861,7 @@ private extension HistoryView {
         for record: TimelineRecord
     ) -> Color {
         if record.log?.status == "Skipped" {
-            return Theme.muted
+            return Theme.textSecondary
         }
 
         switch record.category {
@@ -878,7 +878,7 @@ private extension HistoryView {
             return Theme.teal
 
         default:
-            return Theme.muted
+            return Theme.textSecondary
         }
     }
 
@@ -954,7 +954,7 @@ private struct TimelineRow: View {
                 spacing: Theme.spaceXXS
             ) {
                 Text(title)
-                    .font(Theme.label)
+                    .font(Theme.cardTitle)
                     .foregroundStyle(Theme.ink)
                     .lineLimit(2)
 
@@ -962,6 +962,7 @@ private struct TimelineRow: View {
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(2)
+                    .monospacedDigit()
             }
 
             Spacer(
@@ -980,7 +981,7 @@ private struct TimelineRow: View {
         }
         .padding(
             .vertical,
-            Theme.spaceS
+            Theme.rowPadding
         )
     }
 }

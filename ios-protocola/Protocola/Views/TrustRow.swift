@@ -21,7 +21,7 @@ struct TrustRow: View {
                     .monochrome
                 )
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
                 .frame(
                     width:
@@ -48,7 +48,7 @@ struct TrustRow: View {
                 Text(detail)
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                     .fixedSize(
                         horizontal: false,

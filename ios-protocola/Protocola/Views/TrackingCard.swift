@@ -80,9 +80,15 @@ struct TrackingSearchField: View {
 
 /// Canonical rule used by editorial sections and record groups.
 struct EditorialRule: View {
+    var onDark = false
+
     var body: some View {
         Rectangle()
-            .fill(Theme.hairline)
+            .fill(
+                onDark
+                    ? Theme.onDarkHairline
+                    : Theme.hairline
+            )
             .frame(
                 height:
                     Theme.ruleThickness
@@ -108,7 +114,7 @@ struct EditorialSection<Content: View>: View {
     var body: some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceM
+            spacing: Theme.sectionHeaderGap
         ) {
             Eyebrow(text: title)
             EditorialRule()
@@ -217,14 +223,14 @@ struct TrackingNavLink<
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
                 .accessibilityHidden(true)
             }
             .contentShape(Rectangle())
             .padding(
                 .vertical,
-                Theme.spaceS
+                Theme.rowPadding
             )
             .frame(
                 minHeight:
@@ -237,9 +243,7 @@ struct TrackingNavLink<
         .overlay(
             alignment: .bottom
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 }
@@ -256,7 +260,7 @@ extension View {
                     cornerRadius
             )
             .stroke(
-                Theme.border,
+                Theme.hairline,
                 lineWidth:
                     Theme.ruleThickness
             )

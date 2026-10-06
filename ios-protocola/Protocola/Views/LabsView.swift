@@ -27,7 +27,7 @@ struct LabListView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceL
+                spacing: Theme.sectionGap
             ) {
                 if records.isEmpty {
                     TrackingEmptyState(
@@ -128,7 +128,7 @@ struct LabListView: View {
             ) {
                 Text(lab.marker)
                     .font(
-                        Theme.sectionTitle
+                        Theme.cardTitle
                     )
                     .foregroundStyle(
                         Theme.ink
@@ -165,13 +165,13 @@ struct LabListView: View {
             )
             .font(Theme.micro)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
             .accessibilityHidden(true)
         }
         .padding(
             .vertical,
-            Theme.spaceS
+            Theme.rowPadding
         )
         .frame(
             minHeight:
@@ -201,7 +201,7 @@ struct LabDetailView: View {
                     VStack(
                         alignment: .leading,
                         spacing:
-                            Theme.spaceXL
+                            Theme.sectionGap
                     ) {
                         resultSection(lab)
                         contextSection(lab)
@@ -319,7 +319,7 @@ struct LabDetailView: View {
                 spacing: Theme.spaceXXS
             ) {
                 Text(lab.displayValue)
-                    .font(Theme.metric)
+                    .font(Theme.metricLarge)
                     .foregroundStyle(
                         Theme.ink
                     )
@@ -442,8 +442,8 @@ struct LabEditorView: View {
                             .date
                     )
                 } header: {
-                    Text("Date")
-                }
+            Eyebrow(text: "Date")
+        }
 
                 Section {
                     TextField(
@@ -471,8 +471,8 @@ struct LabEditorView: View {
                         )
                     }
                 } header: {
-                    Text("Result")
-                }
+            Eyebrow(text: "Result")
+        }
 
                 Section {
                     HStack {
@@ -497,10 +497,8 @@ struct LabEditorView: View {
                         )
                     }
                 } header: {
-                    Text(
-                        "Reference range"
-                    )
-                } footer: {
+            Eyebrow(text: "Reference range")
+        } footer: {
                     Text(
                         "Optional. Enter the range shown by your lab source; Protocola does not generate one."
                     )
@@ -537,8 +535,8 @@ struct LabEditorView: View {
                         axis: .vertical
                     )
                 } header: {
-                    Text("Context")
-                }
+            Eyebrow(text: "Context")
+        }
             }
             .listStyle(.plain)
             .paperList()

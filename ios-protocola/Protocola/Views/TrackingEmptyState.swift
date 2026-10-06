@@ -18,7 +18,12 @@ struct TrackingEmptyState: View {
             Image(systemName: icon)
                 .font(
                     .system(
-                        size: Theme.iconLarge,
+                        size:
+                            Theme.scaledSize(
+                                Theme.iconLarge,
+                                .title1,
+                                max: Theme.iconLarge * 2
+                            ),
                         weight: .regular
                     )
                 )

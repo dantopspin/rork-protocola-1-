@@ -24,7 +24,7 @@ struct VisitSummaryView: View {
             ScrollView {
                 VStack(
                     alignment: .leading,
-                    spacing: Theme.spaceXL
+                    spacing: Theme.sectionGap
                 ) {
                     scopeSection
                     contentsSection

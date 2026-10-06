@@ -166,7 +166,7 @@ private extension OnboardingView {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.sectionGap
             ) {
                 Text("Protocola")
                     .font(Theme.label)
@@ -186,7 +186,7 @@ private extension OnboardingView {
                         "Track what you recorded, what changed, and the history behind your protocol."
                     )
                     .font(Theme.body)
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.textSecondary)
                     .fixedSize(
                         horizontal: false,
                         vertical: true
@@ -210,7 +210,7 @@ private extension OnboardingView {
                             .monospacedDigit()
 
                         Text("·")
-                            .foregroundStyle(Theme.line)
+                            .foregroundStyle(Theme.inactiveFill)
 
                         Text(
                             proof.protocolCount
@@ -218,7 +218,7 @@ private extension OnboardingView {
                         )
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.textSecondary
                         )
                     }
                 }
@@ -227,7 +227,7 @@ private extension OnboardingView {
                     "No account required · Core records stay on this iPhone"
                 )
                 .font(Theme.caption)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(Theme.textSecondary)
             }
             .screenPadding()
             .padding(
@@ -266,7 +266,7 @@ private extension OnboardingView {
                         .foregroundStyle(Theme.onDarkPrimary)
 
                     Text("8:00 PM")
-                        .font(Theme.metric)
+                        .font(Theme.metricLarge)
                         .monospacedDigit()
                         .foregroundStyle(Theme.onDarkPrimary)
                 }
@@ -283,10 +283,7 @@ private extension OnboardingView {
                 )
             }
 
-            Divider()
-                .overlay(
-                    Theme.onDarkHairline
-                )
+            EditorialRule(onDark: true)
 
             Label(
                 "Every entry and change becomes part of your history.",
@@ -318,7 +315,7 @@ private extension OnboardingView {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.sectionGap
             ) {
                 VStack(
                     alignment: .leading,
@@ -335,7 +332,7 @@ private extension OnboardingView {
                     )
                     .font(Theme.body)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                 }
 
@@ -351,7 +348,7 @@ private extension OnboardingView {
 
                         if index
                             < Intent.allCases.count - 1 {
-                            Divider()
+                            EditorialRule()
                                 .padding(
                                     .leading,
                                     52
@@ -376,7 +373,7 @@ private extension OnboardingView {
                 )
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
             }
             .screenPadding()
@@ -417,7 +414,7 @@ private extension OnboardingView {
                 .foregroundStyle(
                     selected
                         ? Theme.ink
-                        : Theme.muted
+                        : Theme.textSecondary
                 )
                 .frame(width: Theme.iconColumn)
 
@@ -439,7 +436,7 @@ private extension OnboardingView {
                 .foregroundStyle(
                     selected
                         ? Theme.ink
-                        : Theme.line
+                        : Theme.inactiveFill
                 )
             }
             .padding(
@@ -451,7 +448,7 @@ private extension OnboardingView {
             )
             .background(
                 selected
-                    ? Theme.neutralTint
+                    ? Theme.subtleFill
                     : Color.clear
             )
             .contentShape(Rectangle())
@@ -477,7 +474,7 @@ private extension OnboardingView {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.sectionGap
             ) {
                 VStack(
                     alignment: .leading,
@@ -498,7 +495,7 @@ private extension OnboardingView {
                     )
                     .font(Theme.body)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                 }
 
@@ -512,7 +509,7 @@ private extension OnboardingView {
                             "Previous values are not overwritten."
                     )
 
-                    Divider()
+                    EditorialRule()
                         .padding(
                             .leading,
                             48
@@ -567,7 +564,7 @@ private extension OnboardingView {
                             Text(proof.rating)
                                 .font(Theme.caption)
                                 .foregroundStyle(
-                                    Theme.muted
+                                    Theme.textSecondary
                                 )
                         }
 
@@ -582,7 +579,7 @@ private extension OnboardingView {
                         Text("App Store review")
                             .font(Theme.caption)
                             .foregroundStyle(
-                                Theme.muted
+                                Theme.textSecondary
                             )
                     }
                 }
@@ -642,7 +639,7 @@ private extension OnboardingView {
                 .foregroundStyle(
                     dark
                         ? Theme.onDarkSecondary
-                        : Theme.muted
+                        : Theme.textSecondary
                 )
 
             Text(primary)
@@ -659,7 +656,7 @@ private extension OnboardingView {
                 .foregroundStyle(
                     dark
                         ? Theme.onDarkSecondary
-                        : Theme.muted
+                        : Theme.textSecondary
                 )
         }
         .padding(Theme.spaceM)
@@ -683,7 +680,7 @@ private extension OnboardingView {
                         Theme.radiusCard
                 )
                 .stroke(
-                    Theme.border,
+                    Theme.hairline,
                     lineWidth: Theme.ruleThickness
                 )
             }
@@ -699,7 +696,7 @@ private extension OnboardingView {
             Text("Protocol change")
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
 
             HStack(
@@ -716,7 +713,7 @@ private extension OnboardingView {
                 )
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
 
                 changeValue(
@@ -730,7 +727,7 @@ private extension OnboardingView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
         }
         .padding(Theme.spaceM)
@@ -759,7 +756,7 @@ private extension OnboardingView {
             Text(label)
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
 
             Text(value)
@@ -788,7 +785,7 @@ private extension OnboardingView {
             Image(systemName: icon)
                 .font(Theme.label)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
                 .frame(width: Theme.iconColumn)
 
@@ -805,7 +802,7 @@ private extension OnboardingView {
                 Text(detail)
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
             }
 
@@ -827,7 +824,7 @@ private extension OnboardingView {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.sectionGap
             ) {
                 VStack(
                     alignment: .leading,
@@ -844,7 +841,7 @@ private extension OnboardingView {
                     )
                     .font(Theme.body)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                 }
 
@@ -859,12 +856,7 @@ private extension OnboardingView {
                             "Your core records stay on this iPhone."
                     )
 
-                    Rectangle()
-                        .fill(Theme.hairline)
-                        .frame(
-                            height:
-                                Theme.ruleThickness
-                        )
+                    EditorialRule()
 
                     trustRow(
                         icon:
@@ -875,12 +867,7 @@ private extension OnboardingView {
                             "Start tracking without creating an account."
                     )
 
-                    Rectangle()
-                        .fill(Theme.hairline)
-                        .frame(
-                            height:
-                                Theme.ruleThickness
-                        )
+                    EditorialRule()
 
                     trustRow(
                         icon: "text.bubble",
@@ -897,22 +884,12 @@ private extension OnboardingView {
                 .overlay(
                     alignment: .top
                 ) {
-                    Rectangle()
-                        .fill(Theme.hairline)
-                        .frame(
-                            height:
-                                Theme.ruleThickness
-                        )
+                    EditorialRule()
                 }
                 .overlay(
                     alignment: .bottom
                 ) {
-                    Rectangle()
-                        .fill(Theme.hairline)
-                        .frame(
-                            height:
-                                Theme.ruleThickness
-                        )
+                    EditorialRule()
                 }
             }
             .screenPadding()
@@ -1047,7 +1024,7 @@ private extension OnboardingView {
                     )
                     .font(Theme.label)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                     .frame(
                         maxWidth: .infinity,
@@ -1101,7 +1078,7 @@ private extension OnboardingView {
                 .foregroundStyle(
                     accepted
                         ? Theme.ink
-                        : Theme.muted
+                        : Theme.textSecondary
                 )
 
                 VStack(
@@ -1121,7 +1098,7 @@ private extension OnboardingView {
                             Text("Required")
                                 .font(Theme.micro)
                                 .foregroundStyle(
-                                    Theme.muted
+                                    Theme.textSecondary
                                 )
                         }
                     }
@@ -1131,7 +1108,7 @@ private extension OnboardingView {
                     )
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                 }
             }
@@ -1172,7 +1149,7 @@ private extension OnboardingView {
                     .fill(
                         index == step
                             ? Theme.ink
-                            : Theme.line
+                            : Theme.inactiveFill
                     )
                     .frame(
                         width:
@@ -1217,7 +1194,7 @@ private extension OnboardingView {
                 detail: "Starting values preserved"
             )
 
-            Divider()
+            EditorialRule()
 
             timelineRow(
                 date: "Sep 22",
@@ -1225,7 +1202,7 @@ private extension OnboardingView {
                 detail: "Previous → new values"
             )
 
-            Divider()
+            EditorialRule()
 
             timelineRow(
                 date: "Sep 25",
@@ -1288,14 +1265,14 @@ private extension OnboardingView {
                     Text(date)
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.textSecondary
                         )
                 }
 
                 Text(detail)
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
             }
         }

@@ -164,7 +164,7 @@ private extension InsightsView {
         return ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceL
+                spacing: Theme.sectionGap
             ) {
                 PrimaryPageHeader(
                     title: "Insights"
@@ -193,7 +193,7 @@ private extension InsightsView {
 
                         Text(periodLabel)
                             .font(Theme.caption)
-                            .foregroundStyle(Theme.muted)
+                            .foregroundStyle(Theme.textSecondary)
                             .monospacedDigit()
                     }
                 }
@@ -335,7 +335,7 @@ private extension InsightsView {
                 )
                 .font(Theme.micro)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
             }
             .padding(
@@ -345,16 +345,12 @@ private extension InsightsView {
             .overlay(
                 alignment: .top
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
             .overlay(
                 alignment: .bottom
             ) {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: Theme.ruleThickness)
+                EditorialRule()
             }
         }
         .buttonStyle(.plain)
@@ -437,7 +433,7 @@ private extension InsightsView {
                     Eyebrow(text: "Consistency")
 
                     Text(summary.percentage)
-                        .font(Theme.metric)
+                        .font(Theme.metricLarge)
                         .monospacedDigit()
                         .foregroundStyle(Theme.ink)
 
@@ -445,7 +441,7 @@ private extension InsightsView {
                         "\(summary.recorded) of \(summary.scheduled) scheduled"
                     )
                     .font(Theme.caption)
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -454,7 +450,7 @@ private extension InsightsView {
                     systemName: "chevron.right"
                 )
                 .font(Theme.micro)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(Theme.textSecondary)
             }
 
             Chart(summary.days) {
@@ -472,7 +468,7 @@ private extension InsightsView {
                     )
                 )
                 .foregroundStyle(
-                    Theme.line
+                    Theme.inactiveFill
                 )
 
                 BarMark(
@@ -504,7 +500,7 @@ private extension InsightsView {
                 ) { value in
                     AxisGridLine()
                         .foregroundStyle(
-                            Theme.line
+                            Theme.inactiveFill
                         )
 
                     AxisValueLabel(
@@ -514,7 +510,7 @@ private extension InsightsView {
                     )
                     .font(Theme.micro)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
                 }
             }
@@ -526,16 +522,12 @@ private extension InsightsView {
         .overlay(
             alignment: .top
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
         .overlay(
             alignment: .bottom
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 
@@ -550,7 +542,7 @@ private extension InsightsView {
             Eyebrow(text: "Recorded entries")
 
             Text(String(periodLogs.count))
-                .font(Theme.metric)
+                .font(Theme.metricLarge)
                 .monospacedDigit()
                 .foregroundStyle(Theme.ink)
 
@@ -558,7 +550,7 @@ private extension InsightsView {
                 "No recurring schedule is recorded for this period."
             )
             .font(Theme.caption)
-            .foregroundStyle(Theme.muted)
+            .foregroundStyle(Theme.textSecondary)
         }
         .padding(
             .vertical,
@@ -571,16 +563,12 @@ private extension InsightsView {
         .overlay(
             alignment: .top
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
         .overlay(
             alignment: .bottom
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 
@@ -615,7 +603,7 @@ private extension InsightsView {
             statTile(
                 value: String(skipped),
                 label: "Skipped",
-                dot: Theme.muted
+                dot: Theme.textSecondary
             )
 
             Rectangle()
@@ -632,22 +620,18 @@ private extension InsightsView {
                         summary.sites.count
                     ),
                 label: "Sites",
-                dot: Theme.line
+                dot: Theme.inactiveFill
             )
         }
         .overlay(
             alignment: .top
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
         .overlay(
             alignment: .bottom
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 
@@ -677,7 +661,7 @@ private extension InsightsView {
                 Text(label)
                     .font(Theme.caption)
                     .foregroundStyle(
-                        Theme.muted
+                        Theme.textSecondary
                     )
             }
         }
@@ -702,79 +686,70 @@ private extension InsightsView {
     func changeContext(
         _ change: ProtocolEvent
     ) -> some View {
-        Button {
-            if store.isPremium {
-                comparing = true
-                changeID = change.id
-            } else {
-                store.requestPaywall(.compare)
-            }
-        } label: {
-            HStack(
-                spacing: Theme.spaceM
-            ) {
-                Image(
-                    systemName:
-                        "arrow.left.arrow.right"
-                )
-                .font(Theme.sectionTitle)
-                .foregroundStyle(
-                    Theme.onDarkSecondary
-                )
-
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXXS
+        EditorialSection(
+            "Since last change"
+        ) {
+            Button {
+                if store.isPremium {
+                    comparing = true
+                    changeID = change.id
+                } else {
+                    store.requestPaywall(.compare)
+                }
+            } label: {
+                HStack(
+                    spacing: Theme.spaceM
                 ) {
-                    Text("Since last change")
-                        .font(Theme.caption)
-                        .foregroundStyle(
-                            Theme.onDarkSecondary
-                        )
-
-                    Text(
-                        changeSummary(change)
+                    Image(
+                        systemName:
+                            "arrow.left.arrow.right"
                     )
                     .font(Theme.sectionTitle)
-                    .foregroundStyle(Theme.onDarkPrimary)
-                    .lineLimit(2)
+                    .foregroundStyle(Theme.teal)
+                    .frame(width: Theme.iconColumn)
 
-                    Text(
-                        change.at.formatted(
-                            date: .abbreviated,
-                            time: .omitted
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceXXS
+                    ) {
+                        Text(
+                            changeSummary(change)
                         )
+                        .font(Theme.cardTitle)
+                        .foregroundStyle(Theme.ink)
+                        .monospacedDigit()
+                        .lineLimit(2)
+
+                        Text(
+                            change.at.formatted(
+                                date: .abbreviated,
+                                time: .omitted
+                            )
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(
+                            Theme.textSecondary
+                        )
+                    }
+
+                    Spacer()
+
+                    Image(
+                        systemName: "chevron.right"
                     )
-                    .font(Theme.caption)
+                    .font(Theme.micro)
                     .foregroundStyle(
-                        Theme.onDarkSecondary
+                        Theme.textSecondary
                     )
                 }
-
-                Spacer()
-
-                Image(
-                    systemName: "chevron.right"
+                .frame(
+                    minHeight:
+                        Theme.minimumTapTarget
                 )
-                .font(Theme.micro)
-                .foregroundStyle(
-                    Theme.onDarkSecondary
-                )
+                .contentShape(Rectangle())
             }
-            .padding(Theme.spaceM)
-            .frame(
-                maxWidth: .infinity,
-                alignment: .leading
-            )
-            .background(
-                Theme.darkSurface,
-                in: .rect(
-                    cornerRadius:
-                        Theme.radiusCard
-                )
-            )
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
 
@@ -863,6 +838,7 @@ private extension InsightsView {
             .foregroundStyle(
                 Theme.teal
             )
+            .frame(width: Theme.iconColumn)
 
             VStack(
                 alignment: .leading,
@@ -870,9 +846,7 @@ private extension InsightsView {
                     Theme.spaceXXS
             ) {
                 Text("Estimated levels")
-                    .font(
-                        Theme.sectionTitle
-                    )
+                    .font(Theme.cardTitle)
                     .foregroundStyle(
                         Theme.ink
                     )
@@ -899,21 +873,17 @@ private extension InsightsView {
         }
         .padding(
             .vertical,
-            Theme.spaceM
+            Theme.rowPadding
         )
         .overlay(
             alignment: .top
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
         .overlay(
             alignment: .bottom
         ) {
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: Theme.ruleThickness)
+            EditorialRule()
         }
     }
 }
@@ -955,6 +925,7 @@ private extension InsightsView {
                 .foregroundStyle(
                     Theme.teal
                 )
+            .frame(width: Theme.iconColumn)
 
                 VStack(
                     alignment: .leading,
@@ -962,9 +933,7 @@ private extension InsightsView {
                         Theme.spaceXXS
                 ) {
                     Text("Labs")
-                        .font(
-                            Theme.sectionTitle
-                        )
+                        .font(Theme.cardTitle)
                         .foregroundStyle(
                             Theme.ink
                         )
@@ -1004,7 +973,7 @@ private extension InsightsView {
             }
             .padding(
                 .vertical,
-                Theme.spaceM
+                Theme.rowPadding
             )
             .contentShape(Rectangle())
             .overlay(
@@ -1030,6 +999,9 @@ private extension InsightsView {
     func sitesCard(
         _ summary: InsightsSummary
     ) -> some View {
+        EditorialSection(
+            "Top injection sites"
+        ) {
         NavigationLink {
             SitesBreakdownView(
                 sites: summary.sites
@@ -1037,26 +1009,8 @@ private extension InsightsView {
         } label: {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceM
+                spacing: Theme.spaceS
             ) {
-                HStack {
-                    Text("Top injection sites")
-                        .font(Theme.sectionTitle)
-                        .foregroundStyle(
-                            Theme.ink
-                        )
-
-                    Spacer()
-
-                    Image(
-                        systemName:
-                            "chevron.right"
-                    )
-                    .font(Theme.micro)
-                    .foregroundStyle(
-                        Theme.muted
-                    )
-                }
 
                 let total =
                     max(
@@ -1111,26 +1065,38 @@ private extension InsightsView {
                         )
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.textSecondary
                         )
                         .monospacedDigit()
                     }
                 }
+
+
+                HStack {
+                    Text("All sites")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.teal)
+
+                    Spacer()
+
+                    Image(
+                        systemName:
+                            "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+                }
+                .frame(
+                    minHeight:
+                        Theme.minimumTapTarget
+                )
             }
-            .padding(Theme.spaceM)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        }
     }
 
 
@@ -1159,27 +1125,20 @@ private extension InsightsView {
     func symptomsCard(
         _ summary: InsightsSummary
     ) -> some View {
+        EditorialSection(
+            "Recorded observations"
+        ) {
         VStack(
             alignment: .leading,
             spacing: Theme.spaceXS
         ) {
-            HStack {
-                Text("Recorded observations")
-                    .font(Theme.sectionTitle)
-
-                Spacer()
-
-                Text(
+            RecordRow(
+                label: "Observations recorded",
+                value:
                     String(
                         summary.symptoms.count
                     )
-                )
-                .font(Theme.body)
-                .foregroundStyle(
-                    Theme.muted
-                )
-                .monospacedDigit()
-            }
+            )
 
             if let latest =
                 summary.symptoms
@@ -1199,7 +1158,7 @@ private extension InsightsView {
                 )
                 .font(Theme.caption)
                 .foregroundStyle(
-                    Theme.muted
+                    Theme.textSecondary
                 )
             }
 
@@ -1208,21 +1167,10 @@ private extension InsightsView {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
         }
-        .padding(Theme.spaceM)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        }
     }
 }
 
@@ -1311,23 +1259,39 @@ private struct SitesBreakdownView: View {
     let sites: [InsightsSummary.Site]
 
     var body: some View {
-        List {
-            Section("Recorded sites") {
-                ForEach(sites) {
-                    site in
-
-                    RecordRow(
-                        label: site.name,
-                        value:
-                            String(site.count)
-                    )
+        ScrollView {
+            VStack(
+                alignment: .leading,
+                spacing: Theme.sectionGap
+            ) {
+                EditorialSection(
+                    "Recorded sites"
+                ) {
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceS
+                    ) {
+                        ForEach(sites) { site in
+                            RecordRow(
+                                label: site.name,
+                                value:
+                                    String(site.count)
+                            )
+                            .monospacedDigit()
+                        }
+                    }
                 }
             }
+            .screenPadding()
+            .padding(
+                .bottom,
+                Theme.spaceXL
+            )
         }
-        .listStyle(.insetGrouped)
-        .paperList()
+        .scrollIndicators(.hidden)
+        .background(Theme.paper)
         .navigationTitle(
-            "Injection Sites"
+            "Injection sites"
         )
         .navigationBarTitleDisplayMode(
             .inline
@@ -1345,8 +1309,7 @@ struct PeriodSummaryCard: View {
             alignment: .leading,
             spacing: Theme.spaceS
         ) {
-            Text("Recorded in this period")
-                .font(Theme.sectionTitle)
+            Eyebrow(text: "Recorded in this period")
 
             RecordRow(
                 label: "Entries",
@@ -1457,12 +1420,7 @@ private struct ComparisonCard: View {
                         spacing:
                             Theme.spaceS
                     ) {
-                        Text(
-                            "Labs around change"
-                        )
-                        .font(
-                            Theme.sectionTitle
-                        )
+                        Eyebrow(text: "Labs around change")
 
                         ForEach(
                             labPairs
@@ -1480,7 +1438,7 @@ private struct ComparisonCard: View {
                         )
                         .font(Theme.caption)
                         .foregroundStyle(
-                            Theme.muted
+                            Theme.textSecondary
                         )
                     }
                 }
@@ -1491,7 +1449,7 @@ private struct ComparisonCard: View {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
         }
     }
@@ -1505,8 +1463,7 @@ private struct ComparisonCard: View {
             alignment: .leading,
             spacing: Theme.spaceXS
         ) {
-            Text(title)
-                .font(Theme.sectionTitle)
+            Eyebrow(text: title)
 
             Text(
                 period.start.formatted(
@@ -1521,7 +1478,7 @@ private struct ComparisonCard: View {
             )
             .font(Theme.caption)
             .foregroundStyle(
-                Theme.muted
+                Theme.textSecondary
             )
             .monospacedDigit()
 
@@ -1597,7 +1554,7 @@ struct EstimatedLevelsView: View {
         ScrollView {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceXL
+                spacing: Theme.sectionGap
             ) {
                 Picker(
                     "Period",
@@ -1674,13 +1631,7 @@ private extension EstimatedLevelsView {
     var modelExplanation:
         some View {
         TrackingCard {
-            Text("Model assumptions")
-                .font(
-                    Theme.sectionTitle
-                )
-                .foregroundStyle(
-                    Theme.ink
-                )
+            Eyebrow(text: "Model assumptions")
 
             Text(
                 "Each curve uses simple exponential decay from actual recorded doses and the reference half-life you enter. It is not a measured blood concentration, exposure, efficacy, or safety estimate."
@@ -1696,13 +1647,7 @@ private extension EstimatedLevelsView {
     var multiCompoundOverview:
         some View {
         TrackingCard {
-            Text("Current estimates")
-                .font(
-                    Theme.sectionTitle
-                )
-                .foregroundStyle(
-                    Theme.ink
-                )
+            Eyebrow(text: "Current estimates")
 
             ForEach(
                 overview.series
@@ -1846,7 +1791,7 @@ private extension EstimatedLevelsView {
                 ) { value in
                     AxisGridLine()
                         .foregroundStyle(
-                            Theme.line
+                            Theme.inactiveFill
                         )
 
                     AxisValueLabel(
@@ -1912,9 +1857,7 @@ private extension EstimatedLevelsView {
         some View {
         TrackingCard {
             Text("Add half-life reference")
-                .font(
-                    Theme.sectionTitle
-                )
+                .font(Theme.cardTitle)
                 .foregroundStyle(
                     Theme.ink
                 )
@@ -2024,10 +1967,7 @@ struct CompoundHalfLifeEditorView:
                     )
 
                 } header: {
-                    Text(
-                        compound.name
-                    )
-
+                    Eyebrow(text: compound.name)
                 } footer: {
                     Text(
                         "Enter a half-life from a source you trust. This value powers a mathematical decay model only; Protocola does not infer a clinical half-life or recommend treatment."
