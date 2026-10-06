@@ -11,14 +11,14 @@ import UserNotifications
 @MainActor
 final class NotificationActionRouter: NSObject, UNUserNotificationCenterDelegate {
 
-    enum Action: String {
+    nonisolated enum Action: String, Sendable {
         case log = "protocola.entry.log"
         case skip = "protocola.entry.skip"
     }
 
     static let shared = NotificationActionRouter()
-    static let entryCategory = "protocola.entry"
-    static let entryIDKey = "entryID"
+    nonisolated static let entryCategory = "protocola.entry"
+    nonisolated static let entryIDKey = "entryID"
 
     /// Set by the open TrackingStore; nil while no store is open.
     var handler: ((String, Action) -> Void)?

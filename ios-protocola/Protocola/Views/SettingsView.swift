@@ -285,11 +285,14 @@ private extension SettingsView {
                 set: { enabled in
                     Task {
                         // Turning the lock on proves it can be unlocked first.
-                        if !enabled || await AppLock.authenticate(
-                            reason: "Turn on App Lock for Protocola."
-                        ) {
-                            appLock = enabled
+                        guard enabled else {
+                            appLock = false
+                            return
                         }
+                        let granted = await AppLock.authenticate(
+                            reason: "Turn on App Lock for Protocola."
+                        )
+                        if granted { appLock = true }
                     }
                 }
             )) {
