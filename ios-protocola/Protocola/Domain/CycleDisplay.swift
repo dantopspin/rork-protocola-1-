@@ -53,6 +53,46 @@ enum CycleDisplay {
     }
 
 
+    /// Delivery time for a cycle-restart notice. `nextRestart` is the start
+    /// of the restart day (midnight in the schedule's time zone), which is
+    /// not a sensible moment for a sounding notification, so the notice is
+    /// delivered at 20:00 on the evening before the cycle resumes.
+    static func restartNoticeDate(
+        _ config: ScheduleConfig,
+        restart: Date
+    ) -> Date? {
+        var calendar =
+            Calendar(identifier: .gregorian)
+
+        calendar.timeZone =
+            TimeZone(
+                identifier:
+                    config.timeZoneID
+            ) ?? .current
+
+        guard
+            let dayBefore =
+                calendar.date(
+                    byAdding: .day,
+                    value: -1,
+                    to:
+                        calendar.startOfDay(
+                            for: restart
+                        )
+                )
+        else {
+            return nil
+        }
+
+        return calendar.date(
+            bySettingHour: 20,
+            minute: 0,
+            second: 0,
+            of: dayBefore
+        )
+    }
+
+
     static func status(
         _ config: ScheduleConfig,
         at date: Date = .now

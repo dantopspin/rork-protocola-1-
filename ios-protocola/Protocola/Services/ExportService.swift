@@ -489,11 +489,21 @@ import Foundation
     }
 
 
-    private static func escape(
+    static func escape(
         _ value: String
     ) -> String {
+        // Neutralize spreadsheet formula triggers, but keep plain signed
+        // numbers numeric: inventory deltas ("-0.5") and lab values ("-2")
+        // were exported as text ("'-0.5") and broke sums in Excel/Numbers.
+        let isPlainNumber =
+            value.range(
+                of: "^[-+]?[0-9]+(?:\\.[0-9]+)?$",
+                options: .regularExpression
+            ) != nil
+
         let safe =
-            [
+            !isPlainNumber
+            && [
                 "=",
                 "+",
                 "-",
