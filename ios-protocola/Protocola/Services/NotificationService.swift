@@ -4,9 +4,7 @@ import Observation
 
 @MainActor
 @Observable
-final class NotificationService:
-    NSObject,
-    UNUserNotificationCenterDelegate {
+final class NotificationService {
 
     private let center =
         UNUserNotificationCenter.current()
@@ -20,10 +18,8 @@ final class NotificationService:
         String =
         "Reminders are off until enabled in a protocol."
 
-    override init() {
-        super.init()
-        center.delegate = self
-    }
+    // The notification center's delegate is NotificationActionRouter,
+    // installed at launch so reminder actions arrive even before a store opens.
 
     func requestPermission() async -> Bool {
         do {
@@ -187,11 +183,25 @@ final class NotificationService:
                 content.sound =
                     .default
 
+                // Dose reminders carry Log / Skip actions; cycle and
+                // inventory notes do not.
+                if !entry.id.hasPrefix("cycle-restart:"),
+                   !entry.id.hasPrefix("vial-") {
+                    content.categoryIdentifier =
+                        NotificationActionRouter
+                            .entryCategory
+                    content.userInfo = [
+                        NotificationActionRouter
+                            .entryIDKey: entry.id
+                    ]
+                }
+
                 let request =
                     Self.request(
                         id: entry.id,
                         at: entry.at,
-                        content: content
+                        content: content,
+                        floating: entry.floating
                     )
 
                 try await center.add(
@@ -222,8 +232,29 @@ final class NotificationService:
     static func request(
         id: String,
         at: Date,
-        content: UNNotificationContent
+        content: UNNotificationContent,
+        floating: Bool = false
     ) -> UNNotificationRequest {
+        if floating {
+            // Wall-clock trigger with no time zone: iOS fires it at this
+            // local time in whatever zone the iPhone is in.
+            let components =
+                Calendar.current.dateComponents(
+                    [.year, .month, .day, .hour, .minute],
+                    from: at
+                )
+
+            return UNNotificationRequest(
+                identifier: "protocola:" + id,
+                content: content,
+                trigger:
+                    UNCalendarNotificationTrigger(
+                        dateMatching: components,
+                        repeats: false
+                    )
+            )
+        }
+
         var calendar =
             Calendar(
                 identifier: .gregorian
@@ -262,19 +293,5 @@ final class NotificationService:
                     repeats: false
                 )
         )
-    }
-
-    nonisolated
-    func userNotificationCenter(
-        _ center:
-            UNUserNotificationCenter,
-        willPresent notification:
-            UNNotification
-    ) async
-        -> UNNotificationPresentationOptions {
-        [
-            .banner,
-            .sound
-        ]
     }
 }

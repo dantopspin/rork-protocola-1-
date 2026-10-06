@@ -381,6 +381,11 @@ private extension ProtocolEditorView {
                 }
 
                 Toggle(
+                    "Follow this iPhone's time zone",
+                    isOn: $draft.followsDeviceTimeZone
+                )
+
+                Toggle(
                     "Local reminders",
                     isOn: $draft.reminders
                 )
@@ -400,7 +405,15 @@ private extension ProtocolEditorView {
                 )
             } else {
                 Text(
-                    "Times use this iPhone's current time zone."
+                    draft.followsDeviceTimeZone
+                    ? "Times follow this iPhone's time zone, so a time you recorded stays the same local time when you travel."
+                    : "Times stay in "
+                        + (
+                            TimeZone(identifier: draft.timeZoneID)?
+                                .localizedName(for: .generic, locale: .current)
+                            ?? draft.timeZoneID
+                        )
+                        + " when you travel."
                 )
             }
         }

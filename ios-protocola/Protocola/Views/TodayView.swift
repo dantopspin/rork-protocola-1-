@@ -13,11 +13,11 @@ struct TodayView: View {
     @State private var settings = false
     @State private var inventory = false
     @State private var addVial = false
-    @State private var calculator = false
     @State private var stackCalendar = false
     @State private var shareCard = false
     @State private var editingSchedule: ScheduleRevision?
     @State private var undoLog: DoseLog?
+    @State private var addingSite: DoseLog?
     @State private var undoTask: Task<Void, Never>?
     @State private var dropTarget: String?
     @State private var dropAfter = false
@@ -99,6 +99,10 @@ struct TodayView: View {
                     value:
                         nextUnloggedEntry?.id
                 )
+
+                if !store.carriedOver.isEmpty {
+                    missedSection
+                }
 
                 if !asNeededRevisions.isEmpty {
                     asNeededSection
@@ -187,16 +191,6 @@ struct TodayView: View {
             ) {
                 Menu {
                     Button {
-                        calculator = true
-                    } label: {
-                        Label(
-                            "Calculator",
-                            systemImage:
-                                "function"
-                        )
-                    }
-
-                    Button {
                         settings = true
                     } label: {
                         Label(
@@ -235,14 +229,17 @@ struct TodayView: View {
         .sheet(isPresented: $create) {
             ProtocolEditorView()
         }
+        .sheet(
+            item: $addingSite,
+            onDismiss: { undoLog = nil }
+        ) { log in
+            DoseEditorView(correcting: log)
+        }
         .sheet(isPresented: $settings) {
             SettingsView()
         }
         .sheet(isPresented: $addVial) {
             VialEditorView()
-        }
-        .sheet(isPresented: $calculator) {
-            CalculatorView()
         }
         .sheet(
             isPresented: $stackCalendar
@@ -745,6 +742,115 @@ private extension TodayView {
             alignment: .bottom
         ) {
             EditorialRule()
+        }
+    }
+
+
+    /// Yesterday's unrecorded entries. Logging defaults the recorded time to
+    /// the scheduled time, which the editor lets the person change.
+    var missedSection: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.sectionHeaderGap
+        ) {
+            HStack {
+                Eyebrow(text: "Not recorded yesterday")
+
+                Spacer()
+
+                Text(
+                    String(store.carriedOver.count)
+                )
+                .font(Theme.caption)
+                .foregroundStyle(Theme.textSecondary)
+                .monospacedDigit()
+            }
+
+            VStack(spacing: 0) {
+                ForEach(
+                    Array(
+                        store.carriedOver.enumerated()
+                    ),
+                    id: \.element.id
+                ) { index, entry in
+                    HStack(spacing: Theme.spaceS) {
+                        VStack(
+                            alignment: .leading,
+                            spacing: Theme.spaceXXS
+                        ) {
+                            Text(
+                                DoseText.line(
+                                    compound:
+                                        entry.revision.compoundName,
+                                    amount:
+                                        entry.revision.amountText,
+                                    unit:
+                                        entry.revision.unitText
+                                )
+                            )
+                            .font(Theme.cardTitle)
+                            .foregroundStyle(Theme.ink)
+                            .monospacedDigit()
+
+                            Text(
+                                "Yesterday · "
+                                + entry.at.formatted(
+                                    date: .omitted,
+                                    time: .shortened
+                                )
+                                + " · "
+                                + entry.revision.protocolName
+                            )
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.textSecondary)
+                            .monospacedDigit()
+                        }
+
+                        Spacer(minLength: Theme.spaceXS)
+
+                        Button("Skip") {
+                            skipEntry(entry)
+                        }
+                        .buttonStyle(TrackingCompactButtonStyle())
+                        .accessibilityLabel(
+                            "Skip "
+                            + entry.revision.compoundName
+                            + " from yesterday"
+                        )
+
+                        Button("Log") {
+                            var draft =
+                                DoseDraft(
+                                    revision:
+                                        entry.revision
+                                )
+                            draft.loggedAt = entry.at
+                            open(entry, prefill: draft)
+                        }
+                        .buttonStyle(
+                            TrackingCompactButtonStyle(
+                                prominent: true
+                            )
+                        )
+                        .accessibilityLabel(
+                            "Log "
+                            + entry.revision.compoundName
+                            + " from yesterday"
+                        )
+                    }
+                    .padding(.vertical, Theme.rowPadding)
+
+                    if index < store.carriedOver.count - 1 {
+                        EditorialRule()
+                    }
+                }
+            }
+            .overlay(alignment: .top) {
+                EditorialRule()
+            }
+            .overlay(alignment: .bottom) {
+                EditorialRule()
+            }
         }
     }
 
@@ -1908,6 +2014,18 @@ private extension TodayView {
             Spacer(
                 minLength: Theme.spaceXS
             )
+
+            if log.status != "Skipped",
+               log.route.usesInjectionSite,
+               log.site.isEmpty {
+                Button("Add site") {
+                    undoTask?.cancel()
+                    addingSite = log
+                }
+                .font(Theme.label)
+                .foregroundStyle(Theme.teal)
+                .frame(minHeight: Theme.minimumTapTarget)
+            }
 
             Button("Undo") {
                 if store.deleteDose(log) {

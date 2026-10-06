@@ -39,6 +39,19 @@ nonisolated struct ScheduleConfig: Codable, Equatable, Sendable {
     var cycleOnDays: Int? = nil
     var cycleOffDays: Int? = nil
 
+    /// When true, times are wall-clock times in whatever time zone the iPhone
+    /// is in (8:00 PM stays 8:00 PM when travelling). When false or absent
+    /// (every schedule recorded before this option), times stay in
+    /// `timeZoneID`.
+    var followsDeviceTimeZone: Bool? = nil
+
+    /// The zone this schedule's times are read in right now.
+    var timeZone: TimeZone {
+        followsDeviceTimeZone == true
+            ? .current
+            : TimeZone(identifier: timeZoneID) ?? .current
+    }
+
     var hasCycle: Bool {
         guard
             let on = cycleOnDays,
@@ -123,10 +136,7 @@ nonisolated struct ScheduleConfig: Codable, Equatable, Sendable {
         var calendar =
             Calendar(identifier: .gregorian)
 
-        calendar.timeZone =
-            TimeZone(
-                identifier: timeZoneID
-            ) ?? .current
+        calendar.timeZone = timeZone
 
         let start =
             calendar.startOfDay(

@@ -9,7 +9,6 @@ struct ProtocolsView: View {
 
     @State private var create = false
     @State private var choice = false
-    @State private var calculator = false
 
     private var activeProtocols:
         [ProtocolRecord] {
@@ -108,9 +107,6 @@ struct ProtocolsView: View {
         }
         .sheet(isPresented: $choice) {
             FreeProtocolChoiceView()
-        }
-        .sheet(isPresented: $calculator) {
-            CalculatorView()
         }
         .trackingRoutes()
         .trackingErrors()
@@ -420,20 +416,6 @@ private extension ProtocolsView {
                             "Vial inventory",
                         detail:
                             inventorySummary
-                    )
-                }
-                .buttonStyle(.plain)
-
-                EditorialRule()
-
-                Button {
-                    calculator = true
-                } label: {
-                    toolRow(
-                        title:
-                            "Calculator",
-                        detail:
-                            "Dose · Volume · Units"
                     )
                 }
                 .buttonStyle(.plain)

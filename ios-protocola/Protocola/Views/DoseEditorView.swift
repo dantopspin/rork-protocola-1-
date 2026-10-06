@@ -47,12 +47,6 @@ struct DoseEditorView: View {
                 if currentRoute.usesInjectionSite {
                     vialSection
 
-                    if let conversion {
-                        conversionSection(
-                            conversion
-                        )
-                    }
-
                     injectionSiteSection
                 }
 
@@ -281,49 +275,9 @@ private extension DoseEditorView {
                 Text(
                     draft.vialID == nil
                         ? "A vial is optional. Without one, Protocola records the entry but cannot reconcile vial balance or calculate volume."
-                        : "The selected vial provides the recorded concentration used for inventory and conversion."
+                        : "The selected vial's recorded strength is used to update its inventory balance."
                 )
             }
-        }
-    }
-
-
-    func conversionSection(
-        _ conversion: DoseConversionPreview
-    ) -> some View {
-        Section {
-            RecordRow(
-                label: "Concentration",
-                value:
-                    conversion.concentration
-                    + " mg/mL"
-            )
-
-            RecordRow(
-                label: "Calculated volume",
-                value:
-                    conversion.volume
-                    + " mL"
-            )
-
-            RecordRow(
-                label: "Syringe units",
-                value: conversion.units
-            )
-
-            SyringeVisualization(
-                filledUnits:
-                    conversion.unitsValue,
-                scale:
-                    conversion.scaleValue
-            )
-
-        } header: {
-            Eyebrow(text: "Calculated from recorded values")
-        } footer: {
-            Text(
-                "Arithmetic only. Protocola converts the amount, vial concentration, and syringe scale you entered. It does not choose or recommend a dose."
-            )
         }
     }
 
@@ -513,80 +467,6 @@ private extension DoseEditorView {
     }
 
 
-    var conversion: DoseConversionPreview? {
-        guard draft.status != "Skipped" else {
-            return nil
-        }
-
-        do {
-            let amount =
-                try DoseCalculator.parse(
-                    draft.amount,
-                    label: "Amount"
-                )
-
-            let scale =
-                try DoseCalculator.parse(
-                    draft.unitsPerMl,
-                    label: "Syringe scale"
-                )
-
-            let concentration: Decimal?
-
-            if let correcting {
-                concentration =
-                    correcting.concentration
-            } else if let vialID =
-                        draft.vialID {
-                concentration =
-                    store.vial(vialID)?
-                        .concentration
-            } else {
-                concentration = nil
-            }
-
-            guard let concentration,
-                  concentration > 0
-            else {
-                return nil
-            }
-
-            let volume =
-                try DoseCalculator.volume(
-                    amount: amount,
-                    unit: draft.unit,
-                    concentration:
-                        concentration,
-                    unitsPerMl: scale
-                )
-
-            let syringeUnits =
-                volume * scale
-
-            return DoseConversionPreview(
-                concentration:
-                    DoseCalculator.text(
-                        concentration
-                    ),
-                volume:
-                    DoseCalculator.text(
-                        volume
-                    ),
-                units:
-                    DoseCalculator.text(
-                        syringeUnits
-                    ),
-                unitsValue:
-                    syringeUnits,
-                scaleValue: scale
-            )
-
-        } catch {
-            return nil
-        }
-    }
-
-
     var recentSiteUses: [InjectionSiteUse] {
         InjectionSite.recentUses(
             from: store.logs
@@ -626,127 +506,6 @@ private extension DoseEditorView {
             }
             dismiss()
         }
-    }
-}
-
-
-private struct DoseConversionPreview {
-    let concentration: String
-    let volume: String
-    let units: String
-    let unitsValue: Decimal
-    let scaleValue: Decimal
-}
-
-
-private struct SyringeVisualization:
-    View {
-    let filledUnits: Decimal
-    let scale: Decimal
-
-    private var fillFraction: CGFloat {
-        guard scale > 0 else {
-            return 0
-        }
-
-        let value =
-            NSDecimalNumber(
-                decimal:
-                    filledUnits / scale
-            ).doubleValue
-
-        return CGFloat(
-            min(
-                max(value, 0),
-                1
-            )
-        )
-    }
-
-    var body: some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceXS
-        ) {
-            GeometryReader { geometry in
-                ZStack(
-                    alignment: .leading
-                ) {
-                    RoundedRectangle(
-                        cornerRadius:
-                            Theme.radiusField
-                    )
-                    .fill(Theme.subtleFill)
-                    .overlay {
-                        RoundedRectangle(
-                            cornerRadius:
-                                Theme.radiusField
-                        )
-                        .stroke(
-                            Theme.hairline,
-                            lineWidth: Theme.ruleThickness
-                        )
-                    }
-
-                    RoundedRectangle(
-                        cornerRadius:
-                            Theme.radiusField
-                    )
-                    .fill(Theme.tealTint)
-                    .frame(
-                        width:
-                            geometry.size.width
-                            * fillFraction
-                    )
-                }
-            }
-            .frame(
-                height:
-                    Theme.compactButtonHeight
-            )
-
-            HStack {
-                Text("0")
-                Spacer()
-                Text(
-                    DoseCalculator.text(
-                        scale
-                    )
-                    + " units"
-                )
-            }
-            .font(Theme.caption)
-            .foregroundStyle(
-                Theme.textSecondary
-            )
-            .monospacedDigit()
-
-            if filledUnits > scale {
-                Text(
-                    "Calculated units exceed the selected syringe scale."
-                )
-                .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.amber
-                )
-            }
-        }
-        .accessibilityElement(
-            children: .combine
-        )
-        .accessibilityLabel(
-            "Syringe visualization"
-        )
-        .accessibilityValue(
-            DoseCalculator.text(
-                filledUnits
-            )
-            + " of "
-            + DoseCalculator.text(
-                scale
-            )
-            + " units"
-        )
     }
 }
 

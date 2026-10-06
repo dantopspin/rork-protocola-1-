@@ -155,7 +155,6 @@ Insights calendar of non-skipped entries per day, 20 week columns. Cells use rad
 - Insights -> primary metric
 - Inventory -> remaining supply
 - Vial -> remaining amount
-- Calculator -> calculated result
 - Paywall -> value of Pro
 - Onboarding -> one concept per page
 
@@ -165,7 +164,7 @@ Secondary actions should use the pattern **object -> menu -> focused sheet -> re
 
 Titles: the four tab roots draw `PrimaryPageHeader` (34pt) in content with an empty bar title; every pushed screen and sheet uses the standard inline bar title. Sheet confirmation ("Done", "Save") sits top-right.
 
-Forms (editors, Settings, Calculator) keep native row insets; their section headers are `Eyebrow`.
+Forms (editors, Settings) keep native row insets; their section headers are `Eyebrow`.
 
 Native tab bars, navigation bars, menus, system sheets/popovers, confirmation dialogs, and the transient Today undo material may remain native. Product content itself should use tokens/components.
 

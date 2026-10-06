@@ -40,6 +40,7 @@ enum ProtocolSnapshot {
             + "times \(times); "
             + "starts \(config.anchor.ISO8601Format()); "
             + "zone \(config.timeZoneID)"
+            + (config.followsDeviceTimeZone == true ? " (follows this iPhone)" : "")
             + cycle
     }
 

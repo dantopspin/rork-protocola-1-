@@ -44,7 +44,11 @@ struct DoseDraft {
     var severity: Int = 1
     var notes: String = ""
     var loggedAt: Date = .now
-    init(revision: ScheduleRevision) { amount = revision.amountText; unit = revision.unit; vialID = revision.vialID }
+    init(revision: ScheduleRevision) {
+        amount = revision.amountText; unit = revision.unit; vialID = revision.vialID
+        // The protocol's recorded site, so one-tap logging keeps rotation history.
+        site = revision.route.usesInjectionSite ? (revision.configuredSite ?? "") : ""
+    }
 
     /// Repeat-last prefill for the Today quick action. Dose values always come from the
     /// current scheduled revision — never from history. Only the vial and its recorded
