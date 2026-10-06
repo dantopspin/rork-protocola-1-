@@ -31,7 +31,6 @@ jobs:
       - name: Capture screens
         continue-on-error: true
         run: |
-          set -o pipefail
           xcodebuild test \
             -project ios-protocola/Protocola.xcodeproj \
             -scheme Protocola \
@@ -40,25 +39,32 @@ jobs:
             -only-testing:ProtocolaUITests/DesignSnapshotTests \
             -parallel-testing-enabled NO \
             -resultBundlePath Shots.xcresult \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcbeautify
+            CODE_SIGNING_ALLOWED=NO > capture.log 2>&1
+          code=$?
+          report() { python3 -c 'import sys,urllib.parse; d=sys.stdin.read()[-3500:]; print(d.replace("%","%25").replace("\r","").replace("\n","%0A"))'; }
+          echo "::warning title=capture exit $code::$(grep -E 'error:|Failed|failed|Executed|\*\* TEST' capture.log | tail -n 25 | report)"
+          exit 0
 
       - name: Export attachments
         if: always()
         run: |
           mkdir -p raw shots
-          xcrun xcresulttool export attachments --path Shots.xcresult --output-path raw
+          xcrun xcresulttool export attachments --path Shots.xcresult --output-path raw > export.log 2>&1 || true
           python3 - <<'EOF'
           import json, os, shutil
-          manifest = json.load(open("raw/manifest.json"))
+          try:
+              manifest = json.load(open("raw/manifest.json"))
+          except Exception as e:
+              print("::warning title=export::no manifest: %s %s" % (e, open("export.log").read()[-500:].replace("\n","%0A")))
+              raise SystemExit(0)
           for test in manifest:
               for a in test.get("attachments", []):
                   name = a.get("suggestedHumanReadableName") or a["exportedFileName"]
-                  base = name.split("_")[0] if name.startswith(("default", "ax-")) else name
+                  base = name.split("_")[0] if name.startswith(("default", "ax-", "zz-")) else name
                   if not base.endswith(".png"):
                       base += ".png"
                   shutil.copy(os.path.join("raw", a["exportedFileName"]), os.path.join("shots", base))
-          print(sorted(os.listdir("shots")))
+          print("::notice title=exported::" + " ".join(sorted(os.listdir("shots"))))
           EOF
 
       - name: Publish to design-screenshots branch
@@ -66,7 +72,6 @@ jobs:
         run: |
           set -e
           trap 'echo "::error title=publish failed::line $LINENO: $BASH_COMMAND"' ERR
-          echo "::notice title=shots::$(ls shots | tr '\n' ' ')"
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           SHA=${GITHUB_SHA::7}
@@ -75,11 +80,12 @@ jobs:
             git worktree add out FETCH_HEAD
           else
             git worktree add --detach out
-            (cd out && git checkout --orphan design-screenshots && git rm -rfq .)
+            (cd out && git checkout --orphan design-screenshots && git rm -rfq . && git clean -fdq)
           fi
           mkdir -p "out/$SHA"
-          cp shots/*.png "out/$SHA/" || true
+          cp shots/*.png "out/$SHA/" 2>/dev/null || echo "::warning title=publish::no png files"
           cd out
           git add -A
-          git commit -qm "Screenshots for $SHA" || exit 0
-          git push origin HEAD:design-screenshots
+          git commit -qm "Screenshots for $SHA" || { echo "::warning title=publish::nothing to commit"; exit 0; }
+          git push origin HEAD:refs/heads/design-screenshots
+          echo "::notice title=published::$SHA"
