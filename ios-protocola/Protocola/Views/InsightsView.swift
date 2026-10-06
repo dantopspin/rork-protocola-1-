@@ -210,6 +210,12 @@ private extension InsightsView {
 
                         supportingStats(summary)
 
+                        if let latest {
+                            changeContext(latest)
+                        }
+
+                        estimatedLevelsEntry
+
                         RecordedEntriesHeatmap(
                             logs:
                                 store.logs.filter {
@@ -217,12 +223,6 @@ private extension InsightsView {
                                         == selected?.id
                                 }
                         )
-
-                        if let latest {
-                            changeContext(latest)
-                        }
-
-                        estimatedLevelsEntry
 
                         if !summary.sites.isEmpty {
                             sitesCard(summary)
