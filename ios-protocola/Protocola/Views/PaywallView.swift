@@ -372,11 +372,7 @@ struct PaywallView: View {
                 .foregroundStyle(
                     Theme.textSecondary
                 )
-                .lineLimit(
-                    density == .regular
-                        ? 2
-                        : 1
-                )
+                .lineLimit(2)
                 .fixedSize(
                     horizontal: false,
                     vertical: true
@@ -515,6 +511,9 @@ struct PaywallView: View {
                 Theme.textSecondary
             )
             .lineLimit(1)
+            // Natural width so the connectors shrink instead of the label
+            // ("Chan…", "Patt…" in the default-size screenshot).
+            .fixedSize()
         }
     }
 

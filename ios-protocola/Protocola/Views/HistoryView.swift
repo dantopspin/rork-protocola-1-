@@ -717,6 +717,21 @@ private extension HistoryView {
             }
         }
 
+        if event.title == "Vial added" {
+            let parts = [
+                afterValue("Name", in: event),
+                afterValue("Compound", in: event),
+                afterValue("Amount", in: event)
+                    .map { DoseText.amount($0, "mg") }
+            ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+
+            if !parts.isEmpty {
+                return parts.joined(separator: " · ")
+            }
+        }
+
         let meaningful =
             event.changes.filter {
                 $0.isMeaningful
@@ -742,21 +757,6 @@ private extension HistoryView {
             return summaries.joined(
                 separator: " · "
             )
-        }
-
-        if event.title == "Vial added" {
-            let parts = [
-                afterValue("Name", in: event),
-                afterValue("Compound", in: event),
-                afterValue("Amount", in: event)
-                    .map { DoseText.amount($0, "mg") }
-            ]
-            .compactMap { $0 }
-            .filter { !$0.isEmpty }
-
-            if !parts.isEmpty {
-                return parts.joined(separator: " · ")
-            }
         }
 
         // Any other event: its first two changes in plain words, never the

@@ -95,7 +95,10 @@ final class DesignSnapshotTests: XCTestCase {
                             .matching(NSPredicate(format: "label CONTAINS[c] 'Inventory alerts'"))
                             .firstMatch
                         if alerts.waitForExistence(timeout: 2) {
-                            alerts.tap()
+                            // Tap the control itself, not the row label.
+                            alerts
+                                .coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+                                .tap()
                             settle()
                             shot(app, "\(prefix)-05b-permission-sheet")
                             tapIfPresent(app.buttons["Not now"])
