@@ -1,5 +1,7 @@
 // Vendored from SwiftPieces (https://github.com/Saivion/SwiftPieces) @ cca6f69,
-// registry/swift/data/ActivityHeatmap.swift — unmodified.
+// registry/swift/data/ActivityHeatmap.swift. Local change: HeatmapMetrics,
+// HeatmapPlacement and HeatmapRowKey marked `nonisolated` so the file builds
+// under this target's SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor.
 // Copyright (c) 2026 Saivion Hayes. MIT + Commons Clause License Condition v1.0;
 // see ios-protocola/THIRD_PARTY_NOTICES.md. Do not redistribute this component on its own.
 
@@ -1083,7 +1085,7 @@ private enum HeatmapSpace {
 }
 
 /// Cell size and positions for a width. The layout and the Canvas both use it, so they always agree.
-private struct HeatmapMetrics: Equatable, Sendable {
+nonisolated private struct HeatmapMetrics: Equatable, Sendable {
     var weeks: Int
     var cell: CGFloat
     var gap: CGFloat
@@ -1152,7 +1154,7 @@ private struct HeatmapMetrics: Equatable, Sendable {
 }
 
 /// Where the Canvas sits in the grid section, and the metrics it was drawn with.
-private struct HeatmapPlacement: Equatable, Sendable {
+nonisolated private struct HeatmapPlacement: Equatable, Sendable {
     var canvas: CGRect
     var metrics: HeatmapMetrics
     var originX: CGFloat
@@ -1168,7 +1170,7 @@ private struct HeatmapScrollTarget: Equatable {
     var tick = 0
 }
 
-private struct HeatmapRowKey: LayoutValueKey {
+nonisolated private struct HeatmapRowKey: LayoutValueKey {
     static let defaultValue = -1
 }
 
