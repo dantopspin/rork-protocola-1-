@@ -164,11 +164,20 @@ struct ProtocolEditorView: View {
             .sheet(
                 isPresented: $askingPermission,
                 onDismiss: {
-                    // Continue the save whatever the answer; the protocol
-                    // records the reminder choice and delivery follows the
-                    // system setting.
-                    permissionExplained = true
-                    save()
+                    Task {
+                        let status =
+                            await store
+                                .notifications
+                                .authorizationStatus()
+
+                        if !NotificationService
+                            .allowsDelivery(status) {
+                            draft.reminders = false
+                        }
+
+                        permissionExplained = true
+                        save()
+                    }
                 }
             ) {
                 NotificationPermissionSheet(
