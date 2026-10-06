@@ -16,6 +16,10 @@ import Observation
     private(set) var events: [ProtocolEvent] = []
     private(set) var labs: [LabRecord] = []
     private(set) var today: [ScheduledEntry] = []
+    /// Yesterday's scheduled entries that were neither logged nor skipped.
+    /// Kept on Today so a dose taken late at night can still be recorded
+    /// against its scheduled occurrence after midnight.
+    private(set) var carriedOver: [ScheduledEntry] = []
     private(set) var balances: [UUID: Decimal] = [:]
     private(set) var insights: [Int: InsightsSummary] = [:]
     private(set) var onboarded: Bool = false
@@ -46,6 +50,30 @@ import Observation
     init(container: ModelContainer) {
         realContainer = container; repository = TrackingRepository(container: container)
         refresh()
+        NotificationActionRouter.shared.handler = { [weak self] entryID, action in
+            self?.handleNotificationAction(entryID, action)
+        }
+    }
+
+    /// Log or skip a scheduled entry from its reminder's action buttons. The
+    /// entry keeps the time the action was taken; already-recorded entries
+    /// are left untouched.
+    func handleNotificationAction(_ entryID: String, _ action: NotificationActionRouter.Action) {
+        guard !isDemo else { return }
+        let now = Date()
+        let calendar = Calendar.current
+        let start = calendar.date(byAdding: .day, value: -2, to: now) ?? now
+        let end = calendar.date(byAdding: .day, value: 1, to: now) ?? now
+        guard let entry = entries(start: start, end: end).first(where: { $0.id == entryID }), entry.log == nil else { return }
+        var draft = DoseDraft(revision: entry.revision)
+        if action == .skip {
+            draft.status = "Skipped"; draft.vialID = nil; draft.site = ""; draft.symptoms = ""; draft.notes = ""
+        }
+        _ = saveDose(draft, revision: entry.revision, occurrence: entry, correcting: nil)
+    }
+
+    func detachNotificationHandler() {
+        NotificationActionRouter.shared.handler = nil
     }
     func refresh(now: Date = .now) {
         do {
@@ -74,6 +102,8 @@ import Observation
         let start = Calendar.current.startOfDay(for: now)
         let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? now
         let generated = entries(start: start, end: end).filter { canTrack($0.revision.protocolID) }
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: start) ?? start
+        carriedOver = entries(start: yesterday, end: start).filter { $0.log == nil && canTrack($0.revision.protocolID) }
         today = Self.ordered(generated, by: (try? repository.preferences())?.todayOrder ?? [])
         insights = [7: InsightsSummary(store: self, window: 7, now: now), 30: InsightsSummary(store: self, window: 30, now: now)]
     }
@@ -340,7 +370,7 @@ import Observation
             return revision.amount
         case .mcg:
             return revision.amount / 1_000
-        case .mL, .units:
+        case .mL, .units, .iu:
             return nil
         }
     }
@@ -348,7 +378,7 @@ import Observation
         revisions.filter(\.enabled).flatMap { revision -> [ScheduledEntry] in
             guard let config = revision.config else { return [] }
             return SchedulingEngine.occurrences(config: config, effectiveFrom: revision.effectiveFrom, effectiveUntil: revision.effectiveUntil, start: start, end: end).map { at in
-                let id = SchedulingEngine.occurrenceKey(compoundID: revision.compoundID, revisionID: revision.id, at: at)
+                let id = SchedulingEngine.occurrenceKey(compoundID: revision.compoundID, revisionID: revision.id, at: at, config: config)
                 return ScheduledEntry(id: id, revision: revision, at: at, log: logs.first { $0.occurrenceID == id })
             }
         }.sorted { $0.at < $1.at }
@@ -710,7 +740,10 @@ import Observation
             .map {
                 ReminderPlanner.Candidate(
                     id: $0.id,
-                    at: $0.at
+                    at: $0.at,
+                    floating:
+                        $0.revision.config?
+                            .followsDeviceTimeZone == true
                 )
             }
 

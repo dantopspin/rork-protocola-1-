@@ -373,10 +373,7 @@ struct ProtocolEvolutionSummary {
                 )
 
             calendar.timeZone =
-                TimeZone(
-                    identifier:
-                        config.timeZoneID
-                ) ?? .current
+                config.timeZone
 
             let anchor =
                 calendar.startOfDay(
@@ -782,7 +779,7 @@ struct EstimatedLevelOverview {
                 log.actualAmount
                 / 1_000
 
-        case .mL, .units:
+        case .mL, .units, .iu:
             decimal =
                 log.consumptionMg > 0
                 ? log.consumptionMg

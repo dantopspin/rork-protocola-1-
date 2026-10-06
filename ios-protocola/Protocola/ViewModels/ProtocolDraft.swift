@@ -20,6 +20,9 @@ struct ProtocolDraft {
     var cycleOnDays: Int = 56
     var cycleOffDays: Int = 28
     var timeZoneID: String = TimeZone.current.identifier
+    /// New schedules follow the iPhone's time zone so times stay put when
+    /// travelling; schedules recorded before this option keep a fixed zone.
+    var followsDeviceTimeZone: Bool = true
 
     func config() throws -> ScheduleConfig {
         var calendar =
@@ -60,6 +63,10 @@ struct ProtocolDraft {
                     cycleEnabled
                     && kind != .asRecorded
                     ? cycleOffDays
+                    : nil,
+                followsDeviceTimeZone:
+                    followsDeviceTimeZone
+                    ? true
                     : nil
             )
 
@@ -95,6 +102,8 @@ struct ProtocolDraft {
             start = config.anchor
             timeZoneID =
                 config.timeZoneID
+            followsDeviceTimeZone =
+                config.followsDeviceTimeZone == true
             cycleEnabled =
                 config.hasCycle
             cycleOnDays =

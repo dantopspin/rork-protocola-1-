@@ -465,7 +465,9 @@ private extension InsightsView {
                     y: .value(
                         "Scheduled",
                         day.scheduled
-                    )
+                    ),
+                    // Recorded overlays scheduled; stacking would double the height.
+                    stacking: .unstacked
                 )
                 .foregroundStyle(
                     Theme.inactiveFill
@@ -480,7 +482,9 @@ private extension InsightsView {
                     y: .value(
                         "Recorded",
                         day.recorded
-                    )
+                    ),
+                    // Recorded overlays scheduled; stacking would double the height.
+                    stacking: .unstacked
                 )
                 .foregroundStyle(
                     Theme.teal
@@ -506,7 +510,8 @@ private extension InsightsView {
                     AxisValueLabel(
                         format:
                             .dateTime
-                                .day()
+                                .day(),
+                        centered: true
                     )
                     .font(Theme.micro)
                     .foregroundStyle(

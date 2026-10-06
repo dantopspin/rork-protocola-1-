@@ -7,6 +7,8 @@ nonisolated enum ReminderPlanner {
         let at: Date
         let title: String
         let body: String
+        /// Fire at this wall-clock time in whatever zone the iPhone is in.
+        var floating: Bool = false
 
         init(
             id: String,
@@ -14,8 +16,10 @@ nonisolated enum ReminderPlanner {
             title: String =
                 "Protocola · scheduled entry",
             body: String =
-                "An entry in your recorded protocol is scheduled. Open Protocola to review it."
+                "An entry in your recorded protocol is scheduled. Open Protocola to review it.",
+            floating: Bool = false
         ) {
+            self.floating = floating
             self.id = id
             self.at = at
             self.title = title

@@ -39,8 +39,7 @@ jobs:
             -only-testing:ProtocolaUITests/DesignSnapshotTests \
             -parallel-testing-enabled NO \
             -resultBundlePath Shots.xcresult \
-            CODE_SIGNING_ALLOWED=NO > capture.log 2>&1
-          code=$?
+            CODE_SIGNING_ALLOWED=NO > capture.log 2>&1 && code=0 || code=$?
           report() { python3 -c 'import sys,urllib.parse; d=sys.stdin.read()[-3500:]; print(d.replace("%","%25").replace("\r","").replace("\n","%0A"))'; }
           echo "::warning title=capture exit $code::$(grep -E 'error:|Failed|failed|Executed|\*\* TEST' capture.log | tail -n 25 | report)"
           exit 0

@@ -46,7 +46,6 @@ enum LegalContent {
             LegalSection(heading: "Not a medical device", body: "Protocola is not a medical device and is not intended to diagnose, treat, cure, or prevent any condition."),
             LegalSection(heading: "Verify with a professional", body: "Every value shown in Protocola comes from what you enter. Always follow the instructions you were given by a qualified healthcare professional and the product label, and contact them with questions about your care."),
             LegalSection(heading: "Emergencies", body: "If you may be experiencing a medical emergency, contact your local emergency services immediately."),
-            LegalSection(heading: "Calculator", body: "The conversion calculator performs arithmetic on the values you enter. Its results are not guidance of any kind.")
         ]
     )
 

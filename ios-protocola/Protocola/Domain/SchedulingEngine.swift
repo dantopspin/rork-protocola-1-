@@ -5,7 +5,7 @@ nonisolated enum SchedulingEngine {
     static func occurrences(config: ScheduleConfig, effectiveFrom: Date, effectiveUntil: Date?, start: Date, end: Date) -> [Date] {
         guard (try? config.validate()) != nil, config.kind != .asRecorded, start < end else { return [] }
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: config.timeZoneID) ?? .current
+        calendar.timeZone = config.timeZone
         var day = calendar.startOfDay(for: max(start, effectiveFrom))
         let stop = min(end, effectiveUntil ?? end)
         var result: [Date] = []
@@ -32,7 +32,16 @@ nonisolated enum SchedulingEngine {
         }
         return Array(Set(result)).sorted()
     }
-    static func occurrenceKey(compoundID: UUID, revisionID: UUID, at: Date) -> String {
-        "\(compoundID.uuidString):\(revisionID.uuidString):\(Int(at.timeIntervalSince1970))"
+    static func occurrenceKey(compoundID: UUID, revisionID: UUID, at: Date, config: ScheduleConfig? = nil) -> String {
+        guard config?.followsDeviceTimeZone == true, let config else {
+            return "\(compoundID.uuidString):\(revisionID.uuidString):\(Int(at.timeIntervalSince1970))"
+        }
+        // Wall-clock key: the same calendar day and time keeps the same key
+        // after a time-zone change, so a logged entry stays logged.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = config.timeZone
+        let c = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: at)
+        let wall = String(format: "%04d%02d%02dT%02d%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0, c.hour ?? 0, c.minute ?? 0)
+        return "\(compoundID.uuidString):\(revisionID.uuidString):L\(wall)"
     }
 }

@@ -30,10 +30,7 @@ enum CycleDisplay {
                 )
 
             calendar.timeZone =
-                TimeZone(
-                    identifier:
-                        config.timeZoneID
-                ) ?? .current
+                config.timeZone
 
             guard
                 let restart =
@@ -65,10 +62,7 @@ enum CycleDisplay {
             Calendar(identifier: .gregorian)
 
         calendar.timeZone =
-            TimeZone(
-                identifier:
-                    config.timeZoneID
-            ) ?? .current
+            config.timeZone
 
         guard
             let dayBefore =
@@ -117,10 +111,7 @@ enum CycleDisplay {
                 Calendar(identifier: .gregorian)
 
             calendar.timeZone =
-                TimeZone(
-                    identifier:
-                        config.timeZoneID
-                ) ?? .current
+                config.timeZone
 
             let today =
                 calendar.startOfDay(

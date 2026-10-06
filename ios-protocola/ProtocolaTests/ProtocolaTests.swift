@@ -1533,64 +1533,6 @@ struct EstimatedLevelOverviewTests {
 }
 
 
-struct ReverseDilutionTests {
-    @Test func reverseMatchesForwardRoundTrip() throws {
-        // 5 mg vial; a 0.25 mg dose drawn as 10 units on a 100 scale
-        // solves to 2 mL of diluent at 2.5 mg/mL.
-        let target = try DoseCalculator.diluentForTarget(
-            vialAmount: 5,
-            vialUnit: .mg,
-            dose: Decimal(string: "0.25")!,
-            doseUnit: .mg,
-            drawUnits: 10,
-            scale: 100
-        )
-
-        #expect(target.diluentMl == 2)
-        #expect(target.concentration == Decimal(string: "2.5")!)
-
-        // Round trip: the forward conversion at the solved concentration
-        // must reproduce the requested draw.
-        let volume = try DoseCalculator.volume(
-            amount: Decimal(string: "0.25")!,
-            unit: .mg,
-            concentration: target.concentration,
-            unitsPerMl: 100
-        )
-
-        #expect(volume * 100 == 10)
-    }
-
-    @Test func reverseConvertsUnitsExplicitly() throws {
-        // 500 mcg vial; 250 mcg dose drawn as 5 units on a 100 scale:
-        // draw volume 0.05 mL, concentration 5 mg/mL, diluent 0.1 mL.
-        let target = try DoseCalculator.diluentForTarget(
-            vialAmount: 500,
-            vialUnit: .mcg,
-            dose: 250,
-            doseUnit: .mcg,
-            drawUnits: 5,
-            scale: 100
-        )
-
-        #expect(target.diluentMl == Decimal(string: "0.1")!)
-        #expect(target.concentration == 5)
-    }
-
-    @Test func reverseRejectsInvalidInputs() {
-        #expect(throws: TrackingError.self) {
-            try DoseCalculator.diluentForTarget(vialAmount: 5, vialUnit: .mg, dose: 0, doseUnit: .mg, drawUnits: 10, scale: 100)
-        }
-        #expect(throws: TrackingError.self) {
-            try DoseCalculator.diluentForTarget(vialAmount: 5, vialUnit: .mg, dose: 1, doseUnit: .mg, drawUnits: 0, scale: 100)
-        }
-        #expect(throws: TrackingError.self) {
-            try DoseCalculator.diluentForTarget(vialAmount: 5, vialUnit: .mg, dose: 1, doseUnit: .mg, drawUnits: 10, scale: 0)
-        }
-    }
-}
-
-
 @MainActor
 struct VialAlertTests {
     @Test func inventoryWarningsAreFutureDatedAndReachPlanner() {
@@ -2545,5 +2487,43 @@ struct ExportHardeningTests {
                     )
             }
         )
+    }
+}
+
+
+struct DailyUserTests {
+    @Test func iuCannotBeConvertedToMass() {
+        #expect(throws: TrackingError.self) { try DoseCalculator.massMg(10, unit: .iu) }
+    }
+
+    @Test func followDeviceKeyIsWallClock() {
+        let compound = UUID()
+        let revision = UUID()
+        var config = ScheduleConfig(kind: .daily, weekdays: [], interval: 1, minutes: [480], anchor: .now, timeZoneID: "UTC")
+        config.followsDeviceTimeZone = true
+        let at = Date(timeIntervalSince1970: 1_800_000_000)
+        let key = SchedulingEngine.occurrenceKey(compoundID: compound, revisionID: revision, at: at, config: config)
+        #expect(key.contains(":L"))
+        #expect(key == SchedulingEngine.occurrenceKey(compoundID: compound, revisionID: revision, at: at, config: config))
+    }
+
+    @Test func fixedZoneKeyIsUnchanged() {
+        let compound = UUID()
+        let revision = UUID()
+        let config = ScheduleConfig(kind: .daily, weekdays: [], interval: 1, minutes: [480], anchor: .now, timeZoneID: "UTC")
+        let at = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(
+            SchedulingEngine.occurrenceKey(compoundID: compound, revisionID: revision, at: at, config: config)
+                == SchedulingEngine.occurrenceKey(compoundID: compound, revisionID: revision, at: at)
+        )
+    }
+
+    @Test func legacyConfigDecodesWithoutFollowFlag() throws {
+        let config = ScheduleConfig(kind: .daily, weekdays: [], interval: 1, minutes: [480], anchor: .now, timeZoneID: "Europe/Paris")
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as! [String: Any]
+        json.removeValue(forKey: "followsDeviceTimeZone")
+        let decoded = try JSONDecoder().decode(ScheduleConfig.self, from: JSONSerialization.data(withJSONObject: json))
+        #expect(decoded.followsDeviceTimeZone == nil)
+        #expect(decoded.timeZone.identifier == "Europe/Paris")
     }
 }

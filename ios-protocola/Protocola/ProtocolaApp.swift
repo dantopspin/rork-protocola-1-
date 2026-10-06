@@ -4,6 +4,8 @@ import RevenueCat
 
 @main
 struct ProtocolaApp: App {
+    @UIApplicationDelegateAdaptor(ProtocolaAppDelegate.self)
+    private var appDelegate
     @State private var store: TrackingStore?
     @State private var purchases = StoreService()
     @State private var loadError: Bool = false
@@ -19,8 +21,10 @@ struct ProtocolaApp: App {
         WindowGroup {
             Group {
                 if let store {
-                    ContentView()
-                        .environment(store)
+                    AppLockGate {
+                        ContentView()
+                            .environment(store)
+                    }
 
                 } else if loadError {
                     ContentUnavailableView {

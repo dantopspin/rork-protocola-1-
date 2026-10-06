@@ -248,11 +248,7 @@ private extension OnboardingView {
             alignment: .leading,
             spacing: Theme.spaceM
         ) {
-            Text("Next entry")
-                .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.onDarkSecondary
-                )
+            Eyebrow(text: "Next entry", onDark: true)
 
             HStack(
                 alignment: .firstTextBaseline

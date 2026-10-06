@@ -19,6 +19,7 @@ struct SettingsView: View {
 
     @State private var confirmClear = false
     @State private var explainingInventoryAlerts = false
+    @AppStorage(AppLock.key) private var appLock = false
 
     var body: some View {
         NavigationStack {
@@ -280,6 +281,28 @@ private extension SettingsView {
             .foregroundStyle(Theme.ink)
 
             Toggle(isOn: Binding(
+                get: { appLock },
+                set: { enabled in
+                    Task {
+                        // Turning the lock on proves it can be unlocked first.
+                        guard enabled else {
+                            appLock = false
+                            return
+                        }
+                        let granted = await AppLock.authenticate(
+                            reason: "Turn on App Lock for Protocola."
+                        )
+                        if granted { appLock = true }
+                    }
+                }
+            )) {
+                Label(
+                    "App Lock",
+                    systemImage: "lock"
+                )
+            }
+
+            Toggle(isOn: Binding(
                 get: { store.inventoryAlerts },
                 set: { enabled in
                     Task {
@@ -363,7 +386,10 @@ private extension SettingsView {
             Text(
                 "Ask Protocola sharing is optional and can be turned off here at any time. "
                 + "When enabled, only the scoped record fields described in AI & Data Use are sent when you actively ask a question; nothing is sent in the background. "
-                + "Export My Data creates portable CSV copies of your protocols, schedules, entries, vial and inventory records, audit events, and labs."
+                + "Export My Data creates portable CSV copies of your protocols, schedules, entries, vial and inventory records, audit events, and labs.\n\n"
+                + "Your records are stored only on this iPhone. They are not synced to iCloud. "
+                + "To move them to a new iPhone, use an iCloud or computer backup of this device. "
+                + "CSV exports are for reading and sharing; they can't be imported back into Protocola."
             )
         }
     }

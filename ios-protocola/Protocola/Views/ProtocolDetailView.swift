@@ -17,7 +17,6 @@ struct ProtocolDetailView: View {
     @State private var logging:
         ScheduleRevision?
     @State private var addCompound = false
-    @State private var calculator = false
     @State private var choice = false
 
     var body: some View {
@@ -46,11 +45,6 @@ struct ProtocolDetailView: View {
             isPresented: $choice
         ) {
             FreeProtocolChoiceView()
-        }
-        .sheet(
-            isPresented: $calculator
-        ) {
-            CalculatorView()
         }
         .trackingErrors()
     }
@@ -746,17 +740,6 @@ private extension ProtocolDetailView {
             } label: {
                 navigationRow(
                     "Labs"
-                )
-            }
-            .buttonStyle(TrackingRowButtonStyle())
-
-            EditorialRule()
-
-            Button {
-                calculator = true
-            } label: {
-                navigationRow(
-                    "Calculator"
                 )
             }
             .buttonStyle(TrackingRowButtonStyle())

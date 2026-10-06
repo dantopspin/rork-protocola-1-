@@ -268,23 +268,6 @@ private extension LogDetailView {
                         volume
                         + " mL"
                 )
-
-                if let volumeDecimal =
-                    Decimal(
-                        string: volume
-                    ) {
-                    RecordRow(
-                        label:
-                            "Syringe units",
-                        value:
-                            DoseCalculator
-                                .text(
-                                    volumeDecimal
-                                    * log
-                                        .unitsPerMl
-                                )
-                    )
-                }
             }
 
             if let corrected =

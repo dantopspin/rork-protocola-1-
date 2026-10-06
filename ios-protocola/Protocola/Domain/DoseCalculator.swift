@@ -21,6 +21,8 @@ nonisolated enum DoseCalculator {
         case .mL:
             guard let concentration, concentration > 0 else { throw TrackingError.invalidInput("Record the vial concentration before converting volume.") }
             return amount * concentration
+        case .iu:
+            throw TrackingError.invalidInput("IU can't be converted to mg. Log IU entries without a vial, or record this dose in mg or mcg to track the vial balance.")
         case .units:
             guard let concentration, concentration > 0, let unitsPerMl, unitsPerMl > 0 else { throw TrackingError.invalidInput("Record concentration and syringe scale before converting units.") }
             return amount / unitsPerMl * concentration
@@ -35,54 +37,6 @@ nonisolated enum DoseCalculator {
         return try massMg(amount, unit: unit, concentration: concentration, unitsPerMl: unitsPerMl) / concentration
     }
 
-    /// Reverse reconstitution: the diluent volume that produces a recorded
-    /// concentration at which a user-entered dose measures as the user-entered
-    /// syringe draw. Arithmetic on explicit inputs only — never a suggested
-    /// preparation.
-    ///
-    /// Blend architecture note (deferred): multi-compound blends need a list of
-    /// per-component (mass, diluent) contributions with an explicit stored
-    /// concentration per component, because a shared diluent volume cannot be
-    /// represented by the current single-vial fields without a new model and
-    /// ledger semantics. Left for a later pass to keep Release A stable.
-    struct DilutionTarget: Equatable, Sendable {
-        let diluentMl: Decimal
-        let concentration: Decimal
-    }
-
-    static func diluentForTarget(
-        vialAmount: Decimal,
-        vialUnit: AmountUnit,
-        dose: Decimal,
-        doseUnit: AmountUnit,
-        drawUnits: Decimal,
-        scale: Decimal
-    ) throws -> DilutionTarget {
-        let vialMg = try massMg(vialAmount, unit: vialUnit)
-        let doseMg = try massMg(dose, unit: doseUnit)
-
-        guard vialMg > 0, doseMg > 0, drawUnits > 0, scale > 0 else {
-            throw TrackingError.invalidInput("Enter a vial amount, dose, and draw greater than zero with a positive syringe scale.")
-        }
-
-        let drawVolumeMl = drawUnits / scale
-
-        guard drawVolumeMl > 0 else {
-            throw TrackingError.invalidInput("The target draw must be greater than zero.")
-        }
-
-        let targetConcentration = doseMg / drawVolumeMl
-        let diluentMl = vialMg / targetConcentration
-
-        guard diluentMl > 0, !diluentMl.isNaN else {
-            throw TrackingError.invalidInput("These values cannot produce a valid dilution.")
-        }
-
-        return DilutionTarget(
-            diluentMl: diluentMl,
-            concentration: targetConcentration
-        )
-    }
     static func text(_ number: Decimal) -> String { NSDecimalNumber(decimal: number).stringValue }
 }
 

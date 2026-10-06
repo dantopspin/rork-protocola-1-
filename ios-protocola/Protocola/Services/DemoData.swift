@@ -14,7 +14,7 @@ import Foundation
                 guard let day = Calendar.current.date(byAdding: .day, value: -offset, to: .now), let end = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: day)), let at = SchedulingEngine.occurrences(config: config, effectiveFrom: revision.effectiveFrom, effectiveUntil: nil, start: Calendar.current.startOfDay(for: day), end: end).first else { continue }
                 var draft = DoseDraft(revision: revision); draft.loggedAt = at; draft.site = offset % 2 == 0 ? "Left abdomen" : "Right abdomen"; draft.notes = "Sample record"
                 if offset == 3 { draft.symptoms = "Tenderness"; draft.severity = 2 }
-                let entry = ScheduledEntry(id: SchedulingEngine.occurrenceKey(compoundID: revision.compoundID, revisionID: revision.id, at: at), revision: revision, at: at, log: nil)
+                let entry = ScheduledEntry(id: SchedulingEngine.occurrenceKey(compoundID: revision.compoundID, revisionID: revision.id, at: at, config: config), revision: revision, at: at, log: nil)
                 try repository.saveDose(draft, revision: revision, occurrence: entry, correcting: nil)
             }
         }

@@ -31,23 +31,6 @@ struct VialEditorView: View {
                 lifecycleSection
                 photoSection
 
-                if let concentration {
-                    Section {
-                        RecordRow(
-                            label: "Concentration",
-                            value:
-                                concentration
-                                + " mg/mL"
-                        )
-                    } header: {
-            Eyebrow(text: "Calculated from recorded values")
-        } footer: {
-                        Text(
-                            "Arithmetic only. This is calculated from the vial amount and diluent you entered."
-                        )
-                    }
-                }
-
                 if let vial {
                     correctionSection(vial)
                 }
@@ -318,34 +301,6 @@ private extension VialEditorView {
             Text(
                 "Leave blank to keep the current estimate. A correction is recorded as an adjustment; later entry corrections and deletions still reconcile the balance."
             )
-        }
-    }
-}
-
-private extension VialEditorView {
-
-    var concentration: String? {
-        do {
-            let amount =
-                try DoseCalculator.parse(
-                    draft.amount,
-                    label: "Vial amount"
-                )
-            let diluent =
-                try DoseCalculator.parse(
-                    draft.diluent,
-                    label: "Diluent volume"
-                )
-            let value =
-                try DoseCalculator
-                    .concentration(
-                        vialAmount: amount,
-                        unit: draft.unit,
-                        diluentMl: diluent
-                    )
-            return DoseCalculator.text(value)
-        } catch {
-            return nil
         }
     }
 }

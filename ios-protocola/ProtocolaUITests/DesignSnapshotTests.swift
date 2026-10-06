@@ -131,14 +131,6 @@ final class DesignSnapshotTests: XCTestCase {
                     shot(app, "\(prefix)-07b-protocol-editor")
                     dismissSheets(app)
                 }
-                if tapIfPresent(
-                    app.buttons
-                        .matching(NSPredicate(format: "label BEGINSWITH 'Calculator'"))
-                        .firstMatch
-                ) {
-                    shot(app, "\(prefix)-07c-calculator")
-                    dismissSheets(app)
-                }
             }
 
             if screens == nil {
