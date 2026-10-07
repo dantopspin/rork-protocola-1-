@@ -1013,10 +1013,16 @@ import SwiftData
                 ),
                 unit: draft.unit
             )
+        // Optional: pre-filled pens and unmixed vials have no diluent.
+        let diluentText =
+            draft.diluent.trimmingCharacters(in: .whitespaces)
         let diluent =
-            try DoseCalculator.parse(
-                draft.diluent,
-                label: "Diluent"
+            diluentText.isEmpty
+            ? Decimal(0)
+            : try DoseCalculator.parse(
+                diluentText,
+                label: "Diluent",
+                allowZero: true
             )
 
         let reconstitutedAt =

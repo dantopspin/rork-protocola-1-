@@ -83,12 +83,12 @@ final class DesignSnapshotTests: XCTestCase {
 
                 app.swipeDown()
                 app.swipeDown()
-                let actions = app.buttons["Today actions"]
+                let actions = app.navigationBars.buttons["Settings"].firstMatch
                 if actions.waitForExistence(timeout: 2) {
                     actions.tap()
-                    let settings = app.buttons["Settings"]
+                    let settings = app.navigationBars["Settings"].firstMatch
                     if settings.waitForExistence(timeout: 2) {
-                        settings.tap()
+                        _ = settings
                         settle()
                         shot(app, "\(prefix)-05-settings")
                         let alerts = app.switches

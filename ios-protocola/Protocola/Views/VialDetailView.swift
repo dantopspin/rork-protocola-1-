@@ -409,8 +409,9 @@ private extension VialDetailView {
             RecordRow(
                 label: "Diluent",
                 value:
-                    vial.diluentMlText
-                    + " mL"
+                    vial.diluentMl > 0
+                    ? vial.diluentMlText + " mL"
+                    : "None"
             )
 
             RecordRow(

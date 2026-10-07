@@ -300,3 +300,26 @@ struct AIPrivacyHardeningTests {
         )
     }
 }
+
+
+@MainActor struct TestFlightFixTests {
+    @Test func vialWithoutDiluentSavesAndTracksMass() throws {
+        let repo = TrackingRepository(container: try LocalPersistence.container(inMemory: true))
+        var v = VialDraft(); v.name = "Pen"; v.compound = "C"; v.amount = "10"; v.diluent = ""
+        try repo.saveVial(v, id: nil)
+        let vial = try #require(repo.all(VialRecord.self).first)
+        #expect(vial.diluentMl == 0)
+        #expect(vial.concentration == nil)
+        var p = ProtocolDraft(); p.name = "P"; p.compound = "C"; p.amount = "1"; p.unit = .mg; p.vialID = vial.id
+        try repo.saveProtocol(p, protocolID: nil, compoundID: nil)
+        let revision = try #require(repo.all(ScheduleRevision.self).first)
+        try repo.saveDose(DoseDraft(revision: revision), revision: revision, occurrence: nil, correcting: nil)
+        #expect(try repo.balance(vial) == 9)
+    }
+
+    @Test func negativeDiluentStillRejected() throws {
+        let repo = TrackingRepository(container: try LocalPersistence.container(inMemory: true))
+        var v = VialDraft(); v.name = "A"; v.compound = "C"; v.amount = "10"; v.diluent = "-1"
+        #expect(throws: TrackingError.self) { try repo.saveVial(v, id: nil) }
+    }
+}

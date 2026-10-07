@@ -32,7 +32,7 @@ struct InsightsSummary {
         scheduled = entries.count; recorded = entries.filter { $0.log != nil && $0.log?.status != "Skipped" }.count
         percentage = scheduled == 0 ? "—" : "\(recorded * 100 / scheduled)%"
         let logs = store.logs.filter { period.contains($0.loggedAt) && (protocolID == nil || $0.protocolID == protocolID) }
-        sites = Dictionary(grouping: logs.filter { !$0.site.isEmpty && $0.status != "Skipped" }, by: \.site).map { Site(name: $0.key, count: $0.value.count) }.sorted { $0.name < $1.name }
+        sites = Dictionary(grouping: logs.filter { !$0.site.isEmpty && $0.status != "Skipped" }, by: \.site).map { Site(name: $0.key, count: $0.value.count) }.sorted { $0.count != $1.count ? $0.count > $1.count : $0.name < $1.name }
         symptoms = logs.filter { !$0.symptoms.isEmpty }.map { Symptom(id: $0.id, date: $0.loggedAt, name: $0.symptoms, severity: $0.symptomSeverity) }
     }
 }

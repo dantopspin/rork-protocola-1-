@@ -213,6 +213,8 @@ struct HistoryView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            SettingsToolbarItem()
+
             ToolbarItem(
                 placement: .topBarTrailing
             ) {

@@ -1118,10 +1118,10 @@ struct PaywallView: View {
             .multilineTextAlignment(
                 .center
             )
-            .lineLimit(
-                density == .tight
-                    ? 1
-                    : 2
+            // Renewal terms must always be readable in full (App Review 3.1.2).
+            .fixedSize(
+                horizontal: false,
+                vertical: true
             )
 
             if let notice =

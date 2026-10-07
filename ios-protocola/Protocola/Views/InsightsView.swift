@@ -108,6 +108,9 @@ struct InsightsView: View {
         .background(Theme.paper)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            SettingsToolbarItem()
+        }
         .sheet(isPresented: $assistant) {
             AssistantView()
         }
@@ -1063,7 +1066,7 @@ private extension InsightsView {
                                         / Double(
                                             total
                                         )
-                                    ) * 100
+                                    ) * 100 + 0.5 // round to nearest
                                 )
                             )
                             + "%"
