@@ -1301,14 +1301,25 @@ private extension TodayView {
         _ next: ScheduledEntry
     ) -> some View {
         TrackingHeroCard {
-            HStack(
-                alignment: .center,
-                spacing: Theme.spaceS
-            ) {
+            // At accessibility sizes the label gets its own line so it never
+            // breaks mid-word beside the due tag and menu.
+            if usesStackedHero {
                 Eyebrow(
                     text: "Next entry",
                     onDark: true
                 )
+            }
+
+            HStack(
+                alignment: .center,
+                spacing: Theme.spaceS
+            ) {
+                if !usesStackedHero {
+                    Eyebrow(
+                        text: "Next entry",
+                        onDark: true
+                    )
+                }
 
                 Spacer()
 
