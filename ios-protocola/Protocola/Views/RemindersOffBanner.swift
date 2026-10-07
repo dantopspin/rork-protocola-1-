@@ -19,7 +19,9 @@ struct RemindersOffBanner: View {
         guard expectsReminders, let status else {
             return false
         }
-        return status == .denied || status == .notDetermined
+
+        return !NotificationService
+            .allowsDelivery(status)
     }
 
     var body: some View {
