@@ -155,6 +155,21 @@ final class StoreService {
     }
 
 
+    /// Recovers the catalog when a paywall opens without one — during a slow
+    /// launch fetch or after an offline start. No-op when plans are already
+    /// loaded or a fetch is in flight.
+    func ensureOfferingsLoaded() async {
+        guard
+            offerings.isEmpty,
+            !isLoading
+        else {
+            return
+        }
+
+        await loadOfferings()
+    }
+
+
     /// Explicit foreground refresh. A network failure keeps the previous
     /// verified entitlement state.
     func syncEntitlements() async {

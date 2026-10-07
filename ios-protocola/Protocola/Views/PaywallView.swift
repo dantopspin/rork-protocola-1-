@@ -176,6 +176,12 @@ struct PaywallView: View {
             trigger:
                 selectedPackageIdentifier
         )
+        .task {
+            // A paywall can open while the launch-time catalog fetch is still
+            // in flight or after it failed offline; recover the plans in place
+            // instead of leaving an empty paywall on slow connections.
+            await purchases.ensureOfferingsLoaded()
+        }
     }
 
 
@@ -940,55 +946,71 @@ struct PaywallView: View {
     private func unavailablePlans(
         density: PaywallDensity
     ) -> some View {
-        HStack(
-            spacing: Theme.spaceS
-        ) {
+        Group {
             if purchases.isLoading {
-                ProgressView()
-                    .controlSize(
-                        .small
+                // A clearly visible spinner keeps the plans slot occupied on
+                // slow connections instead of reading as an empty paywall.
+                HStack(
+                    spacing: Theme.spaceS
+                ) {
+                    Spacer(
+                        minLength: 0
                     )
 
-                Text(
-                    "Loading plans…"
-                )
-                .font(
-                    Theme.caption
-                )
-                .foregroundStyle(
-                    Theme.textSecondary
+                    ProgressView()
+
+                    Text(
+                        "Loading plans…"
+                    )
+                    .font(
+                        Theme.caption
+                    )
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+
+                    Spacer(
+                        minLength: 0
+                    )
+                }
+                .accessibilityElement(
+                    children: .combine
                 )
 
             } else {
-                Text(
-                    "Plans could not be loaded."
-                )
-                .font(
-                    Theme.caption
-                )
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
-
-                Spacer()
-
-                Button(
-                    "Try again"
+                HStack(
+                    spacing: Theme.spaceS
                 ) {
-                    Task {
-                        await purchases
-                            .loadOfferings()
+                    Text(
+                        "Plans could not be loaded."
+                    )
+                    .font(
+                        Theme.caption
+                    )
+                    .foregroundStyle(
+                        Theme.textSecondary
+                    )
+
+                    Spacer()
+
+                    Button(
+                        "Try again"
+                    ) {
+                        Task {
+                            await purchases
+                                .loadOfferings()
+                        }
                     }
+                    .font(
+                        Theme.label
+                    )
+                    .foregroundStyle(
+                        Theme.teal
+                    )
+                    .buttonStyle(
+                        .plain
+                    )
                 }
-                .font(
-                    Theme.label
-                )
-                .foregroundStyle(
-                    Theme.teal
-                )
-                .buttonStyle(
-                    .plain
-                )
             }
         }
         .frame(
