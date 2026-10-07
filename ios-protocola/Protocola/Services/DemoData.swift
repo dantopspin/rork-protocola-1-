@@ -2,10 +2,10 @@ import Foundation
 
 @MainActor enum DemoData {
     static func seed(_ repository: TrackingRepository) throws {
-        var vial = VialDraft(); vial.name = "Sample vial 01"; vial.compound = "BPC-157"; vial.amount = "10"; vial.diluent = "2"; vial.batch = "DEMO-01"; vial.notes = "Illustrative records only. Not instructions."
+        var vial = VialDraft(); vial.name = "Sample vial 01"; vial.compound = "Sample compound"; vial.amount = "10"; vial.diluent = "2"; vial.batch = "DEMO-01"; vial.notes = "Illustrative records only. Not instructions."
         try repository.saveVial(vial, id: nil)
         let sampleVial = try repository.all(VialRecord.self).first
-        var protocolDraft = ProtocolDraft(); protocolDraft.name = "Sample protocol"; protocolDraft.compound = "BPC-157"; protocolDraft.amount = "250"; protocolDraft.vialID = sampleVial?.id; protocolDraft.source = "Illustrative demo — not instructions"
+        var protocolDraft = ProtocolDraft(); protocolDraft.name = "Sample protocol"; protocolDraft.compound = "Sample compound"; protocolDraft.amount = "250"; protocolDraft.vialID = sampleVial?.id; protocolDraft.source = "Illustrative demo — not instructions"
         protocolDraft.start = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
         protocolDraft.times = [RecordedTime(date: Calendar.current.date(bySettingHour: 20, minute: 0, second: 0, of: .now) ?? .now)]
         try repository.saveProtocol(protocolDraft, protocolID: nil, compoundID: nil)
