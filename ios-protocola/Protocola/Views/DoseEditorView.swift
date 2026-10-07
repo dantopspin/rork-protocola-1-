@@ -240,11 +240,12 @@ private extension DoseEditorView {
 
         } header: {
             Eyebrow(text: "Entry as recorded")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Values reflect your own records, not an administration recommendation."
             )
         }
+}
     }
 
 
@@ -291,7 +292,7 @@ private extension DoseEditorView {
 
         } header: {
             Eyebrow(text: "Vial")
-        } footer: {
+        } footer: { FormFooter {
             if correcting == nil {
                 Text(
                     draft.vialID == nil
@@ -300,6 +301,7 @@ private extension DoseEditorView {
                 )
             }
         }
+}
     }
 
 

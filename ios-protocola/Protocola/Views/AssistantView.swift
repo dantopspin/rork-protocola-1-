@@ -303,11 +303,12 @@ private extension AssistantView {
                     "Before your first question"
             )
 
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "AI can make mistakes. Avoid typing information you do not want sent."
             )
         }
+}
     }
 
 
@@ -356,11 +357,12 @@ private extension AssistantView {
                     .isEmpty
             )
 
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Sharing remains enabled until you turn it off in Settings. Nothing is sent in the background."
             )
         }
+}
     }
 
 

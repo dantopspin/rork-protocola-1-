@@ -71,10 +71,6 @@ private extension OnboardingView {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
-                Text("Protocola")
-                    .font(Theme.label)
-                    .foregroundStyle(Theme.teal)
-
                 VStack(
                     alignment: .leading,
                     spacing: Theme.spaceS
@@ -150,16 +146,6 @@ private extension OnboardingView {
                 }
 
                 Spacer()
-
-                Image(
-                    systemName:
-                        "calendar.badge.clock"
-                )
-                .font(Theme.sectionTitle)
-                .foregroundStyle(
-                    Theme.onDarkSecondary
-                )
-                .accessibilityHidden(true)
             }
 
             EditorialRule(onDark: true)
@@ -219,8 +205,6 @@ private extension OnboardingView {
 
                 workflow
 
-                changePreview
-
                 Text(
                     "No lifestyle quiz. No treatment recommendations. Just the protocol and records you choose to enter."
                 )
@@ -247,30 +231,27 @@ private extension OnboardingView {
     }
 
 
+    /// Three steps grouped by spacing alone: icon, title, one line.
     var workflow: some View {
-        VStack(spacing: 0) {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceL
+        ) {
             workflowStep(
-                number: "01",
                 icon: "calendar",
                 title: "Plan",
                 detail:
                     "Record the schedule and instructions you already have."
             )
 
-            EditorialRule()
-
             workflowStep(
-                number: "02",
                 icon: "checkmark.circle",
                 title: "Log",
                 detail:
                     "Capture what actually happened without rewriting the plan."
             )
 
-            EditorialRule()
-
             workflowStep(
-                number: "03",
                 icon:
                     "arrow.left.arrow.right",
                 title: "Understand",
@@ -278,50 +259,26 @@ private extension OnboardingView {
                     "Review history and compare periods around recorded changes."
             )
         }
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
     }
 
 
     func workflowStep(
-        number: String,
         icon: String,
         title: String,
         detail: String
     ) -> some View {
         HStack(
-            alignment: .top,
-            spacing: Theme.spaceM
+            alignment: .firstTextBaseline,
+            spacing: Theme.spaceS
         ) {
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXXS
-            ) {
-                Text(number)
-                    .font(Theme.micro)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.teal)
-
-                Image(systemName: icon)
-                    .font(Theme.label)
-                    .foregroundStyle(
-                        Theme.textSecondary
-                    )
-                    .accessibilityHidden(true)
-            }
-            .frame(
-                width: Theme.iconColumn,
-                alignment: .leading
-            )
+            Image(systemName: icon)
+                .font(Theme.sectionTitle)
+                .foregroundStyle(Theme.teal)
+                .frame(
+                    width: Theme.iconColumn,
+                    alignment: .leading
+                )
+                .accessibilityHidden(true)
 
             VStack(
                 alignment: .leading,
@@ -332,7 +289,7 @@ private extension OnboardingView {
                     .foregroundStyle(Theme.ink)
 
                 Text(detail)
-                    .font(Theme.caption)
+                    .font(Theme.label)
                     .foregroundStyle(
                         Theme.textSecondary
                     )
@@ -343,91 +300,11 @@ private extension OnboardingView {
             }
 
             Spacer(
-                minLength: Theme.spaceS
+                minLength: 0
             )
         }
-        .padding(Theme.spaceM)
         .accessibilityElement(
             children: .combine
-        )
-    }
-
-
-    var changePreview: some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceM
-        ) {
-            Eyebrow(text: "Recorded change")
-
-            HStack(
-                alignment: .center,
-                spacing: Theme.spaceM
-            ) {
-                changeState(
-                    label: "Before",
-                    value: "Daily"
-                )
-
-                Image(
-                    systemName: "arrow.right"
-                )
-                .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
-                .accessibilityHidden(true)
-
-                changeState(
-                    label: "After",
-                    value: "Every 2 days"
-                )
-            }
-
-            Text(
-                "The earlier record stays attached to the period where it was actually in effect."
-            )
-            .font(Theme.caption)
-            .foregroundStyle(
-                Theme.textSecondary
-            )
-        }
-        .padding(Theme.spaceM)
-        .background(
-            Theme.surface,
-            in: .rect(
-                cornerRadius:
-                    Theme.radiusCard
-            )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
-    }
-
-
-    func changeState(
-        label: String,
-        value: String
-    ) -> some View {
-        VStack(
-            alignment: .leading,
-            spacing: Theme.spaceXXS
-        ) {
-            Text(label)
-                .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
-
-            Text(value)
-                .font(Theme.label)
-                .foregroundStyle(Theme.ink)
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
         )
     }
 }
@@ -464,17 +341,18 @@ private extension OnboardingView {
                     )
                 }
 
-                VStack(spacing: 0) {
-                    trustRow(
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceL
+                ) {
+                    workflowStep(
                         icon: "iphone",
                         title: "Stored locally",
                         detail:
                             "Your core tracking records stay on this iPhone."
                     )
 
-                    EditorialRule()
-
-                    trustRow(
+                    workflowStep(
                         icon:
                             "person.crop.circle",
                         title:
@@ -483,9 +361,7 @@ private extension OnboardingView {
                             "Start tracking without creating a Protocola account."
                     )
 
-                    EditorialRule()
-
-                    trustRow(
+                    workflowStep(
                         icon: "lock.shield",
                         title:
                             "Share only when you choose",
@@ -493,19 +369,6 @@ private extension OnboardingView {
                             "Exports and network features are initiated by you; Ask Protocola record sharing is optional."
                     )
                 }
-                .background(
-                    Theme.surface,
-                    in: .rect(
-                        cornerRadius:
-                            Theme.radiusCard
-                    )
-                )
-                .inkBorder(
-                    cornerRadius:
-                        Theme.radiusCard
-                )
-
-                acknowledgementRow
             }
             .screenPadding()
             .padding(
@@ -514,53 +377,6 @@ private extension OnboardingView {
             )
         }
         .scrollIndicators(.hidden)
-    }
-
-
-    func trustRow(
-        icon: String,
-        title: String,
-        detail: String
-    ) -> some View {
-        HStack(
-            alignment: .top,
-            spacing: Theme.spaceM
-        ) {
-            Image(systemName: icon)
-                .font(Theme.label)
-                .foregroundStyle(Theme.teal)
-                .frame(
-                    width: Theme.iconColumn
-                )
-                .accessibilityHidden(true)
-
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXXS
-            ) {
-                Text(title)
-                    .font(Theme.label)
-                    .foregroundStyle(Theme.ink)
-
-                Text(detail)
-                    .font(Theme.caption)
-                    .foregroundStyle(
-                        Theme.textSecondary
-                    )
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
-            }
-
-            Spacer(
-                minLength: Theme.spaceS
-            )
-        }
-        .padding(Theme.spaceM)
-        .accessibilityElement(
-            children: .combine
-        )
     }
 
 
@@ -589,12 +405,8 @@ private extension OnboardingView {
                         ? "checkmark.square.fill"
                         : "square"
                 )
-                .font(Theme.sectionTitle)
-                .foregroundStyle(
-                    accepted
-                    ? Theme.ink
-                    : Theme.textSecondary
-                )
+                .font(Theme.modalTitle)
+                .foregroundStyle(Theme.teal)
 
                 VStack(
                     alignment: .leading,
@@ -602,7 +414,7 @@ private extension OnboardingView {
                 ) {
                     HStack {
                         Text("I understand")
-                            .font(Theme.label)
+                            .font(Theme.sectionTitle)
                             .foregroundStyle(
                                 Theme.ink
                             )
@@ -631,18 +443,7 @@ private extension OnboardingView {
                     )
                 }
             }
-            .padding(Theme.spaceM)
-            .background(
-                Theme.surface,
-                in: .rect(
-                    cornerRadius:
-                        Theme.radiusRow
-                )
-            )
-            .inkBorder(
-                cornerRadius:
-                    Theme.radiusRow
-            )
+            .padding(.vertical, Theme.spaceS)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -671,6 +472,12 @@ private extension OnboardingView {
         VStack(
             spacing: Theme.spaceS
         ) {
+            // The one required step sits right above the button it unlocks,
+            // styled as an action rather than as more information.
+            if step == Self.lastStep {
+                acknowledgementRow
+            }
+
             progress
 
             HStack(

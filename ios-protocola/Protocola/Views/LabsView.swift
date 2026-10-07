@@ -498,11 +498,12 @@ struct LabEditorView: View {
                     }
                 } header: {
             Eyebrow(text: "Reference range")
-        } footer: {
+        } footer: { FormFooter {
                     Text(
                         "Optional. Enter the range shown by your lab source; Protocola does not generate one."
                     )
                 }
+}
 
                 Section {
                     Picker(

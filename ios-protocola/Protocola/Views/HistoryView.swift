@@ -364,12 +364,13 @@ private extension HistoryView {
                     }
                 } header: {
                     Eyebrow(text: "Date range")
-                } footer: {
+                } footer: { FormFooter {
                     Text(
                         "Date filters change what appears in History only. "
                         + "Your records are not modified."
                     )
                 }
+}
 
                 if hasActiveFilters {
                     Section {

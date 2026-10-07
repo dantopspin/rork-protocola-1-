@@ -265,10 +265,6 @@ struct PaywallView: View {
                 density: density
             )
 
-            proofPreview(
-                density: density
-            )
-
             socialProof(
                 density: density
             )
@@ -548,11 +544,9 @@ struct PaywallView: View {
                 density: density
             )
 
-        } else {
-            fallbackTrustStrip(
-                density: density
-            )
         }
+        // Without a verified testimonial nothing is shown here: the
+        // benefit list already says what Pro adds.
     }
 
 
@@ -857,7 +851,7 @@ struct PaywallView: View {
                        package.packageType == badge.packageType {
 
                         Text(
-                            "SAVE \(badge.percent)%"
+                            "Save \(badge.percent)%"
                         )
                         .font(
                             Theme.micro

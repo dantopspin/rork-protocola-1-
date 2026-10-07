@@ -27,8 +27,9 @@ struct RecordRow: View {
 
     var body: some View {
         layout {
+            // Label quieter than value: Subheadline vs Body.
             Text(label)
-                .font(Theme.body)
+                .font(Theme.subheadline)
                 .foregroundStyle(
                     onDark
                         ? Theme.onDarkSecondary

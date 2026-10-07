@@ -207,7 +207,7 @@ private extension SettingsView {
 
         } header: {
             Eyebrow(text: "Protocola Pro")
-        } footer: {
+        } footer: { FormFooter {
             VStack(
                 alignment: .leading,
                 spacing: Theme.spaceXS
@@ -226,6 +226,7 @@ private extension SettingsView {
                 }
             }
         }
+}
     }
 
 
@@ -329,11 +330,12 @@ private extension SettingsView {
         } header: {
             Eyebrow(text: "Preferences")
 
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Optional reminders built from your recorded balance, schedule, and the expiry date you entered. Protocola never estimates an expiry date."
             )
         }
+}
     }
 
 
@@ -384,7 +386,7 @@ private extension SettingsView {
 
         } header: {
             Eyebrow(text: "Data & Privacy")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Ask Protocola sharing is optional and can be turned off here at any time. "
                 + "When enabled, only the scoped record fields described in AI & Data Use are sent when you actively ask a question; nothing is sent in the background. "
@@ -394,6 +396,7 @@ private extension SettingsView {
                 + "CSV exports are for reading and sharing; they can't be imported back into Protocola."
             )
         }
+}
     }
 
 
@@ -445,7 +448,7 @@ private extension SettingsView {
 
         } header: {
             Eyebrow(text: "Danger Zone")
-        } footer: {
+        } footer: { FormFooter {
             VStack(
                 alignment: .leading,
                 spacing: Theme.spaceS
@@ -461,6 +464,7 @@ private extension SettingsView {
                     .padding(.top, Theme.spaceXXS)
             }
         }
+}
     }
 }
 

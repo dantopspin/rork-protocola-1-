@@ -225,11 +225,12 @@ private extension ProtocolEditorView {
 
         } header: {
             Eyebrow(text: "Future change")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Choose when these recorded instructions should become effective. This is scheduling of your own record, not a recommendation."
             )
         }
+}
     }
 
 
@@ -308,11 +309,12 @@ private extension ProtocolEditorView {
 
         } header: {
             Eyebrow(text: "Recorded instructions")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Enter values from instructions you already have. Protocola records them; it does not generate a dose, route, or schedule."
             )
         }
+}
     }
 
 
@@ -415,7 +417,7 @@ private extension ProtocolEditorView {
 
         } header: {
             Eyebrow(text: "Recorded schedule")
-        } footer: {
+        } footer: { FormFooter {
             if draft.kind == .asRecorded {
                 Text(
                     "As needed creates no automatic scheduled entries. Log an entry whenever you need to record one."
@@ -438,6 +440,7 @@ private extension ProtocolEditorView {
                 )
             }
         }
+}
     }
 
 
@@ -568,11 +571,12 @@ private extension ProtocolEditorView {
 
         } header: {
             Eyebrow(text: "Injection context")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "A vial is optional. Leave the site blank to record the actual site only when logging."
             )
         }
+}
     }
 }
 

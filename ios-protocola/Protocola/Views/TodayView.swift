@@ -89,18 +89,6 @@ struct TodayView: View {
                         )
                 )
 
-                if !store.isDemo,
-                   let status = notificationStatus,
-                   RemindersOffBanner.isOff(
-                       status,
-                       expectsReminders: expectsReminders
-                   ) {
-                    RemindersOffBanner(
-                        status: status,
-                        refresh: refreshNotificationStatus
-                    )
-                }
-
                 Group {
                     if let next = nextUnloggedEntry {
                         nextEntryHero(next)
@@ -126,6 +114,19 @@ struct TodayView: View {
                     value:
                         nextUnloggedEntry?.id
                 )
+
+                if !store.isDemo,
+                   let status = notificationStatus,
+                   RemindersOffBanner.isOff(
+                       status,
+                       expectsReminders: expectsReminders
+                   ) {
+                    RemindersOffBanner(
+                        status: status,
+                        refresh: refreshNotificationStatus
+                    )
+                }
+
 
                 if !store.carriedOver.isEmpty {
                     missedSection
@@ -347,56 +348,56 @@ private extension TodayView {
         ) {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceS
+                spacing: Theme.spaceXXS
             ) {
-                Image(
-                    systemName:
-                        dayOutcome.icon
-                )
-                .font(
-                    .system(
-                        size: Theme.iconLarge,
-                        weight: .regular
+                Label {
+                    Text(dayOutcome.title)
+                        .foregroundStyle(Theme.ink)
+                } icon: {
+                    Image(
+                        systemName:
+                            dayOutcome.icon
                     )
-                )
-                .foregroundStyle(
-                    dayOutcome.isPositive
-                        ? Theme.teal
-                        : Theme.textSecondary
-                )
-                .accessibilityHidden(true)
-
-                Text(dayOutcome.title)
-                    .font(Theme.modalTitle)
-                    .foregroundStyle(Theme.ink)
-
-                Text(dayOutcome.detail)
-                    .font(Theme.body)
                     .foregroundStyle(
-                        Theme.textSecondary
+                        dayOutcome.isPositive
+                            ? Theme.teal
+                            : Theme.textSecondary
                     )
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
+                }
+                .font(Theme.modalTitle)
 
-                if let log = lastTakenTodayLog {
-                    NavigationLink(
-                        value:
-                            TrackingRoute
-                                .logDetail(log.id)
-                    ) {
-                        Text("View entry")
-                            .font(Theme.label)
-                            .foregroundStyle(Theme.teal)
-                            .frame(
-                                minHeight:
-                                    Theme.minimumTapTarget,
-                                alignment: .leading
-                            )
-                            .contentShape(Rectangle())
+                HStack(
+                    alignment: .firstTextBaseline,
+                    spacing: Theme.spaceXS
+                ) {
+                    Text(dayOutcome.detail)
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.textSecondary
+                        )
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+
+                    if let log = lastTakenTodayLog {
+                        NavigationLink(
+                            value:
+                                TrackingRoute
+                                    .logDetail(log.id)
+                        ) {
+                            Text("View")
+                                .font(Theme.label)
+                                .foregroundStyle(Theme.teal)
+                                .frame(
+                                    minHeight:
+                                        Theme.minimumTapTarget
+                                )
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("View entry")
                     }
-                    .buttonStyle(.plain)
                 }
             }
 
@@ -492,7 +493,7 @@ private extension TodayView {
                         next.revision.unitText
                 )
             )
-            .font(Theme.body)
+            .font(Theme.label)
             .foregroundStyle(Theme.textSecondary)
         }
         .padding(Theme.spaceM)
@@ -1343,33 +1344,22 @@ private extension TodayView {
 private extension TodayView {
 
     @ViewBuilder
+    /// Four levels only: label, what (compound + dose), when, and Log.
+    /// Reference details (protocol, vial) live on the protocol screen.
     func nextEntryHero(
         _ next: ScheduledEntry
     ) -> some View {
         TrackingHeroCard {
-            // At accessibility sizes the label gets its own line so it never
-            // breaks mid-word beside the due tag and menu.
-            if usesStackedHero {
-                Eyebrow(
-                    text: "Next entry",
-                    onDark: true
-                )
-            }
-
             HStack(
                 alignment: .center,
                 spacing: Theme.spaceS
             ) {
-                if !usesStackedHero {
-                    Eyebrow(
-                        text: "Next entry",
-                        onDark: true
-                    )
-                }
+                Eyebrow(
+                    text: "Next entry",
+                    onDark: true
+                )
 
                 Spacer()
-
-                dueTag(for: next)
 
                 Menu {
                     Button {
@@ -1419,47 +1409,18 @@ private extension TodayView {
                 )
             }
 
-            Text(next.revision.compoundName)
-                .font(Theme.modalTitle)
-                .foregroundStyle(Theme.onDarkPrimary)
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(next.revision.compoundName)
+                    .font(Theme.modalTitle)
+                    .foregroundStyle(Theme.onDarkPrimary)
 
-            if usesStackedHero {
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXS
-                ) {
-                    heroDose(next)
-                    heroTime(next)
-                }
-            } else {
-                HStack(
-                    alignment: .firstTextBaseline,
-                    spacing: Theme.spaceM
-                ) {
-                    heroDose(next)
-
-                    Spacer()
-
-                    heroTime(next)
-                }
+                heroDose(next)
             }
 
-            EditorialRule(onDark: true)
-
-            protocolActionLight(next)
-
-            if next.revision.route
-                .usesInjectionSite {
-                vialActionLight(next)
-            } else {
-                RecordRow(
-                    label: "Route",
-                    value:
-                        next.revision
-                            .routeText,
-                    onDark: true
-                )
-            }
+            heroTime(next)
 
             Button {
                 logAsScheduled(next)
@@ -1469,8 +1430,6 @@ private extension TodayView {
             .buttonStyle(
                 TrackingPrimaryButtonStyle(inverted: true)
             )
-
-
         }
     }
 
@@ -1702,22 +1661,23 @@ private extension TodayView {
     ) -> some View {
         HStack(
             alignment: .firstTextBaseline,
-            spacing: Theme.spaceXXS
+            spacing: Theme.spaceXS
         ) {
             Text(next.revision.amountText)
-                .font(Theme.metricLarge)
-                .monospacedDigit()
                 .foregroundStyle(Theme.onDarkPrimary)
 
             Text(next.revision.unitText)
-                .font(Theme.sectionTitle)
                 .foregroundStyle(
                     Theme.onDarkSecondary
                 )
         }
+        .font(Theme.metricCompact)
+        .accessibilityElement(children: .combine)
     }
 
 
+    /// One line for when: the time and how soon, instead of a time plus a
+    /// separate chip saying the same thing.
     func heroTime(
         _ next: ScheduledEntry
     ) -> some View {
@@ -1725,37 +1685,21 @@ private extension TodayView {
             editingSchedule =
                 next.revision
         } label: {
-            HStack(
-                spacing: Theme.spaceXXS
-            ) {
-                Text(
-                    next.at,
-                    style: .time
-                )
-                .font(Theme.sectionTitle)
-                .monospacedDigit()
-                .foregroundStyle(Theme.onDarkPrimary)
-
-                Image(
-                    systemName:
-                        "chevron.right"
-                )
-                .font(Theme.micro)
-                .foregroundStyle(
-                    Theme.onDarkSecondary
-                )
-                .accessibilityHidden(true)
-            }
+            Text(
+                "\(next.at, style: .time) · \(dueText(for: next))"
+            )
+            .font(Theme.body)
+            .monospacedDigit()
+            .foregroundStyle(Theme.onDarkSecondary)
             .frame(
+                maxWidth: .infinity,
                 minHeight:
-                    Theme.minimumTapTarget
+                    Theme.minimumTapTarget,
+                alignment: .leading
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(
-            "Edit schedule time"
-        )
         .accessibilityHint(
             "Opens the protocol schedule editor."
         )
