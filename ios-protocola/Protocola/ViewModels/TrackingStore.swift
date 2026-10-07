@@ -102,8 +102,16 @@ import Observation
         let start = Calendar.current.startOfDay(for: now)
         let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? now
         let generated = entries(start: start, end: end).filter { canTrack($0.revision.protocolID) }
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: start) ?? start
-        carriedOver = entries(start: yesterday, end: start).filter { $0.log == nil && canTrack($0.revision.protocolID) }
+        // Unrecorded entries from the past week stay on Today until they are
+        // logged or skipped. Entries dated before the protocol was added to
+        // the app are not counted, so a backdated start doesn't flood Today.
+        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: start) ?? start
+        let added = Dictionary(protocols.map { ($0.id, $0.createdAt) }, uniquingKeysWith: { first, _ in first })
+        carriedOver = entries(start: weekAgo, end: start).filter {
+            $0.log == nil
+            && canTrack($0.revision.protocolID)
+            && $0.at >= (added[$0.revision.protocolID] ?? .distantPast)
+        }
         today = Self.ordered(generated, by: (try? repository.preferences())?.todayOrder ?? [])
         insights = [7: InsightsSummary(store: self, window: 7, now: now), 30: InsightsSummary(store: self, window: 30, now: now)]
     }

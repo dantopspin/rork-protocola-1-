@@ -11,6 +11,12 @@ struct VialEditorView: View {
     private var dismiss
 
     @State private var draft: VialDraft
+    @State private var initialSnapshot: String?
+    @State private var confirmDiscard = false
+
+    private var hasUnsavedChanges: Bool {
+        initialSnapshot.map { $0 != String(describing: draft) } ?? false
+    }
     @State private var saving = false
     @State private var photoItem:
         PhotosPickerItem?
@@ -57,13 +63,28 @@ struct VialEditorView: View {
             .navigationBarTitleDisplayMode(
                 .inline
             )
+            .discardGuard(
+                hasChanges: hasUnsavedChanges,
+                confirming: $confirmDiscard
+            ) {
+                dismiss()
+            }
+            .onAppear {
+                if initialSnapshot == nil {
+                    initialSnapshot = String(describing: draft)
+                }
+            }
             .toolbar {
                 ToolbarItem(
                     placement:
                         .cancellationAction
                 ) {
                     Button("Cancel") {
-                        dismiss()
+                        if hasUnsavedChanges {
+                            confirmDiscard = true
+                        } else {
+                            dismiss()
+                        }
                     }
                     .disabled(saving)
                 }
@@ -123,7 +144,7 @@ private extension VialEditorView {
             }
 
             TextField(
-                "Diluent volume (mL)",
+                "Diluent volume (mL, optional)",
                 text: $draft.diluent
             )
             .keyboardType(.decimalPad)

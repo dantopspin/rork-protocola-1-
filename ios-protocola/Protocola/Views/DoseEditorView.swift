@@ -10,6 +10,12 @@ struct DoseEditorView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var draft: DoseDraft
+    @State private var initialSnapshot: String?
+    @State private var confirmDiscard = false
+
+    private var hasUnsavedChanges: Bool {
+        initialSnapshot.map { $0 != String(describing: draft) } ?? false
+    }
     @State private var addVial = false
     @State private var showSiteMap = false
 
@@ -66,12 +72,27 @@ struct DoseEditorView: View {
                     : "Correct entry"
             )
             .navigationBarTitleDisplayMode(.inline)
+            .discardGuard(
+                hasChanges: hasUnsavedChanges,
+                confirming: $confirmDiscard
+            ) {
+                dismiss()
+            }
+            .onAppear {
+                if initialSnapshot == nil {
+                    initialSnapshot = String(describing: draft)
+                }
+            }
             .toolbar {
                 ToolbarItem(
                     placement: .cancellationAction
                 ) {
                     Button("Cancel") {
-                        dismiss()
+                        if hasUnsavedChanges {
+                            confirmDiscard = true
+                        } else {
+                            dismiss()
+                        }
                     }
                 }
 

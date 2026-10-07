@@ -1,16 +1,18 @@
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 struct TodayView: View {
     @Environment(TrackingStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var notificationStatus: UNAuthorizationStatus?
 
     @State private var target: ScheduledEntry?
     @State private var manualRevision: ScheduleRevision?
     @State private var prefill: DoseDraft?
     @State private var create = false
-    @State private var settings = false
     @State private var inventory = false
     @State private var addVial = false
     @State private var stackCalendar = false
@@ -26,6 +28,19 @@ struct TodayView: View {
         store.today.filter {
             $0.log != nil
         }.count
+    }
+
+    func refreshNotificationStatus() async {
+        notificationStatus =
+            await UNUserNotificationCenter
+                .current()
+                .notificationSettings()
+                .authorizationStatus
+    }
+
+    private var expectsReminders: Bool {
+        store.today.contains { $0.revision.reminders }
+        || nextUpcomingEntry?.revision.reminders == true
     }
 
     private var asNeededRevisions: [ScheduleRevision] {
@@ -73,6 +88,18 @@ struct TodayView: View {
                                 .day()
                         )
                 )
+
+                if !store.isDemo,
+                   let status = notificationStatus,
+                   RemindersOffBanner.isOff(
+                       status,
+                       expectsReminders: expectsReminders
+                   ) {
+                    RemindersOffBanner(
+                        status: status,
+                        refresh: refreshNotificationStatus
+                    )
+                }
 
                 Group {
                     if let next = nextUnloggedEntry {
@@ -186,31 +213,19 @@ struct TodayView: View {
                 }
             }
 
-            ToolbarItem(
-                placement: .topBarTrailing
-            ) {
-                Menu {
-                    Button {
-                        settings = true
-                    } label: {
-                        Label(
-                            "Settings",
-                            systemImage:
-                                "gearshape"
-                        )
-                    }
-                } label: {
-                    Label(
-                        "Today actions",
-                        systemImage:
-                            "ellipsis.circle"
-                    )
-                }
-            }
+            SettingsToolbarItem()
         }
         .refreshable {
             store.refresh()
             store.resyncReminders()
+        }
+        .task {
+            await refreshNotificationStatus()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await refreshNotificationStatus() }
+            }
         }
         .sheet(item: $target) { entry in
             DoseEditorView(
@@ -234,9 +249,6 @@ struct TodayView: View {
             onDismiss: { undoLog = nil }
         ) { log in
             DoseEditorView(correcting: log)
-        }
-        .sheet(isPresented: $settings) {
-            SettingsView()
         }
         .sheet(isPresented: $addVial) {
             VialEditorView()
@@ -315,10 +327,7 @@ private extension TodayView {
                 TrackingEmptyState(
                     icon: "calendar",
                     title: "Nothing scheduled today",
-                    message:
-                        !asNeededRevisions.isEmpty
-                        ? "No scheduled entries. As-needed protocols are available below."
-                        : "Your recorded schedule is clear for today."
+                    message: emptyDayMessage
                 )
 
             } else {
@@ -551,6 +560,33 @@ private extension TodayView {
     }
 
 
+    /// Always says when the next entry is, so a weekly or future-start
+    /// protocol never looks like it wasn't saved.
+    var emptyDayMessage: String {
+        var parts: [String] = []
+
+        if let next = nextUpcomingEntry {
+            parts.append(
+                "Next: "
+                + next.revision.compoundName
+                + ", "
+                + next.at.formatted(
+                    .dateTime.weekday(.wide).month(.abbreviated).day().hour().minute()
+                )
+                + "."
+            )
+        } else if asNeededRevisions.isEmpty {
+            parts.append("Your recorded schedule is clear for today.")
+        }
+
+        if !asNeededRevisions.isEmpty {
+            parts.append("As-needed protocols are available below.")
+        }
+
+        return parts.joined(separator: " ")
+    }
+
+
     var nextUpcomingEntry: ScheduledEntry? {
         let now = Date.now
         let end =
@@ -746,15 +782,24 @@ private extension TodayView {
     }
 
 
-    /// Yesterday's unrecorded entries. Logging defaults the recorded time to
-    /// the scheduled time, which the editor lets the person change.
+    func missedDayLabel(_ date: Date) -> String {
+        Calendar.current.isDateInYesterday(date)
+            ? "Yesterday"
+            : date.formatted(
+                .dateTime.weekday(.abbreviated).month(.abbreviated).day()
+            )
+    }
+
+
+    /// Unrecorded entries from the past week. Logging defaults the recorded
+    /// time to the scheduled time, which the editor lets the person change.
     var missedSection: some View {
         VStack(
             alignment: .leading,
             spacing: Theme.sectionHeaderGap
         ) {
             HStack {
-                Eyebrow(text: "Not recorded yesterday")
+                Eyebrow(text: "Not recorded")
 
                 Spacer()
 
@@ -793,7 +838,8 @@ private extension TodayView {
                             .monospacedDigit()
 
                             Text(
-                                "Yesterday · "
+                                missedDayLabel(entry.at)
+                                + " · "
                                 + entry.at.formatted(
                                     date: .omitted,
                                     time: .shortened
@@ -815,7 +861,8 @@ private extension TodayView {
                         .accessibilityLabel(
                             "Skip "
                             + entry.revision.compoundName
-                            + " from yesterday"
+                            + " from "
+                            + missedDayLabel(entry.at)
                         )
 
                         Button("Log") {
@@ -835,7 +882,8 @@ private extension TodayView {
                         .accessibilityLabel(
                             "Log "
                             + entry.revision.compoundName
-                            + " from yesterday"
+                            + " from "
+                            + missedDayLabel(entry.at)
                         )
                     }
                     .padding(.vertical, Theme.rowPadding)

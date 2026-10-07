@@ -12,6 +12,12 @@ struct ProtocolEditorView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var draft: ProtocolDraft
+    @State private var initialSnapshot: String?
+    @State private var confirmDiscard = false
+
+    private var hasUnsavedChanges: Bool {
+        initialSnapshot.map { $0 != String(describing: draft) } ?? false
+    }
     @State private var addVial = false
     @State private var saving = false
     @State private var askingPermission = false
@@ -72,6 +78,8 @@ struct ProtocolEditorView: View {
 
         } else {
             var value = ProtocolDraft()
+            // Clinic instructions are most often written in mg.
+            value.unit = .mg
             value.reminders =
                 prefersReminders
 
@@ -134,13 +142,28 @@ struct ProtocolEditorView: View {
             .navigationBarTitleDisplayMode(
                 .inline
             )
+            .discardGuard(
+                hasChanges: hasUnsavedChanges,
+                confirming: $confirmDiscard
+            ) {
+                dismiss()
+            }
+            .onAppear {
+                if initialSnapshot == nil {
+                    initialSnapshot = String(describing: draft)
+                }
+            }
             .toolbar {
                 ToolbarItem(
                     placement:
                         .cancellationAction
                 ) {
                     Button("Cancel") {
-                        dismiss()
+                        if hasUnsavedChanges {
+                            confirmDiscard = true
+                        } else {
+                            dismiss()
+                        }
                     }
                     .disabled(saving)
                 }
@@ -230,25 +253,23 @@ private extension ProtocolEditorView {
             )
             .disabled(planningFuture)
 
-            HStack {
-                TextField(
-                    "Recorded amount",
-                    text: $draft.amount
-                )
-                .keyboardType(.decimalPad)
+            TextField(
+                "Amount",
+                text: $draft.amount
+            )
+            .keyboardType(.decimalPad)
 
-                Picker(
-                    "Unit",
-                    selection: $draft.unit
+            // A visible, labelled row: the unit is as important as the number.
+            Picker(
+                "Unit",
+                selection: $draft.unit
+            ) {
+                ForEach(
+                    AmountUnit.allCases
                 ) {
-                    ForEach(
-                        AmountUnit.allCases
-                    ) {
-                        Text($0.rawValue)
-                            .tag($0)
-                    }
+                    Text($0.rawValue)
+                        .tag($0)
                 }
-                .labelsHidden()
             }
 
             Picker(
