@@ -180,11 +180,12 @@ private extension VialEditorView {
 
         } header: {
             Eyebrow(text: "Label values")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Record the values printed on the vial or provided in your existing instructions."
             )
         }
+}
     }
 
     var lifecycleSection: some View {
@@ -237,11 +238,12 @@ private extension VialEditorView {
 
         } header: {
             Eyebrow(text: "Lifecycle")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "State and dates are your own inventory records. Protocola does not infer when a vial should be opened, reconstituted, or discarded."
             )
         }
+}
     }
 
     var photoSection: some View {
@@ -287,11 +289,12 @@ private extension VialEditorView {
             }
         } header: {
             Eyebrow(text: "Reference photo")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Optional. The photo stays with this local vial record and is not interpreted as dosing guidance."
             )
         }
+}
     }
 
     func correctionSection(
@@ -318,11 +321,12 @@ private extension VialEditorView {
 
         } header: {
             Eyebrow(text: "Manual correction")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Leave blank to keep the current estimate. A correction is recorded as an adjustment; later entry corrections and deletions still reconcile the balance."
             )
         }
+}
     }
 }
 

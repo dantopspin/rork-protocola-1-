@@ -26,6 +26,69 @@ final class DesignSnapshotTests: XCTestCase {
         )
     }
 
+    /// Walks the real first run from a fresh install: onboarding, setup,
+    /// the reminder explanation, and the first Today.
+    @MainActor
+    func testCaptureFirstRun() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing-reset"]
+        app.launch()
+
+        let start = app.buttons["Get started"]
+        guard start.waitForExistence(timeout: 10) else {
+            shot(app, "fr-00-missing-start")
+            return
+        }
+        settle()
+        shot(app, "fr-01-welcome")
+        start.tap()
+        settle()
+        shot(app, "fr-02-step2")
+
+        guard tapIfPresent(app.buttons["Continue"]) else { return }
+        shot(app, "fr-03-step3")
+
+        guard tapIfPresent(app.buttons["onboarding.acknowledgement"]) else { return }
+        shot(app, "fr-03b-step3-accepted")
+
+        guard tapIfPresent(app.buttons["onboarding.setupProtocol"]) else { return }
+        settle()
+        shot(app, "fr-04-setup")
+
+        let name = app.textFields["protocolName"]
+        if name.waitForExistence(timeout: 3) {
+            name.tap()
+            name.typeText("Morning protocol")
+        }
+        let compound = app.textFields["compoundName"]
+        if compound.exists {
+            compound.tap()
+            compound.typeText("Sample compound")
+        }
+        let amount = app.textFields["Amount"]
+        if amount.exists {
+            amount.tap()
+            amount.typeText("0.25")
+        }
+        shot(app, "fr-05-setup-filled")
+        app.swipeUp()
+        settle()
+        shot(app, "fr-06-setup-schedule")
+
+        let save = app.navigationBars.buttons["Save"]
+        guard save.waitForExistence(timeout: 2) else { return }
+        save.tap()
+        settle()
+        shot(app, "fr-07-reminders")
+
+        _ = tapIfPresent(app.buttons["Not now"])
+        settle()
+        shot(app, "fr-08-today")
+        app.swipeUp()
+        settle()
+        shot(app, "fr-09-today-scrolled")
+    }
+
     // MARK: - Flow
 
     @MainActor

@@ -89,18 +89,6 @@ struct TodayView: View {
                         )
                 )
 
-                if !store.isDemo,
-                   let status = notificationStatus,
-                   RemindersOffBanner.isOff(
-                       status,
-                       expectsReminders: expectsReminders
-                   ) {
-                    RemindersOffBanner(
-                        status: status,
-                        refresh: refreshNotificationStatus
-                    )
-                }
-
                 Group {
                     if let next = nextUnloggedEntry {
                         nextEntryHero(next)
@@ -126,6 +114,19 @@ struct TodayView: View {
                     value:
                         nextUnloggedEntry?.id
                 )
+
+                if !store.isDemo,
+                   let status = notificationStatus,
+                   RemindersOffBanner.isOff(
+                       status,
+                       expectsReminders: expectsReminders
+                   ) {
+                    RemindersOffBanner(
+                        status: status,
+                        refresh: refreshNotificationStatus
+                    )
+                }
+
 
                 if !store.carriedOver.isEmpty {
                     missedSection
@@ -337,6 +338,9 @@ private extension TodayView {
     }
 
 
+    /// The end-of-day state. It says honestly what happened today (logged,
+    /// skipped, or both) and puts the next entry first, because that is the
+    /// only thing left to act on.
     var resolvedDayState: some View {
         VStack(
             alignment: .leading,
@@ -344,152 +348,61 @@ private extension TodayView {
         ) {
             VStack(
                 alignment: .leading,
-                spacing: Theme.spaceS
+                spacing: Theme.spaceXXS
             ) {
-                Image(
-                    systemName:
-                        "checkmark.circle"
-                )
-                .font(
-                    .system(
-                        size: Theme.iconLarge,
-                        weight: .regular
+                Label {
+                    Text(dayOutcome.title)
+                        .foregroundStyle(Theme.ink)
+                } icon: {
+                    Image(
+                        systemName:
+                            dayOutcome.icon
                     )
-                )
-                .foregroundStyle(Theme.teal)
-
-                Eyebrow(text: "Today resolved")
-
-                Text("Today's schedule is complete")
-                    .font(Theme.modalTitle)
-                    .foregroundStyle(Theme.ink)
-
-                Text(resolvedSummaryText)
-                    .font(Theme.body)
                     .foregroundStyle(
-                        Theme.textSecondary
+                        dayOutcome.isPositive
+                            ? Theme.teal
+                            : Theme.textSecondary
                     )
-            }
+                }
+                .font(Theme.modalTitle)
 
-            if let log = lastResolvedTodayLog {
-                NavigationLink(
-                    value:
-                        TrackingRoute
-                            .logDetail(log.id)
+                HStack(
+                    alignment: .firstTextBaseline,
+                    spacing: Theme.spaceXS
                 ) {
-                    VStack(
-                        alignment: .leading,
-                        spacing: Theme.spaceS
-                    ) {
-                        HStack(
-                            alignment:
-                                .firstTextBaseline,
-                            spacing: Theme.spaceM
-                        ) {
-                            VStack(
-                                alignment: .leading,
-                                spacing:
-                                    Theme.spaceXXS
-                            ) {
-                                Eyebrow(
-                                    text:
-                                        "Latest record"
-                                )
-
-                                Text(
-                                    log.compoundName
-                                )
-                                .font(
-                                    Theme.sectionTitle
-                                )
-                                .foregroundStyle(
-                                    Theme.ink
-                                )
-                            }
-
-                            Spacer()
-
-                            Text(
-                                log.actualAmountText
-                                + " "
-                                + log.unitText
-                            )
-                            .font(
-                                Theme.metricCompact
-                            )
-                            .foregroundStyle(
-                                Theme.ink
-                            )
-                            .monospacedDigit()
-                        }
-
-                        RecordRow(
-                            label: "Recorded",
-                            value:
-                                log.loggedAt
-                                    .formatted(
-                                        date: .omitted,
-                                        time: .shortened
-                                    )
+                    Text(dayOutcome.detail)
+                        .font(Theme.body)
+                        .foregroundStyle(
+                            Theme.textSecondary
+                        )
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
                         )
 
-                        HStack {
-                            Text("View recorded entry")
+                    if let log = lastTakenTodayLog {
+                        NavigationLink(
+                            value:
+                                TrackingRoute
+                                    .logDetail(log.id)
+                        ) {
+                            Text("View")
                                 .font(Theme.label)
-                                .foregroundStyle(
-                                    Theme.teal
+                                .foregroundStyle(Theme.teal)
+                                .frame(
+                                    minHeight:
+                                        Theme.minimumTapTarget
                                 )
-
-                            Spacer()
-
-                            Image(
-                                systemName:
-                                    "chevron.right"
-                            )
-                            .font(Theme.micro)
-                            .foregroundStyle(
-                                Theme.textSecondary
-                            )
+                                .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("View entry")
                     }
-                    .padding(
-                        .vertical,
-                        Theme.spaceM
-                    )
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .overlay(
-                    alignment: .top
-                ) {
-                    EditorialRule()
-                }
-                .overlay(
-                    alignment: .bottom
-                ) {
-                    EditorialRule()
                 }
             }
 
             if let next = nextUpcomingEntry {
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXXS
-                ) {
-                    Eyebrow(text: "Next")
-
-                    Text(
-                        next.revision.compoundName
-                        + " · "
-                        + next.at.formatted(
-                            date: .abbreviated,
-                            time: .shortened
-                        )
-                    )
-                    .font(Theme.body)
-                    .foregroundStyle(Theme.ink)
-                    .monospacedDigit()
-                }
+                upNextCard(next)
             }
 
             if !store.isDemo {
@@ -501,10 +414,16 @@ private extension TodayView {
                         systemImage:
                             "square.and.arrow.up"
                     )
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.teal)
+                    .frame(
+                        minHeight:
+                            Theme.minimumTapTarget,
+                        alignment: .leading
+                    )
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(
-                    TrackingSecondaryButtonStyle()
-                )
+                .buttonStyle(.plain)
             }
         }
         .frame(
@@ -518,45 +437,170 @@ private extension TodayView {
     }
 
 
-    var resolvedTodayLogs: [DoseLog] {
-        store.today.compactMap(\.log)
-    }
+    /// The next scheduled entry, given the most visual weight on a finished day.
+    func upNextCard(
+        _ next: ScheduledEntry
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceS
+        ) {
+            HStack(
+                alignment: .center,
+                spacing: Theme.spaceS
+            ) {
+                Eyebrow(text: "Up next")
 
+                Spacer()
 
-    var lastResolvedTodayLog: DoseLog? {
-        resolvedTodayLogs
-            .sorted {
-                $0.loggedAt > $1.loggedAt
+                // A countdown only when it adds something; the day label
+                // below already names dates further out.
+                if next.at.timeIntervalSinceNow < 24 * 60 * 60 {
+                    Text(dueText(for: next))
+                        .font(Theme.micro)
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
             }
-            .first
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(upcomingDayLabel(next.at))
+                    .font(Theme.sectionTitle)
+                    .foregroundStyle(Theme.ink)
+
+                Text(
+                    next.at.formatted(
+                        date: .omitted,
+                        time: .shortened
+                    )
+                )
+                .font(Theme.metricCompact)
+                .foregroundStyle(Theme.ink)
+                .monospacedDigit()
+            }
+
+            Text(
+                DoseText.line(
+                    compound:
+                        next.revision.compoundName,
+                    amount:
+                        next.revision.amountText,
+                    unit:
+                        next.revision.unitText
+                )
+            )
+            .font(Theme.label)
+            .foregroundStyle(Theme.textSecondary)
+        }
+        .padding(Theme.spaceM)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .background(
+            Theme.surface,
+            in: .rect(
+                cornerRadius:
+                    Theme.radiusCard
+            )
+        )
+        .inkBorder(
+            cornerRadius:
+                Theme.radiusCard
+        )
+        .accessibilityElement(children: .combine)
     }
 
 
-    var resolvedSummaryText: String {
-        let recorded =
-            resolvedTodayLogs.filter {
-                $0.status != "Skipped"
-            }.count
-        let skipped =
-            resolvedTodayLogs.filter {
-                $0.status == "Skipped"
-            }.count
+    func upcomingDayLabel(
+        _ date: Date
+    ) -> String {
+        let calendar = Calendar.current
 
-        if skipped == 0 {
-            return
-                String(recorded)
-                + (
-                    recorded == 1
-                    ? " entry recorded today."
-                    : " entries recorded today."
-                )
+        if calendar.isDateInToday(date) {
+            return "Later today"
         }
 
-        return
-            String(recorded)
-            + " recorded · "
-            + String(skipped)
-            + " skipped"
+        if calendar.isDateInTomorrow(date) {
+            return "Tomorrow"
+        }
+
+        return date.formatted(
+            .dateTime.weekday(.wide).month(.abbreviated).day()
+        )
+    }
+
+
+    struct DayOutcome {
+        let icon: String
+        let title: String
+        let detail: String
+        let isPositive: Bool
+    }
+
+
+    /// What actually happened today, in plain words. A skipped day is never
+    /// presented as a success.
+    var dayOutcome: DayOutcome {
+        let taken =
+            resolvedTodayLogs.filter {
+                $0.status != "Skipped"
+            }
+        let skipped =
+            resolvedTodayLogs.count - taken.count
+        let time: (DoseLog?) -> String = {
+            $0?.loggedAt.formatted(
+                date: .omitted,
+                time: .shortened
+            ) ?? ""
+        }
+
+        if taken.isEmpty {
+            return DayOutcome(
+                icon: "forward.end.circle",
+                title: "Nothing more today",
+                detail:
+                    skipped == 1
+                    ? "You skipped today's entry. Nothing else is scheduled."
+                    : "You skipped \(skipped) entries today. Nothing else is scheduled.",
+                isPositive: false
+            )
+        }
+
+        if skipped == 0 {
+            return DayOutcome(
+                icon: "checkmark.circle.fill",
+                title: "All done for today",
+                detail:
+                    taken.count == 1
+                    ? "Logged at " + time(lastTakenTodayLog) + "."
+                    : "\(taken.count) entries logged. Last at " + time(lastTakenTodayLog) + ".",
+                isPositive: true
+            )
+        }
+
+        return DayOutcome(
+            icon: "checkmark.circle",
+            title: "Done for today",
+            detail: "\(taken.count) logged · \(skipped) skipped.",
+            isPositive: true
+        )
+    }
+
+
+    var lastTakenTodayLog: DoseLog? {
+        resolvedTodayLogs
+            .filter { $0.status != "Skipped" }
+            .max { $0.loggedAt < $1.loggedAt }
+    }
+
+
+    var resolvedTodayLogs: [DoseLog] {
+        store.today.compactMap(\.log)
     }
 
 
@@ -823,29 +867,23 @@ private extension TodayView {
                             alignment: .leading,
                             spacing: Theme.spaceXXS
                         ) {
-                            Text(
-                                DoseText.line(
-                                    compound:
-                                        entry.revision.compoundName,
-                                    amount:
-                                        entry.revision.amountText,
-                                    unit:
-                                        entry.revision.unitText
-                                )
-                            )
-                            .font(Theme.cardTitle)
-                            .foregroundStyle(Theme.ink)
-                            .monospacedDigit()
+                            // Name on one line, details on the next, so the
+                            // dose never wraps onto a line of its own.
+                            Text(entry.revision.compoundName)
+                                .font(Theme.cardTitle)
+                                .foregroundStyle(Theme.ink)
 
                             Text(
-                                missedDayLabel(entry.at)
+                                entry.revision.amountText
+                                + " "
+                                + entry.revision.unitText
                                 + " · "
+                                + missedDayLabel(entry.at)
+                                + ", "
                                 + entry.at.formatted(
                                     date: .omitted,
                                     time: .shortened
                                 )
-                                + " · "
-                                + entry.revision.protocolName
                             )
                             .font(Theme.caption)
                             .foregroundStyle(Theme.textSecondary)
@@ -914,7 +952,7 @@ private extension TodayView {
                 Spacer()
 
                 Text(
-                    "\(resolvedCount) / \(store.today.count) resolved"
+                    "\(resolvedCount) of \(store.today.count) done"
                 )
                 .font(Theme.caption)
                 .foregroundStyle(Theme.textSecondary)
@@ -1155,10 +1193,13 @@ private extension TodayView {
     }
 
 
+    /// The last dose actually taken. Skips are not doses, so they never
+    /// appear here as "0 mg".
     var lastRecordedLog: DoseLog? {
         store.logs
             .filter {
                 !$0.isDeleted
+                && $0.status != "Skipped"
             }
             .sorted {
                 $0.loggedAt
@@ -1297,33 +1338,22 @@ private extension TodayView {
 private extension TodayView {
 
     @ViewBuilder
+    /// Four levels only: label, what (compound + dose), when, and Log.
+    /// Reference details (protocol, vial) live on the protocol screen.
     func nextEntryHero(
         _ next: ScheduledEntry
     ) -> some View {
         TrackingHeroCard {
-            // At accessibility sizes the label gets its own line so it never
-            // breaks mid-word beside the due tag and menu.
-            if usesStackedHero {
-                Eyebrow(
-                    text: "Next entry",
-                    onDark: true
-                )
-            }
-
             HStack(
                 alignment: .center,
                 spacing: Theme.spaceS
             ) {
-                if !usesStackedHero {
-                    Eyebrow(
-                        text: "Next entry",
-                        onDark: true
-                    )
-                }
+                Eyebrow(
+                    text: "Next entry",
+                    onDark: true
+                )
 
                 Spacer()
-
-                dueTag(for: next)
 
                 Menu {
                     Button {
@@ -1373,47 +1403,18 @@ private extension TodayView {
                 )
             }
 
-            Text(next.revision.compoundName)
-                .font(Theme.modalTitle)
-                .foregroundStyle(Theme.onDarkPrimary)
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(next.revision.compoundName)
+                    .font(Theme.modalTitle)
+                    .foregroundStyle(Theme.onDarkPrimary)
 
-            if usesStackedHero {
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXS
-                ) {
-                    heroDose(next)
-                    heroTime(next)
-                }
-            } else {
-                HStack(
-                    alignment: .firstTextBaseline,
-                    spacing: Theme.spaceM
-                ) {
-                    heroDose(next)
-
-                    Spacer()
-
-                    heroTime(next)
-                }
+                heroDose(next)
             }
 
-            EditorialRule(onDark: true)
-
-            protocolActionLight(next)
-
-            if next.revision.route
-                .usesInjectionSite {
-                vialActionLight(next)
-            } else {
-                RecordRow(
-                    label: "Route",
-                    value:
-                        next.revision
-                            .routeText,
-                    onDark: true
-                )
-            }
+            heroTime(next)
 
             Button {
                 logAsScheduled(next)
@@ -1423,8 +1424,6 @@ private extension TodayView {
             .buttonStyle(
                 TrackingPrimaryButtonStyle(inverted: true)
             )
-
-
         }
     }
 
@@ -1656,22 +1655,23 @@ private extension TodayView {
     ) -> some View {
         HStack(
             alignment: .firstTextBaseline,
-            spacing: Theme.spaceXXS
+            spacing: Theme.spaceXS
         ) {
             Text(next.revision.amountText)
-                .font(Theme.metricLarge)
-                .monospacedDigit()
                 .foregroundStyle(Theme.onDarkPrimary)
 
             Text(next.revision.unitText)
-                .font(Theme.sectionTitle)
                 .foregroundStyle(
                     Theme.onDarkSecondary
                 )
         }
+        .font(Theme.metricCompact)
+        .accessibilityElement(children: .combine)
     }
 
 
+    /// One line for when: the time and how soon, instead of a time plus a
+    /// separate chip saying the same thing.
     func heroTime(
         _ next: ScheduledEntry
     ) -> some View {
@@ -1679,37 +1679,21 @@ private extension TodayView {
             editingSchedule =
                 next.revision
         } label: {
-            HStack(
-                spacing: Theme.spaceXXS
-            ) {
-                Text(
-                    next.at,
-                    style: .time
-                )
-                .font(Theme.sectionTitle)
-                .monospacedDigit()
-                .foregroundStyle(Theme.onDarkPrimary)
-
-                Image(
-                    systemName:
-                        "chevron.right"
-                )
-                .font(Theme.micro)
-                .foregroundStyle(
-                    Theme.onDarkSecondary
-                )
-                .accessibilityHidden(true)
-            }
+            Text(
+                "\(next.at, style: .time) · \(dueText(for: next))"
+            )
+            .font(Theme.body)
+            .monospacedDigit()
+            .foregroundStyle(Theme.onDarkSecondary)
             .frame(
+                maxWidth: .infinity,
                 minHeight:
-                    Theme.minimumTapTarget
+                    Theme.minimumTapTarget,
+                alignment: .leading
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(
-            "Edit schedule time"
-        )
         .accessibilityHint(
             "Opens the protocol schedule editor."
         )

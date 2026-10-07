@@ -93,6 +93,8 @@ enum Theme {
     static let inactiveFill = ink.opacity(0.12)
     static let subtleFill = ink.opacity(0.025)
     static let tealTint = teal.opacity(0.08)
+    /// Past days in a bar chart; today stays full strength.
+    static let chartPastFill = teal.opacity(0.6)
     static let shadow = ink.opacity(0.035)
 
     // Interaction-state values live here so controls do not invent local
@@ -126,19 +128,19 @@ enum Theme {
 
     static let pageTitleSize: CGFloat = 34
     static let metricLargeSize: CGFloat = 34
-    static let metricCompactSize: CGFloat = 26
+    static let metricCompactSize: CGFloat = 28
     static let modalTitleSize: CGFloat = 20
-    static let sectionTitleSize: CGFloat = 18
-    static let cardTitleSize: CGFloat = 16
-    static let bodySize: CGFloat = 15
-    static let buttonLabelSize: CGFloat = 15
-    static let labelSize: CGFloat = 14
-    static let captionSize: CGFloat = 12.5
+    static let sectionTitleSize: CGFloat = 17
+    static let cardTitleSize: CGFloat = 17
+    static let bodySize: CGFloat = 17
+    static let buttonLabelSize: CGFloat = 17
+    static let labelSize: CGFloat = 15
+    static let captionSize: CGFloat = 13
     static let microSize: CGFloat = 11
     static let tabLabelSize: CGFloat = 10
     static let segmentLabelSize: CGFloat = 13
     static let shareMetricSize: CGFloat = 64
-    static let eyebrowTracking: CGFloat = 2.0
+    static let eyebrowTracking: CGFloat = 0.6
 
     // Fonts scale with the user's text-size setting from the sizes above:
     // at the default setting they are exactly these sizes; larger settings
@@ -149,12 +151,16 @@ enum Theme {
         scaled(pageTitleSize, .bold, .largeTitle, max: 52)
     }
 
+    // Numbers use SF Pro with tabular figures, never a second typeface:
+    // columns still align, and "0.25" reads as one number, not "0 . 25".
     static var metricLarge: Font {
-        scaled(metricLargeSize, .semibold, .largeTitle, max: 52, design: .monospaced)
+        scaled(metricLargeSize, .semibold, .largeTitle, max: 52)
+            .monospacedDigit()
     }
 
     static var metricCompact: Font {
-        scaled(metricCompactSize, .semibold, .title1, max: 40, design: .monospaced)
+        scaled(metricCompactSize, .semibold, .title1, max: 40)
+            .monospacedDigit()
     }
 
     static var modalTitle: Font {
@@ -167,7 +173,7 @@ enum Theme {
 
     /// Title of a record row (protocol, entry, vial, lab, tool).
     static var cardTitle: Font {
-        scaled(cardTitleSize, .semibold, .callout)
+        scaled(cardTitleSize, .semibold, .headline)
     }
 
     static var body: Font {
@@ -178,12 +184,17 @@ enum Theme {
         scaled(labelSize, .medium, .subheadline)
     }
 
+    /// Regular-weight Subheadline: row labels and secondary values.
+    static var subheadline: Font {
+        scaled(labelSize, .regular, .subheadline)
+    }
+
     static var buttonLabel: Font {
         scaled(buttonLabelSize, .medium, .body)
     }
 
     static var caption: Font {
-        scaled(captionSize, .regular, .caption1)
+        scaled(captionSize, .regular, .footnote)
     }
 
     static var micro: Font {
@@ -194,9 +205,9 @@ enum Theme {
     static let shareMetric =
         Font.system(
             size: shareMetricSize,
-            weight: .semibold,
-            design: .monospaced
+            weight: .semibold
         )
+        .monospacedDigit()
 
     static let shareTitle =
         Font.system(
@@ -271,6 +282,8 @@ enum Theme {
     static let iconLarge: CGFloat = 28
 
     static let chartHeight: CGFloat = 145
+    /// The consistency chart supports its percentage; it never outweighs it.
+    static let consistencyChartHeight: CGFloat = 96
     static let bodyMapHeight: CGFloat = 360
     static let vialPhotoHeight: CGFloat = 220
     static let shareCardWidth: CGFloat = 520

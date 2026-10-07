@@ -63,16 +63,14 @@ struct TrackingSearchField: View {
             minHeight:
                 Theme.minimumTapTarget
         )
+        // Fill only, like the system search field: the border made it the
+        // second-heaviest shape on the History screen.
         .background(
-            Theme.subtleFill,
+            Theme.inactiveFill,
             in: .rect(
                 cornerRadius:
                     Theme.radiusField
             )
-        )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusField
         )
     }
 }

@@ -448,12 +448,6 @@ private extension InsightsView {
                 }
 
                 Spacer()
-
-                Image(
-                    systemName: "chevron.right"
-                )
-                .font(Theme.micro)
-                .foregroundStyle(Theme.textSecondary)
             }
 
             Chart(summary.days) {
@@ -490,10 +484,12 @@ private extension InsightsView {
                     stacking: .unstacked
                 )
                 .foregroundStyle(
-                    Theme.teal
+                    Calendar.current.isDateInToday(day.date)
+                        ? Theme.teal
+                        : Theme.chartPastFill
                 )
             }
-            .frame(height: Theme.chartHeight)
+            .frame(height: Theme.consistencyChartHeight)
             .chartYAxis(.hidden)
             .chartXAxis {
                 AxisMarks(
@@ -600,27 +596,11 @@ private extension InsightsView {
                 dot: Theme.teal
             )
 
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    width: Theme.ruleThickness,
-                    height:
-                        Theme.compactMetricTileHeight
-                )
-
             statTile(
                 value: String(skipped),
                 label: "Skipped",
                 dot: Theme.textSecondary
             )
-
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(
-                    width: Theme.ruleThickness,
-                    height:
-                        Theme.compactMetricTileHeight
-                )
 
             statTile(
                 value:
@@ -653,8 +633,9 @@ private extension InsightsView {
             alignment: .leading,
             spacing: Theme.spaceXS
         ) {
+            // Supporting numbers stay a step below the headline percentage.
             Text(value)
-                .font(Theme.metricCompact)
+                .font(Theme.modalTitle)
                 .monospacedDigit()
                 .foregroundStyle(Theme.ink)
 
@@ -1976,11 +1957,12 @@ struct CompoundHalfLifeEditorView:
 
                 } header: {
                     Eyebrow(text: compound.name)
-                } footer: {
+                } footer: { FormFooter {
                     Text(
                         "Enter a half-life from a source you trust. This value powers a mathematical decay model only; Protocola does not infer a clinical half-life or recommend treatment."
                     )
                 }
+}
 
                 if compound
                     .referenceHalfLifeHours

@@ -79,9 +79,10 @@ struct RemindersOffBanner: View {
                     openURL(url)
                 }
             }
-            .buttonStyle(
-                TrackingCompactButtonStyle(prominent: true)
-            )
+            .font(Theme.label)
+            .foregroundStyle(Theme.teal)
+            .buttonStyle(.plain)
+            .frame(minHeight: Theme.minimumTapTarget)
         }
         .padding(.vertical, Theme.rowPadding)
         .overlay(alignment: .top) {

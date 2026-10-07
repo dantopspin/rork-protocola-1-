@@ -356,44 +356,46 @@ private extension ProtocolDetailView {
         record: ProtocolRecord
     ) -> some View {
         EditorialSection(
-            revision.compoundName
+            "Schedule"
         ) {
             HStack(
                 alignment: .top,
                 spacing: Theme.spaceM
             ) {
+                // One caps label per section: the compound is a title and
+                // the dose is the data, not two more eyebrows.
                 VStack(
                     alignment: .leading,
                     spacing: Theme.spaceXXS
                 ) {
-                    Eyebrow(
-                        text:
-                            revision.config?
-                                .kind
-                                == .asRecorded
-                            ? "Recorded amount"
-                            : "Scheduled amount"
-                    )
+                    Text(revision.compoundName)
+                        .font(Theme.sectionTitle)
+                        .foregroundStyle(Theme.ink)
 
-                    Text(
-                        revision.amountText
-                        + " "
-                        + revision.unitText
-                    )
-                    .font(
-                        Theme.metricLarge
-                    )
-                    .foregroundStyle(
-                        Theme.ink
-                    )
-                    .monospacedDigit()
+                    HStack(
+                        alignment: .firstTextBaseline,
+                        spacing: Theme.spaceXS
+                    ) {
+                        Text(revision.amountText)
+                            .foregroundStyle(Theme.ink)
+
+                        Text(revision.unitText)
+                            .foregroundStyle(
+                                Theme.textSecondary
+                            )
+                    }
+                    .font(Theme.metricCompact)
+                    .accessibilityElement(children: .combine)
                 }
 
                 Spacer()
 
-                // The active phase stays identifiable at a glance; the
-                // revision timeline below records the full transition history.
-                StatusBadge(text: "Current")
+                // Only meaningful once there is more than one revision.
+                if store.revisions.filter({
+                    $0.protocolID == record.id
+                }).count > 1 {
+                    StatusBadge(text: "Current")
+                }
 
                 Menu {
                     Button {
@@ -515,7 +517,7 @@ private extension ProtocolDetailView {
                 )
             }
             .buttonStyle(
-                TrackingPrimaryButtonStyle()
+                TrackingSecondaryButtonStyle()
             )
             .disabled(
                 !store.canTrack(
@@ -902,11 +904,12 @@ struct ProtocolEvolutionView: View {
 
                 } header: {
             Eyebrow(text: "Evolution analysis")
-        } footer: {
+        } footer: { FormFooter {
                     Text(
                         "Pro adds deterministic before/after, since-change, and cycle-history analysis."
                     )
                 }
+}
             }
 
             revisionTimelineSection
@@ -1028,11 +1031,12 @@ private extension ProtocolEvolutionView {
 
             } header: {
             Eyebrow(text: "Since last change")
-        } footer: {
+        } footer: { FormFooter {
                 Text(
                     "Descriptive record summary only. Changes in consistency or observations do not establish medical effect or causation."
                 )
             }
+}
         }
     }
 
@@ -1204,11 +1208,12 @@ private extension ProtocolEvolutionView {
 
             } header: {
             Eyebrow(text: "Before / after")
-        } footer: {
+        } footer: { FormFooter {
                 Text(
                     "Equal-duration windows, up to 30 days each. Differences are descriptive and do not establish causation."
                 )
             }
+}
         }
     }
 
@@ -1299,11 +1304,12 @@ private extension ProtocolEvolutionView {
 
         } header: {
             Eyebrow(text: "Cycle history")
-        } footer: {
+        } footer: { FormFooter {
             Text(
                 "Cycle history reflects the ON/OFF schedule you recorded and entries logged against it. It does not recommend a cycle."
             )
         }
+}
     }
 
 
