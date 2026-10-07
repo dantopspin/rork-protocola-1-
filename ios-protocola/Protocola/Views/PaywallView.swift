@@ -847,12 +847,11 @@ struct PaywallView: View {
                             Theme.spaceXXS
                     )
 
-                    if package.packageType == .annual,
-                       let savings =
-                        annualSavingsPercent {
+                    if let badge = savingsBadge,
+                       package.packageType == badge.packageType {
 
                         Text(
-                            "SAVE \(savings)%"
+                            "SAVE \(badge.percent)%"
                         )
                         .font(
                             Theme.micro
@@ -1225,30 +1224,37 @@ struct PaywallView: View {
     }
 
 
-    private var displayPackages: [Package] {
-        var result: [Package] = []
+    private var weeklyPackage: Package? {
+        purchases.offerings.first {
+            $0.packageType == .weekly
+        }
+    }
 
+
+    private var displayPackages: [Package] {
+        // The better-value plan sits on the right and is selected by
+        // default; the cheaper entry plan sits on the left for contrast.
         if let monthlyPackage {
-            result.append(
-                monthlyPackage
-            )
+            if let annualPackage {
+                return [monthlyPackage, annualPackage]
+            }
+
+            if let weeklyPackage {
+                return [weeklyPackage, monthlyPackage]
+            }
+
+            return [monthlyPackage]
         }
 
         if let annualPackage {
-            result.append(
-                annualPackage
-            )
+            return [annualPackage]
         }
 
-        if result.isEmpty {
-            return Array(
-                purchases
-                    .offerings
-                    .prefix(2)
-            )
-        }
-
-        return result
+        return Array(
+            purchases
+                .offerings
+                .prefix(2)
+        )
     }
 
 
@@ -1277,6 +1283,9 @@ struct PaywallView: View {
         _ package: Package
     ) -> String {
         switch package.packageType {
+        case .weekly:
+            "Weekly"
+
         case .monthly:
             "Monthly"
 
@@ -1295,6 +1304,9 @@ struct PaywallView: View {
         _ package: Package
     ) -> String {
         switch package.packageType {
+        case .weekly:
+            "per week"
+
         case .monthly:
             "per month"
 
@@ -1319,13 +1331,12 @@ struct PaywallView: View {
             + " "
             + periodLabel(package)
 
-        if package.packageType == .annual,
-           let savings =
-            annualSavingsPercent {
+        if let badge = savingsBadge,
+           package.packageType == badge.packageType {
 
             value +=
                 ", save "
-                + String(savings)
+                + String(badge.percent)
                 + " percent"
         }
 
@@ -1347,6 +1358,12 @@ struct PaywallView: View {
                 .localizedPriceString
 
         switch package.packageType {
+        case .weekly:
+            return
+                "Unlock Pro · "
+                + price
+                + "/week"
+
         case .monthly:
             return
                 "Unlock Pro · "
@@ -1367,49 +1384,68 @@ struct PaywallView: View {
     }
 
 
-    private var annualSavingsPercent: Int? {
-        guard
-            let annual =
-                annualPackage,
-            let monthly =
-                monthlyPackage
-        else {
-            return nil
+    /// Promotional badge for the better-value plan: annual against monthly,
+    /// or monthly against weekly when no annual plan exists.
+    private var savingsBadge: (
+        packageType: PackageType,
+        percent: Int
+    )? {
+        if let annual = annualPackage,
+           let monthly = monthlyPackage {
+            return savingsPercent(
+                current: annual.storeProduct.price,
+                reference: monthly.storeProduct.price,
+                referencePeriods: 12
+            )
+            .map { (packageType: .annual, percent: $0) }
         }
 
-        let monthlyPrice =
+        if let monthly = monthlyPackage,
+           let weekly = weeklyPackage {
+            // 52/12 average weeks per month, so weekly is compared against
+            // its true monthly run rate.
+            return savingsPercent(
+                current: monthly.storeProduct.price,
+                reference: weekly.storeProduct.price,
+                referencePeriods: 52.0 / 12.0
+            )
+            .map { (packageType: .monthly, percent: $0) }
+        }
+
+        return nil
+    }
+
+
+    private func savingsPercent(
+        current: Decimal,
+        reference: Decimal,
+        referencePeriods: Double
+    ) -> Int? {
+        let currentPrice =
             NSDecimalNumber(
-                decimal:
-                    monthly
-                        .storeProduct
-                        .price
+                decimal: current
             )
             .doubleValue
 
-        let annualPrice =
+        let referencePrice =
             NSDecimalNumber(
-                decimal:
-                    annual
-                        .storeProduct
-                        .price
+                decimal: reference
             )
             .doubleValue
 
-        let annualizedMonthly =
-            monthlyPrice * 12
+        let referenceRunRate =
+            referencePrice * referencePeriods
 
         guard
-            annualizedMonthly > 0
+            referenceRunRate > 0
         else {
             return nil
         }
 
         let savings =
             1
-            - (
-                annualPrice
-                / annualizedMonthly
-            )
+            - currentPrice
+                / referenceRunRate
 
         guard savings > 0 else {
             return nil
