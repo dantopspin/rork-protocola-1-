@@ -452,11 +452,15 @@ private extension TodayView {
 
                 Spacer()
 
-                Text(dueText(for: next))
-                    .font(Theme.micro)
-                    .foregroundStyle(Theme.textSecondary)
-                    .lineLimit(1)
-                    .fixedSize()
+                // A countdown only when it adds something; the day label
+                // below already names dates further out.
+                if next.at.timeIntervalSinceNow < 24 * 60 * 60 {
+                    Text(dueText(for: next))
+                        .font(Theme.micro)
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
             }
 
             VStack(
