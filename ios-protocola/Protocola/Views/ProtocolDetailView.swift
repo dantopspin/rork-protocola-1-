@@ -391,7 +391,9 @@ private extension ProtocolDetailView {
                 Spacer()
 
                 // Only meaningful once there is more than one revision.
-                if timeline.count > 1 {
+                if store.revisions.filter({
+                    $0.protocolID == record.id
+                }).count > 1 {
                     StatusBadge(text: "Current")
                 }
 
