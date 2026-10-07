@@ -760,7 +760,11 @@ struct PaywallView: View {
                     .foregroundStyle(
                         Theme.textSecondary
                     )
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
                 }
             }
 

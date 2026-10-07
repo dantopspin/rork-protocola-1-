@@ -867,29 +867,23 @@ private extension TodayView {
                             alignment: .leading,
                             spacing: Theme.spaceXXS
                         ) {
-                            Text(
-                                DoseText.line(
-                                    compound:
-                                        entry.revision.compoundName,
-                                    amount:
-                                        entry.revision.amountText,
-                                    unit:
-                                        entry.revision.unitText
-                                )
-                            )
-                            .font(Theme.cardTitle)
-                            .foregroundStyle(Theme.ink)
-                            .monospacedDigit()
+                            // Name on one line, details on the next, so the
+                            // dose never wraps onto a line of its own.
+                            Text(entry.revision.compoundName)
+                                .font(Theme.cardTitle)
+                                .foregroundStyle(Theme.ink)
 
                             Text(
-                                missedDayLabel(entry.at)
+                                entry.revision.amountText
+                                + " "
+                                + entry.revision.unitText
                                 + " · "
+                                + missedDayLabel(entry.at)
+                                + ", "
                                 + entry.at.formatted(
                                     date: .omitted,
                                     time: .shortened
                                 )
-                                + " · "
-                                + entry.revision.protocolName
                             )
                             .font(Theme.caption)
                             .foregroundStyle(Theme.textSecondary)
