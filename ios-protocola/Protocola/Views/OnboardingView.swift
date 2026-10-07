@@ -33,7 +33,9 @@ struct OnboardingView: View {
         ) {
             ProtocolEditorView(
                 onboarding: true,
-                prefersReminders: false
+                // Reminders are the core of daily tracking; the permission
+                // sheet explains them before iOS asks, and "Not now" is kept.
+                prefersReminders: true
             )
         }
         .trackingErrors()
@@ -163,7 +165,7 @@ private extension OnboardingView {
             EditorialRule(onDark: true)
 
             Label(
-                "Your recorded schedule becomes the control surface for Today.",
+                "Your schedule shows up on Today, ready to log.",
                 systemImage: "checkmark.circle"
             )
             .font(Theme.caption)
@@ -364,7 +366,7 @@ private extension OnboardingView {
             ) {
                 changeState(
                     label: "Before",
-                    value: "Previous value"
+                    value: "Daily"
                 )
 
                 Image(
@@ -378,7 +380,7 @@ private extension OnboardingView {
 
                 changeState(
                     label: "After",
-                    value: "New value"
+                    value: "Every 2 days"
                 )
             }
 
@@ -617,7 +619,7 @@ private extension OnboardingView {
                     }
 
                     Text(
-                        "I will enter instructions I already have. Protocola can organize, calculate, and compare my records, but it does not recommend treatment or doses."
+                        "I will enter instructions I already have. Protocola organizes and compares my records. It does not recommend treatment or doses."
                     )
                     .font(Theme.caption)
                     .foregroundStyle(
