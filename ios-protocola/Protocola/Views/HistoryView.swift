@@ -1047,7 +1047,7 @@ private struct TimelineRow: View {
                 Text(detail)
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textSecondary)
-                    .lineLimit(2)
+                    .lineLimit(3)
                     .monospacedDigit()
             }
 

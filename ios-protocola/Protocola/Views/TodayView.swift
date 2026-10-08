@@ -180,6 +180,10 @@ struct TodayView: View {
                 if lastRecordedLog != nil
                     || activeVial != nil {
                     summaryTiles
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
                 }
 
                 Text(
@@ -1396,6 +1400,10 @@ private extension TodayView {
 
 
     var shortcutTiles: some View {
+        let tileCount =
+            2
+            + (siteLogs.isEmpty ? 0 : 1)
+            + (store.isDemo ? 0 : 1)
         let columns =
             Array(
                 repeating:
@@ -1403,7 +1411,7 @@ private extension TodayView {
                         .flexible(),
                         spacing: Theme.spaceS
                     ),
-                count: usesStackedHero ? 2 : 4
+                count: usesStackedHero ? 2 : tileCount
             )
 
         return LazyVGrid(
@@ -1517,7 +1525,7 @@ private extension TodayView {
                             )
 
                     summaryTile(
-                        title: "Vial inventory",
+                        title: "Vial",
                         icon: "testtube.2",
                         value:
                             DoseCalculator.text(
@@ -1556,6 +1564,7 @@ private extension TodayView {
                 Text(title)
                     .font(Theme.label)
                     .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
 
                 Spacer(minLength: Theme.spaceXXS)
 
@@ -1580,7 +1589,8 @@ private extension TodayView {
         .padding(Theme.cardInset)
         .frame(
             maxWidth: .infinity,
-            alignment: .leading
+            maxHeight: .infinity,
+            alignment: .topLeading
         )
         .background(
             Theme.surface,
