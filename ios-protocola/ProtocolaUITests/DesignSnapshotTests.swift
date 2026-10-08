@@ -34,6 +34,30 @@ final class DesignSnapshotTests: XCTestCase {
         )
     }
 
+    /// Opens only the paywall, so it can be captured on several screen sizes.
+    @MainActor
+    func testCapturePaywallOnly() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing-reset"]
+        app.launch()
+
+        let demo = app.buttons["Explore sample records"]
+        guard demo.waitForExistence(timeout: 10) else { return }
+        demo.tap()
+        _ = app.tabBars.firstMatch.waitForExistence(timeout: 6)
+        settle()
+
+        let settings = app.navigationBars.buttons["Settings"].firstMatch
+        guard settings.waitForExistence(timeout: 3) else { return }
+        settings.tap()
+        settle()
+
+        if tapIfPresent(app.buttons["Upgrade"]) {
+            settle()
+            shot(app, "pw-paywall")
+        }
+    }
+
     /// Walks the real first run from a fresh install: onboarding, setup,
     /// the reminder explanation, and the first Today.
     @MainActor
