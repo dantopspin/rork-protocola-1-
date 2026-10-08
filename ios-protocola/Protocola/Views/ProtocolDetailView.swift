@@ -106,7 +106,7 @@ private extension ProtocolDetailView {
                 Theme.spaceXL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle(record.name)
         .navigationBarTitleDisplayMode(
@@ -339,11 +339,11 @@ private extension ProtocolDetailView {
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textSecondary)
                     .monospacedDigit()
+
+                StatusBadge(text: record.status)
+                    .padding(.top, Theme.spaceXXS)
             }
-
-            Spacer(minLength: Theme.spaceXS)
-
-            StatusBadge(text: record.status)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -1439,7 +1439,7 @@ private extension ProtocolEvolutionView {
                         }
 
                         Text(revision.compoundName)
-                            .font(Theme.serifTitle)
+                            .font(Theme.cardTitle)
                             .foregroundStyle(Theme.ink)
 
                         Text(

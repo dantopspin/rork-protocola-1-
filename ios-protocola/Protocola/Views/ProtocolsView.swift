@@ -76,10 +76,9 @@ struct ProtocolsView: View {
             .padding(
                 .bottom,
                 Theme.spaceXL
-                    + Theme.spaceL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)

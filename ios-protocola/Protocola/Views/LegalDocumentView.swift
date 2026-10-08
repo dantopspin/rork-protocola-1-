@@ -68,7 +68,7 @@ struct LegalDocumentView: View {
                     Theme.spaceXL
                 )
             }
-            .scrollIndicators(.hidden)
+            .trackingScrollChrome()
             .background(Theme.paper)
             .navigationTitle(
                 document.title

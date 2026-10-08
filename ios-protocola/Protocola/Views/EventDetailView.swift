@@ -27,7 +27,7 @@ struct EventDetailView: View {
                 Theme.spaceXL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle(event.title)
         .navigationBarTitleDisplayMode(

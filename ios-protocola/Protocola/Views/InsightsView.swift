@@ -282,10 +282,10 @@ private extension InsightsView {
             .screenPadding()
             .padding(
                 .bottom,
-                Theme.spaceXL + Theme.spaceL
+                Theme.spaceXL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .trackingStateAnimation(
             value:
                 String(window)
@@ -1253,7 +1253,7 @@ private struct SitesBreakdownView: View {
                 Theme.spaceXL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle(
             "Injection sites"
@@ -1569,10 +1569,9 @@ struct EstimatedLevelsView: View {
             .padding(
                 .bottom,
                 Theme.spaceXL
-                + Theme.spaceL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle(
             "Estimated levels"

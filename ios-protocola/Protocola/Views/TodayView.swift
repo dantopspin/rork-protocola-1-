@@ -194,9 +194,9 @@ struct TodayView: View {
                 .foregroundStyle(Theme.textSecondary)
             }
             .screenPadding()
-            .padding(.bottom, Theme.spaceXL + Theme.spaceL)
+            .padding(.bottom, Theme.spaceXL)
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -601,10 +601,13 @@ private extension TodayView {
         }
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Theme.spaceM)
+        .padding(Theme.cardInset)
         .background(
             Theme.surface,
-            in: .rect(cornerRadius: Theme.radiusCard)
+            in: RoundedRectangle(
+                cornerRadius: Theme.radiusRow,
+                style: .continuous
+            )
         )
         .quietElevation()
         .contentShape(Rectangle())

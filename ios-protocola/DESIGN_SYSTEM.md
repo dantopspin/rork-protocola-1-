@@ -52,7 +52,7 @@ Sizes below are the default text size. Every token scales with the user's text-s
 | metricLarge | 34 | serif medium, tabular figures |
 | metricCompact | 28 | serif medium, tabular figures |
 | modalTitle | 20 | serif semibold |
-| serifTitle | 17 | serif medium — vial and compound names on cards |
+| serifTitle | 17 | serif medium — the single subject of a page or sheet (vial card name, Log Dose compound). Compound names in list rows use cardTitle (sans). |
 | chipLabel | 13 | medium — status chips |
 | sectionTitle | 17 | semibold — the name of a thing (compound, a chart series), never a section label |
 | cardTitle | 17 | semibold — title of every record or tool row |
@@ -68,6 +68,10 @@ Sizes below are the default text size. Every token scales with the user's text-s
 | shareMetric | 64 | semibold, tabular figures |
 
 Doses, times and amounts use tabular figures. Two families only: SF Pro and New York. Product views must reference `Theme`; local font sizes are forbidden.
+
+## Bottom spacing owner
+
+Every scrolling screen ends with `screenPadding()` plus `spaceXL` bottom padding, nothing more. The tab bar and home indicator are already in the safe area; never add a second reservation for them. Scrolling screens use `trackingScrollChrome()` (opaque paper navigation bar).
 
 ## Spacing and alignment
 

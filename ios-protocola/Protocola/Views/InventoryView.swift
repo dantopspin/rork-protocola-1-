@@ -113,7 +113,7 @@ struct InventoryView: View {
                 Theme.spaceXL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle("Vials")
         .toolbar {

@@ -82,7 +82,7 @@ struct LabListView: View {
                 Theme.spaceXL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle("Labs")
         .navigationBarTitleDisplayMode(
@@ -212,7 +212,7 @@ struct LabDetailView: View {
                         Theme.spaceXL
                     )
                 }
-                .scrollIndicators(.hidden)
+                .trackingScrollChrome()
                 .background(Theme.paper)
                 .navigationTitle(
                     lab.marker

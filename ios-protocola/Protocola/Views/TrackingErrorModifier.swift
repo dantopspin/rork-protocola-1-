@@ -40,8 +40,18 @@ extension View {
 
 
     /// Fixed app-wide list/form treatment.
+    /// Scrolling screens: no indicators, and an opaque paper navigation
+    /// bar so scrolled content never shows behind the bar buttons.
+    func trackingScrollChrome() -> some View {
+        scrollIndicators(.hidden)
+            .toolbarBackground(Theme.paper, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+    }
+
     func paperList() -> some View {
-        scrollContentBackground(.hidden)
+        toolbarBackground(Theme.paper, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .scrollContentBackground(.hidden)
             .background(Theme.paper)
             .font(Theme.body)
             .textCase(nil)
