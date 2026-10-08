@@ -946,7 +946,7 @@ struct ProtocolEvolutionView: View {
     }
 
     var body: some View {
-        List {
+        Form {
             if store.isPremium {
                 sinceLastChangeSection
 
@@ -985,7 +985,7 @@ struct ProtocolEvolutionView: View {
 
             revisionTimelineSection
 
-            Section("History") {
+            Section {
                 NavigationLink {
                     HistoryView(
                         protocolID:
@@ -998,6 +998,8 @@ struct ProtocolEvolutionView: View {
                             "clock.arrow.circlepath"
                     )
                 }
+            } header: {
+                Eyebrow(text: "History")
             }
         }
         .listStyle(.plain)
