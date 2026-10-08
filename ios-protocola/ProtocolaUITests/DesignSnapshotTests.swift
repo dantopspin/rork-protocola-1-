@@ -168,7 +168,7 @@ final class DesignSnapshotTests: XCTestCase {
 
             if screens == nil {
                 let inventory = app.buttons
-                    .containing(NSPredicate(format: "label CONTAINS[c] 'inventory'"))
+                    .containing(NSPredicate(format: "label CONTAINS[c] 'inventory' OR label == 'Vial' OR label == 'Vials'"))
                     .firstMatch
                 if inventory.waitForExistence(timeout: 2) {
                     inventory.tap()
