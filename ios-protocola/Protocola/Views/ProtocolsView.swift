@@ -279,19 +279,23 @@ private extension ProtocolsView {
 
                 Spacer()
 
-                StatusBadge(
-                    text:
-                        record.status
-                            == "Active"
-                        ? (
-                            store.canTrack(
-                                record.id
-                            )
-                            ? "Active"
-                            : "Read-only"
+                // "Active" repeats the section it sits in; only show a badge
+                // when the state is something else (read-only, paused…).
+                let badge =
+                    record.status
+                        == "Active"
+                    ? (
+                        store.canTrack(
+                            record.id
                         )
-                        : record.status
-                )
+                        ? "Active"
+                        : "Read-only"
+                    )
+                    : record.status
+
+                if badge != "Active" {
+                    StatusBadge(text: badge)
+                }
 
                 Image(
                     systemName:
@@ -498,9 +502,11 @@ private extension ProtocolsView {
             start: now,
             end: end
         )
+        // The next entry still to record: one already logged early is not "next".
         .first {
             $0.revision.protocolID
                 == protocolID
+            && $0.log == nil
         }
     }
 

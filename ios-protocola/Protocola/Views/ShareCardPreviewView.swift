@@ -134,6 +134,9 @@ struct ShareCardPreviewView: View {
                     ShareCardView(
                         data: data
                     )
+                    // Shared images are always the light card, whatever
+                    // the phone's appearance.
+                    .environment(\.colorScheme, .light)
             )
 
         renderer.scale = 2

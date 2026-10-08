@@ -17,6 +17,17 @@ struct ProtocolaApp: App {
         configurePurchases()
     }
 
+    /// UI tests can force Dark Mode to capture both appearances. Release
+    /// builds always follow the system setting.
+    static var forcedAppearance: ColorScheme? {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-ui-dark") {
+            return .dark
+        }
+        #endif
+        return nil
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -54,6 +65,7 @@ struct ProtocolaApp: App {
             .environment(purchases)
             .font(Theme.body)
             .tint(Theme.ink)
+            .preferredColorScheme(Self.forcedAppearance)
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     store?.refresh()

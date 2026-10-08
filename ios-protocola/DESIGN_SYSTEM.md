@@ -8,7 +8,7 @@
 
 Protocola is a restrained technical record: warm paper, black sans-serif type, one blue-grey accent, sharp geometry, thin rules, and native iOS chrome. Product content should not look like a generic rounded-card wellness app.
 
-The product is intentionally **light-only** in v4. `ContentView` pins `.preferredColorScheme(.light)`; therefore dark-mode color variants are not part of the current product contract. “Dark” below refers only to deliberate dark/accent modules inside the light interface.
+The product supports **Light and Dark Mode**. Every foundation colour in `Theme` is adaptive (light value, dark value). `accentFill` (deep teal) stays the same in both appearances so white text on buttons and the hero card keeps 7.9:1; `teal` lightens in Dark Mode for text and marks. Share images always render the light card.
 
 ## Color
 
@@ -40,28 +40,30 @@ Apple system sans-serif throughout product content.
 
 Sizes below are the default text size. Every token scales with the user's text-size setting through `UIFontMetrics` along a matching iOS text style (pageTitle/metrics capped so heroes fit). Share images use the fixed `share*` tokens.
 
-**Headings:** a section is labelled with `Eyebrow` (via `EditorialSection` or a form `header:`), never with sentence-case `sectionTitle` text.
+**Headings:** a section is labelled with `Eyebrow` (via `EditorialSection` or a form `header:`): sentence case, Footnote Semibold (`sectionLabel`), secondary colour, like native iOS section headers. No uppercase, no letter-spacing. Never use `sectionTitle` as a section label.
 
-**Doses:** outside a hero metric a dose is spelled with `DoseText` (`Compound · 250 mcg`) and rendered with `.monospacedDigit()`.
+**Doses:** outside a hero metric a dose is spelled with `DoseText` (`Compound · 250 mcg`) and rendered with tabular figures (`.monospacedDigit()`), never a monospaced typeface.
 
 | Token | Size | Weight |
 | --- | ---: | --- |
 | pageTitle | 34 | bold |
-| metricLarge | 34 | semibold monospaced |
-| metricCompact | 26 | semibold monospaced |
+| metricLarge | 34 | semibold, tabular figures |
+| metricCompact | 28 | semibold, tabular figures |
 | modalTitle | 20 | semibold |
-| sectionTitle | 18 | semibold — the name of a thing (compound in a hero, a chart series), never a section label |
-| cardTitle | 16 | semibold — title of every record or tool row |
-| body | 15 | regular |
-| buttonLabel | 15 | medium |
-| label | 14 | medium |
-| caption | 12.5 | regular |
+| sectionTitle | 17 | semibold — the name of a thing (compound, a chart series), never a section label |
+| cardTitle | 17 | semibold — title of every record or tool row |
+| body | 17 | regular |
+| buttonLabel | 17 | medium |
+| label | 15 | medium |
+| subheadline | 15 | regular — record row labels |
+| caption | 13 | regular (Footnote) — meta, footers, legends |
+| sectionLabel | 13 | semibold (Footnote) — section labels (`Eyebrow`) |
 | micro | 11 | semibold |
 | tabLabel | 10 | medium |
 | segmentLabel | 13 | medium |
-| shareMetric | 64 | semibold monospaced |
+| shareMetric | 64 | semibold, tabular figures |
 
-Technical values, doses, times, and calculations use monospaced digits/design. Product views must reference `Theme`; local font sizes are forbidden.
+Doses, times, and calculations use SF Pro with tabular figures; the app has one typeface. Product views must reference `Theme`; local font sizes are forbidden.
 
 ## Spacing and alignment
 
@@ -112,7 +114,7 @@ Respect Reduce Motion.
 ## Canonical components
 
 ### EditorialSection
-Tracked uppercase `Eyebrow`, 1pt hairline, content, 1pt hairline; spacing 16. Use the shared component rather than recreating this structure.
+Sentence-case `Eyebrow`, 1pt hairline, content, 1pt hairline; spacing 16. Use the shared component rather than recreating this structure.
 
 ### TrackingCard
 Surface background, radius 2, 16pt inset, hairline border, no shadow.
@@ -124,7 +126,7 @@ Teal dark surface, radius 2, 20pt inset. Used once: Today's next entry. Everythi
 The only horizontal rule (1pt, hairline; `onDark` variant on teal). `Divider()` is reserved for menu separators.
 
 ### RecordRow
-Label left, value right, body typography, monospaced digits for values.
+Label left in Subheadline secondary, value right in Body, tabular figures for values.
 
 ### StatusBadge
 Micro type, radius 2, minimum height 22, 8pt horizontal inset, semantic tint.

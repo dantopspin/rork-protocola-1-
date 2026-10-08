@@ -1051,7 +1051,7 @@ private struct InjectionSiteMapCanvas:
             Circle()
                 .fill(
                     selected
-                        ? Theme.teal
+                        ? Theme.accentFill
                         : (
                             recorded
                             ? Theme.ink

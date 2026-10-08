@@ -66,8 +66,7 @@ struct ContentView: View {
         }
         .font(Theme.body)
         .tint(Theme.ink)
-        // Clinical Editorial Instrument v3 is intentionally light-only.
-        .preferredColorScheme(.light)
+        // Light and Dark Mode: every Theme colour adapts to the appearance.
         .onAppear {
             choosingProtocol =
                 store.needsProtocolChoice
@@ -128,6 +127,7 @@ struct ContentView: View {
             Button("Exit") {
                 store.exitDemo()
             }
+            .minimumTapTarget()
         }
         .font(Theme.caption)
         .foregroundStyle(Theme.ink)

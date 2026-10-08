@@ -80,6 +80,13 @@ struct ProtocolEditorView: View {
             var value = ProtocolDraft()
             // Clinic instructions are most often written in mg.
             value.unit = .mg
+            // A round time, never "now": the current minute made a new
+            // user's first entry "Due now" the moment setup finished.
+            value.times = [
+                RecordedTime(
+                    date: Self.nextFullHour()
+                )
+            ]
             value.reminders =
                 prefersReminders
 
@@ -318,6 +325,20 @@ private extension ProtocolEditorView {
     }
 
 
+    static func nextFullHour(
+        after date: Date = .now
+    ) -> Date {
+        // At least 30 minutes ahead, so the first entry is never "Due now".
+        let calendar = Calendar.current
+        let hour =
+            calendar.dateInterval(
+                of: .hour,
+                for: date.addingTimeInterval(30 * 60)
+            )?.end ?? date
+        return hour
+    }
+
+
     var scheduleSection: some View {
         Section {
             DatePicker(
@@ -428,6 +449,8 @@ private extension ProtocolEditorView {
                 )
             } else {
                 Text(
+                    "Set each time from your instructions. "
+                    + (
                     draft.followsDeviceTimeZone
                     ? "Times follow this iPhone's time zone, so a time you recorded stays the same local time when you travel."
                     : "Times stay in "
@@ -437,6 +460,7 @@ private extension ProtocolEditorView {
                             ?? draft.timeZoneID
                         )
                         + " when you travel."
+                    )
                 )
             }
         }
@@ -513,6 +537,7 @@ private extension ProtocolEditorView {
                                 systemName:
                                     "minus.circle"
                             )
+                            .minimumTapTarget()
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(

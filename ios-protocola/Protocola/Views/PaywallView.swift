@@ -668,7 +668,7 @@ struct PaywallView: View {
                 systemName: icon
             )
             .font(
-                Theme.micro
+                Theme.caption
             )
             .foregroundStyle(
                 Theme.teal
@@ -1196,6 +1196,7 @@ struct PaywallView: View {
                         Text("Restore")
                     }
                 }
+                .minimumTapTarget()
                 .disabled(
                     purchases.isRestoring
                         || purchases.isPurchasing
@@ -1207,6 +1208,7 @@ struct PaywallView: View {
                     document =
                         LegalContent.privacy
                 }
+                .minimumTapTarget()
 
                 Button(
                     "Terms"
@@ -1214,6 +1216,7 @@ struct PaywallView: View {
                     document =
                         LegalContent.terms
                 }
+                .minimumTapTarget()
             }
             .font(
                 Theme.micro

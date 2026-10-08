@@ -85,7 +85,7 @@ enum ProtocolaAppearance {
 
         UISegmentedControl.appearance()
             .selectedSegmentTintColor =
-                UIColor(Theme.teal)
+                UIColor(Theme.accentFill)
 
         UISegmentedControl.appearance()
             .setTitleTextAttributes(

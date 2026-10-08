@@ -15,6 +15,14 @@ final class DesignSnapshotTests: XCTestCase {
     }
 
     @MainActor
+    func testCaptureDarkMode() throws {
+        capture(
+            prefix: "dark",
+            extraArguments: ["-ui-dark"]
+        )
+    }
+
+    @MainActor
     func testCaptureAccessibilityTextSize() throws {
         capture(
             prefix: "ax-xl",
@@ -42,6 +50,9 @@ final class DesignSnapshotTests: XCTestCase {
         settle()
         shot(app, "fr-01-welcome")
         start.tap()
+        // Wait for the page transition to finish, not a fixed delay.
+        _ = app.buttons["Continue"].waitForExistence(timeout: 5)
+        settle()
         settle()
         shot(app, "fr-02-step2")
 
@@ -82,6 +93,9 @@ final class DesignSnapshotTests: XCTestCase {
         shot(app, "fr-07-reminders")
 
         _ = tapIfPresent(app.buttons["Not now"])
+        // Saving closes the setup sheet; wait for the tab bar before Today.
+        _ = app.tabBars.firstMatch.waitForExistence(timeout: 8)
+        settle()
         settle()
         shot(app, "fr-08-today")
         app.swipeUp()
@@ -198,7 +212,7 @@ final class DesignSnapshotTests: XCTestCase {
 
             if screens == nil {
                 let row = app.buttons
-                    .matching(NSPredicate(format: "label CONTAINS 'Active'"))
+                    .matching(NSPredicate(format: "label CONTAINS 'Sample protocol'"))
                     .firstMatch
                 if row.waitForExistence(timeout: 2) {
                     row.tap()
