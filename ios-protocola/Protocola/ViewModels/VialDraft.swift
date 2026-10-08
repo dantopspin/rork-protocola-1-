@@ -18,6 +18,8 @@ struct VialDraft {
     var state:
         VialLifecycleState = .active
     var photoData: Data?
+    /// Nil keeps the automatic colour.
+    var capColor: VialCapColor?
     var correctedBalance: String = ""
 
     init() {}
@@ -42,5 +44,8 @@ struct VialDraft {
             vial.openedAt ?? .now
         state = vial.lifecycleState
         photoData = vial.photoData
+        capColor =
+            vial.capColorRawValue
+                .flatMap(VialCapColor.init(rawValue:))
     }
 }

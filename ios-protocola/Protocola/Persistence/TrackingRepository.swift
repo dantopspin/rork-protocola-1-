@@ -1210,6 +1210,7 @@ import SwiftData
             vial.openedAt = openedAt
             vial.lifecycleState = draft.state
             vial.photoData = draft.photoData
+            vial.capColorRawValue = draft.capColor?.rawValue
 
             if let correction {
                 context.insert(

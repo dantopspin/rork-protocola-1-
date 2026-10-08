@@ -32,41 +32,41 @@ enum Theme {
 
     // MARK: - Foundation colors
 
-    /// #F8F7F3 — warm near-white paper canvas.
+    /// #FAF8F4 — light warm cream canvas.
     static let paper = adaptive(
-        light: (0.9725, 0.9686, 0.9529),
-        dark: (0.0745, 0.0745, 0.0706)
+        light: (0.980, 0.973, 0.957),
+        dark: (0.071, 0.082, 0.078)
     )
 
     /// #FBFAF7 — quiet product surface.
     static let surface = adaptive(
-        light: (0.9843, 0.9804, 0.9686),
-        dark: (0.11, 0.11, 0.102)
+        light: (1.0, 1.0, 1.0),
+        dark: (0.122, 0.137, 0.129)
     )
 
-    /// #121211 — primary type and rules.
+    /// #111B29 — navy-black primary type.
     static let ink = adaptive(
-        light: (0.0706, 0.0706, 0.0667),
-        dark: (0.949, 0.945, 0.925)
+        light: (0.067, 0.106, 0.161),
+        dark: (0.937, 0.949, 0.941)
     )
 
-    /// #67655F — supporting copy.
+    /// #626A73 — supporting copy, cool grey.
     static let textSecondary = adaptive(
-        light: (0.4039, 0.3961, 0.3725),
-        dark: (0.663, 0.651, 0.62)
+        light: (0.384, 0.416, 0.451),
+        dark: (0.659, 0.69, 0.675)
     )
 
-    /// #747169 — quiet metadata that still clears 4.5:1 on paper.
+    /// #6C737C — quiet metadata that still clears 4.5:1 on paper.
     static let textTertiary = adaptive(
-        light: (0.4549, 0.4431, 0.4118),
-        dark: (0.596, 0.584, 0.549)
+        light: (0.424, 0.451, 0.486),
+        dark: (0.596, 0.624, 0.612)
     )
 
     /// #30536B — the single product accent from the original Peptide Lens
     /// direction. Used for primary actions, progress, selection, and charts.
     static let teal = adaptive(
-        light: (0.1882, 0.3255, 0.4196),
-        dark: (0.553, 0.702, 0.812)
+        light: (0.118, 0.357, 0.322),
+        dark: (0.494, 0.769, 0.714)
     )
 
     /// #876832 — attention color tuned to clear 4.5:1 in status text.
@@ -84,10 +84,35 @@ enum Theme {
     /// Deep teal in both appearances: white text on it stays above 7.9:1,
     /// while `teal` itself lightens in Dark Mode for text and marks.
     static let accentFill = Color(
-        red: 0.1882,
-        green: 0.3255,
-        blue: 0.4196
+        red: 0.118,
+        green: 0.357,
+        blue: 0.322
     )
+
+    /// "Due" and other time-sensitive information states.
+    static let info = adaptive(
+        light: (0.157, 0.420, 0.737),
+        dark: (0.525, 0.737, 0.957)
+    )
+
+    /// #7554B2 — third phase colour only. Never an action or state colour.
+    static let violet = adaptive(
+        light: (0.459, 0.329, 0.698),
+        dark: (0.749, 0.659, 0.937)
+    )
+
+    /// Phases take colours in order: green, blue, purple, then repeat.
+    /// Colour is never the only signal; each phase keeps its label.
+    static let phasePalette: [Color] = [teal, info, violet]
+
+    static func phaseTint(_ number: Int) -> Color {
+        phasePalette[
+            ((max(number, 1) - 1) % phasePalette.count)
+        ]
+    }
+
+    /// Liquid inside a drawn vial, tinted by the cap colour.
+    static let liquidOpacity: Double = 0.28
 
     /// Dark editorial surface; intentionally the same family as the CTA accent.
     static let darkSurface = accentFill
@@ -124,15 +149,15 @@ enum Theme {
         red: 0,
         green: 0,
         blue: 0
-    ).opacity(0.035)
+    ).opacity(0.06)
 
     // Interaction-state values live here so controls do not invent local
     // transparency or motion values.
     static let pressedFillOpacity = 0.84
     static let pressedControlOpacity = 0.64
     static let pressedSurfaceOpacity = 0.92
-    static let statusFillOpacity = 0.055
-    static let statusBorderOpacity = 0.22
+    static let statusFillOpacity = 0.12
+    static let statusBorderOpacity = 0.0
 
     static let motionPressDuration = 0.12
     static let motionFeedbackDuration = 0.15
@@ -176,24 +201,31 @@ enum Theme {
     // grow them along the matching iOS text style. Large display sizes are
     // capped so hero numbers stay inside their layouts.
 
+    // Display type is New York, Apple's system serif; everything else is
+    // SF Pro. Both scale with Dynamic Type.
     static var pageTitle: Font {
-        scaled(pageTitleSize, .bold, .largeTitle, max: 52)
+        scaled(pageTitleSize, .medium, .largeTitle, max: 52, design: .serif)
     }
 
     // Numbers use SF Pro with tabular figures, never a second typeface:
     // columns still align, and "0.25" reads as one number, not "0 . 25".
     static var metricLarge: Font {
-        scaled(metricLargeSize, .semibold, .largeTitle, max: 52)
+        scaled(metricLargeSize, .medium, .largeTitle, max: 52, design: .serif)
             .monospacedDigit()
     }
 
     static var metricCompact: Font {
-        scaled(metricCompactSize, .semibold, .title1, max: 40)
+        scaled(metricCompactSize, .medium, .title1, max: 40, design: .serif)
             .monospacedDigit()
     }
 
     static var modalTitle: Font {
-        scaled(modalTitleSize, .semibold, .title3, max: 34)
+        scaled(modalTitleSize, .semibold, .title3, max: 34, design: .serif)
+    }
+
+    /// Serif title for a record that is the subject of a card (vials).
+    static var serifTitle: Font {
+        scaled(sectionTitleSize, .medium, .headline, design: .serif)
     }
 
     static var sectionTitle: Font {
@@ -230,6 +262,11 @@ enum Theme {
     /// uppercase tracked eyebrow, the most common templated tell.
     static var sectionLabel: Font {
         scaled(captionSize, .semibold, .footnote)
+    }
+
+    /// Status chips: Footnote Medium.
+    static var chipLabel: Font {
+        scaled(captionSize, .medium, .footnote)
     }
 
     static var micro: Font {
@@ -298,19 +335,20 @@ enum Theme {
 
     // MARK: - Geometry
 
-    /// Sharp editorial geometry. Rounded native chrome is allowed outside
-    /// product content, but app surfaces should read almost rectangular.
-    static let radiusCard: CGFloat = 2
-    static let radiusRow: CGFloat = 2
-    static let radiusButton: CGFloat = 2
-    static let radiusField: CGFloat = 0
-    static let radiusBadge: CGFloat = 2
+    /// Soft geometry: rounded cards, pill buttons and capsule chips.
+    static let radiusCard: CGFloat = 18
+    static let radiusRow: CGFloat = 14
+    /// Pill buttons: half the button height.
+    static let radiusButton: CGFloat = 26
+    static let radiusField: CGFloat = 12
+    /// Capsule chips.
+    static let radiusBadge: CGFloat = 14
 
-    static let buttonHeight: CGFloat = 48
+    static let buttonHeight: CGFloat = 52
     static let compactButtonHeight: CGFloat = 44
     static let rowHeight: CGFloat = 54
     static let dataRowHeight: CGFloat = 48
-    static let badgeHeight: CGFloat = 22
+    static let badgeHeight: CGFloat = 28
     static let iconColumn: CGFloat = 24
     static let iconSmall: CGFloat = 16
     static let iconMedium: CGFloat = 18
@@ -324,11 +362,13 @@ enum Theme {
     static let shareCardWidth: CGFloat = 520
     static let shareBarHeight: CGFloat = 64
 
-    static let shadowRadius: CGFloat = 6
-    static let shadowY: CGFloat = 2
+    static let shadowRadius: CGFloat = 14
+    static let shadowY: CGFloat = 4
     static let ruleThickness: CGFloat = 1
 
     static let statusDot: CGFloat = 6
+    /// Colour bar on the leading edge of an entry card.
+    static let entryStripeWidth: CGFloat = 4
     static let siteDot: CGFloat = 8
     static let insertionLineHeight: CGFloat = 2
     static let onboardingRowHeight: CGFloat = 58
@@ -343,6 +383,11 @@ enum Theme {
 
     // Permission sheet and recorded-entries heatmap
     static let iconTileSize: CGFloat = 56
+    /// Round icon badge leading a field row (Log Dose sheet).
+    static let iconBadgeSize: CGFloat = 40
+    /// Drawn vial glyph inside the vial card tile.
+    static let vialGlyphWidth: CGFloat = 28
+    static let vialGlyphHeight: CGFloat = 46
     static let heatmapCellMin: CGFloat = 8
     static let heatmapCellMax: CGFloat = 20
     static let heatmapGap: CGFloat = 4

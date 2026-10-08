@@ -10,27 +10,49 @@ enum ProtocolaAppearance {
     }
 
 
+    private static func serif(
+        _ font: UIFont
+    ) -> UIFont {
+        guard
+            let descriptor =
+                font.fontDescriptor
+                    .withDesign(.serif)
+        else {
+            return font
+        }
+        return UIFont(
+            descriptor: descriptor,
+            size: font.pointSize
+        )
+    }
+
+
     private static func configureNavigation() {
         // Scaled at launch with the user's text size, like Theme's fonts.
+        // Navigation titles use New York, matching Theme's display type.
         let large =
-            UIFont.systemFont(
-                ofSize:
-                    Theme.scaledSize(
-                        Theme.pageTitleSize,
-                        .largeTitle,
-                        max: 52
-                    ),
-                weight: .bold
+            serif(
+                UIFont.systemFont(
+                    ofSize:
+                        Theme.scaledSize(
+                            Theme.pageTitleSize,
+                            .largeTitle,
+                            max: 52
+                        ),
+                    weight: .medium
+                )
             )
         let inline =
-            UIFont.systemFont(
-                ofSize:
-                    Theme.scaledSize(
-                        Theme.sectionTitleSize,
-                        .headline,
-                        max: 28
-                    ),
-                weight: .semibold
+            serif(
+                UIFont.systemFont(
+                    ofSize:
+                        Theme.scaledSize(
+                            Theme.sectionTitleSize,
+                            .headline,
+                            max: 28
+                        ),
+                    weight: .semibold
+                )
             )
 
         UINavigationBar.appearance()
@@ -85,7 +107,7 @@ enum ProtocolaAppearance {
 
         UISegmentedControl.appearance()
             .selectedSegmentTintColor =
-                UIColor(Theme.accentFill)
+                UIColor(Theme.surface)
 
         UISegmentedControl.appearance()
             .setTitleTextAttributes(
@@ -105,7 +127,7 @@ enum ProtocolaAppearance {
                     .font: font,
                     .foregroundColor:
                         UIColor(
-                            Theme.onDarkPrimary
+                            Theme.ink
                         )
                 ],
                 for: .selected

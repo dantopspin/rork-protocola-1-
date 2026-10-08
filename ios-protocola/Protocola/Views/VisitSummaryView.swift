@@ -36,7 +36,7 @@ struct VisitSummaryView: View {
                     Theme.spaceXL
                 )
             }
-            .scrollIndicators(.hidden)
+            .trackingScrollChrome()
             .background(Theme.paper)
             .navigationTitle(
                 "Visit Summary"

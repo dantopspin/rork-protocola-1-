@@ -35,7 +35,7 @@ struct LogDetailView: View {
                         Theme.spaceXL
                     )
                 }
-                .scrollIndicators(.hidden)
+                .trackingScrollChrome()
                 .background(Theme.paper)
                 .navigationTitle(
                     "Entry details"

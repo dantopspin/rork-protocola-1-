@@ -18,6 +18,8 @@ struct DoseEditorView: View {
     }
     @State private var addVial = false
     @State private var showSiteMap = false
+    @State private var showDetails = false
+    @State private var keyboardShown = false
 
     init(
         revision: ScheduleRevision,
@@ -49,14 +51,21 @@ struct DoseEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
-                entrySection
+                compoundSection
+
+                amountSection
+
+                timeSection
+
+                symptomsSection
+
                 if currentRoute.usesInjectionSite {
                     vialSection
 
                     injectionSiteSection
                 }
 
-                symptomsSection
+                detailsSection
 
                 if correcting != nil {
                     correctionNotice
@@ -68,10 +77,41 @@ struct DoseEditorView: View {
             .doneKeyboard()
             .navigationTitle(
                 correcting == nil
-                    ? "Log entry"
+                    ? "Log Dose"
                     : "Correct entry"
             )
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardWillShowNotification
+                )
+            ) { _ in
+                keyboardShown = true
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardWillHideNotification
+                )
+            ) { _ in
+                keyboardShown = false
+            }
+            .safeAreaInset(edge: .bottom) {
+                // Hidden while typing so the keyboard and the button never
+                // stack over the form; Done dismisses the keyboard.
+                if !keyboardShown {
+                Button(
+                    correcting == nil
+                        ? "Log Dose"
+                        : "Save correction"
+                ) {
+                    save()
+                }
+                .buttonStyle(TrackingPrimaryButtonStyle())
+                .padding(.horizontal, Theme.pageInset)
+                .padding(.vertical, Theme.spaceS)
+                .background(Theme.paper)
+                }
+            }
             .discardGuard(
                 hasChanges: hasUnsavedChanges,
                 confirming: $confirmDiscard
@@ -87,20 +127,14 @@ struct DoseEditorView: View {
                 ToolbarItem(
                     placement: .cancellationAction
                 ) {
-                    Button("Cancel") {
+                    Button {
                         if hasUnsavedChanges {
                             confirmDiscard = true
                         } else {
                             dismiss()
                         }
-                    }
-                }
-
-                ToolbarItem(
-                    placement: .confirmationAction
-                ) {
-                    Button("Save") {
-                        save()
+                    } label: {
+                        Label("Close", systemImage: "xmark")
                     }
                 }
             }
@@ -123,30 +157,20 @@ struct DoseEditorView: View {
 
 private extension DoseEditorView {
 
-    var entrySection: some View {
+    var compoundSection: some View {
         Section {
-            Text(
-                correcting?.compoundName
-                ?? revision?.compoundName
-                ?? "Entry"
-            )
-            .font(Theme.modalTitle)
-
-            if let occurrence {
-                RecordRow(
-                    label: "Scheduled",
-                    value:
-                        occurrence.at.formatted(
-                            date: .abbreviated,
-                            time: .shortened
-                        )
+            FieldRow(
+                icon: "pills",
+                label: "Compound"
+            ) {
+                Text(
+                    correcting?.compoundName
+                    ?? revision?.compoundName
+                    ?? "Entry"
                 )
+                .font(Theme.serifTitle)
+                .foregroundStyle(Theme.ink)
             }
-
-            RecordRow(
-                label: "Route",
-                value: currentRoute.rawValue
-            )
 
             Picker(
                 "Status",
@@ -165,87 +189,227 @@ private extension DoseEditorView {
                         .tag($0)
                 }
             }
+            .pickerStyle(.segmented)
+        }
+    }
 
-            if draft.status != "Skipped" {
-                HStack {
-                    TextField(
-                        "Actual amount",
-                        text: $draft.amount
+
+    /// Step for the − / + buttons, taken from the precision of the user's
+    /// own recorded value (0.25 → 0.01, 250 → 10). Never a suggestion.
+    var amountStep: Decimal {
+        let text =
+            revision?.amountText
+            ?? correcting?.scheduledAmountText
+            ?? draft.amount
+        if let dot = text.firstIndex(of: ".") {
+            let places = text.distance(from: dot, to: text.endIndex) - 1
+            var step = Decimal(1)
+            for _ in 0..<max(places, 0) { step /= 10 }
+            return step
+        }
+        let digits = text.filter(\.isNumber)
+        let zeros = digits.reversed().prefix { $0 == "0" }.count
+        var step = Decimal(1)
+        for _ in 0..<min(zeros, max(digits.count - 1, 0)) { step *= 10 }
+        return step
+    }
+
+    func stepAmount(_ direction: Int) {
+        let current = Decimal(string: draft.amount) ?? 0
+        let next = max(0, current + amountStep * Decimal(direction))
+        draft.amount = DoseCalculator.text(next)
+    }
+
+    func stepButton(
+        _ systemImage: String,
+        label: String,
+        direction: Int
+    ) -> some View {
+        Button {
+            stepAmount(direction)
+        } label: {
+            Image(systemName: systemImage)
+                .font(Theme.label)
+                .foregroundStyle(Theme.ink)
+                .frame(
+                    width: Theme.minimumTapTarget,
+                    height: Theme.minimumTapTarget
+                )
+                .background(Theme.subtleFill, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+
+
+    @ViewBuilder
+    var amountSection: some View {
+        if draft.status != "Skipped" {
+            Section {
+                HStack(spacing: Theme.spaceM) {
+                    stepButton(
+                        "minus",
+                        label: "Decrease amount",
+                        direction: -1
                     )
-                    .keyboardType(.decimalPad)
 
-                    Picker(
-                        "Unit",
-                        selection: $draft.unit
-                    ) {
-                        ForEach(AmountUnit.allCases) {
-                            Text($0.rawValue)
-                                .tag($0)
+                    VStack(spacing: Theme.spaceXXS) {
+                        TextField(
+                            "0",
+                            text: $draft.amount
+                        )
+                        .font(Theme.metricLarge)
+                        .monospacedDigit()
+                        .multilineTextAlignment(.center)
+                        .keyboardType(.decimalPad)
+                        .accessibilityLabel("Actual amount")
+
+                        Picker(
+                            "Unit",
+                            selection: $draft.unit
+                        ) {
+                            ForEach(AmountUnit.allCases) {
+                                Text($0.rawValue)
+                                    .tag($0)
+                            }
                         }
+                        .labelsHidden()
+                        .tint(Theme.textSecondary)
                     }
-                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+
+                    stepButton(
+                        "plus",
+                        label: "Increase amount",
+                        direction: 1
+                    )
+                }
+                .padding(.vertical, Theme.spaceXS)
+
+            } header: {
+                Eyebrow(text: "Amount")
+            } footer: { FormFooter {
+                Text(
+                    "Values reflect your own records, not an administration recommendation."
+                )
+            }
+            }
+        }
+    }
+
+
+    /// Scheduled time, route and syringe scale: reference values kept out
+    /// of the way until needed.
+    var detailsSection: some View {
+        Section {
+            DisclosureGroup(
+                isExpanded: $showDetails
+            ) {
+                if let occurrence {
+                    RecordRow(
+                        label: "Scheduled",
+                        value:
+                            occurrence.at.formatted(
+                                date: .abbreviated,
+                                time: .shortened
+                            )
+                    )
                 }
 
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXS
-                ) {
-                    Text("Syringe scale")
-                        .font(Theme.label)
-                        .foregroundStyle(
-                            Theme.ink
-                        )
+                RecordRow(
+                    label: "Route",
+                    value: currentRoute.rawValue
+                )
 
-                    HStack(
+                if draft.status != "Skipped" {
+                    VStack(
+                        alignment: .leading,
                         spacing: Theme.spaceXS
                     ) {
-                        ForEach(
-                            SyringeScalePreset
-                                .allCases
-                        ) { preset in
-                            Button(
-                                preset.label
-                            ) {
-                                draft.unitsPerMl =
-                                    preset.valueText
-                            }
-                            .buttonStyle(
-                                TrackingCompactButtonStyle()
-                            )
-                            .tint(
-                                SyringeScalePreset
-                                    .match(
-                                        draft.unitsPerMl
-                                    ) == preset
-                                ? Theme.teal
-                                : Theme.ink
-                            )
-                        }
-                    }
+                        Text("Syringe scale")
+                            .font(Theme.label)
+                            .foregroundStyle(Theme.ink)
 
-                    TextField(
-                        "Units per mL",
-                        text:
-                            $draft.unitsPerMl
-                    )
-                    .keyboardType(.decimalPad)
+                        HStack(spacing: Theme.spaceXS) {
+                            ForEach(
+                                SyringeScalePreset.allCases
+                            ) { preset in
+                                Button(preset.label) {
+                                    draft.unitsPerMl =
+                                        preset.valueText
+                                }
+                                .buttonStyle(
+                                    TrackingCompactButtonStyle()
+                                )
+                                .tint(
+                                    SyringeScalePreset
+                                        .match(draft.unitsPerMl)
+                                        == preset
+                                    ? Theme.teal
+                                    : Theme.ink
+                                )
+                            }
+                        }
+
+                        TextField(
+                            "Units per mL",
+                            text: $draft.unitsPerMl
+                        )
+                        .keyboardType(.decimalPad)
+                    }
+                }
+            } label: {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Text("Details")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+
+                    Text(detailsSummary)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(2)
                 }
             }
+            .tint(Theme.textSecondary)
+        }
+    }
 
-            DatePicker(
-                "Recorded time",
-                selection: $draft.loggedAt,
-                in: ...Date.now
-            )
-
-        } header: {
-            Eyebrow(text: "Entry as recorded")
-        } footer: { FormFooter {
-            Text(
-                "Values reflect your own records, not an administration recommendation."
+    var detailsSummary: String {
+        var parts: [String] = []
+        if let occurrence {
+            parts.append(
+                "Scheduled "
+                + occurrence.at.formatted(
+                    date: .omitted,
+                    time: .shortened
+                )
             )
         }
-}
+        parts.append(currentRoute.rawValue)
+        if let preset = SyringeScalePreset.match(draft.unitsPerMl) {
+            parts.append(preset.label)
+        }
+        return parts.joined(separator: " · ")
+    }
+
+
+    var timeSection: some View {
+        Section {
+            FieldRow(
+                icon: "calendar",
+                label: "Date and time"
+            ) {
+                DatePicker(
+                    "Recorded time",
+                    selection: $draft.loggedAt,
+                    in: ...Date.now
+                )
+                .labelsHidden()
+            }
+        }
     }
 
 
@@ -426,11 +590,16 @@ private extension DoseEditorView {
 
 
     var symptomsSection: some View {
-        Section("Symptoms and notes") {
-            TextField(
-                "Symptoms (optional)",
-                text: $draft.symptoms
-            )
+        Section {
+            FieldRow(
+                icon: "waveform.path.ecg",
+                label: "Symptoms (optional)"
+            ) {
+                TextField(
+                    "What did you notice?",
+                    text: $draft.symptoms
+                )
+            }
 
             if !draft.symptoms.isEmpty {
                 Stepper(
@@ -440,11 +609,18 @@ private extension DoseEditorView {
                 )
             }
 
-            TextField(
-                "Notes (optional)",
-                text: $draft.notes,
-                axis: .vertical
-            )
+            FieldRow(
+                icon: "doc.text",
+                label: "Notes (optional)"
+            ) {
+                TextField(
+                    "How are you feeling today?",
+                    text: $draft.notes,
+                    axis: .vertical
+                )
+            }
+        } header: {
+            Eyebrow(text: "Symptoms and notes")
         }
     }
 

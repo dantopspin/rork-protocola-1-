@@ -63,15 +63,13 @@ private extension ProtocolDetailView {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
+                protocolHeader(record)
+
                 if !store.canEdit(
                     record.id
                 ) {
                     readOnlyBlock(record)
                 }
-
-                recordedInstructions(
-                    record
-                )
 
                 ForEach(
                     store.currentRevisions(
@@ -96,7 +94,13 @@ private extension ProtocolDetailView {
                     )
                 }
 
+                phasesBlock(record)
+
                 toolsBlock(record)
+
+                recordedInstructions(
+                    record
+                )
             }
             .screenPadding()
             .padding(
@@ -104,13 +108,20 @@ private extension ProtocolDetailView {
                 Theme.spaceXL
             )
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle(record.name)
         .navigationBarTitleDisplayMode(
             .inline
         )
         .toolbar {
+            // The header carries the name; keep the bar quiet like the
+            // reference while the title still names the back button.
+            ToolbarItem(placement: .principal) {
+                Text("")
+                    .accessibilityHidden(true)
+            }
+
             ToolbarItem(
                 placement: .topBarTrailing
             ) {
@@ -273,6 +284,86 @@ private extension ProtocolDetailView {
             ProtocolEditorView(
                 record: record
             )
+        }
+    }
+
+
+    /// Every recorded schedule for this protocol as phases, inline.
+    @ViewBuilder
+    func phasesBlock(
+        _ record: ProtocolRecord
+    ) -> some View {
+        let revisions =
+            store.revisions
+                .filter { $0.protocolID == record.id }
+                .sorted { $0.effectiveFrom > $1.effectiveFrom }
+
+        if !revisions.isEmpty {
+            EditorialSection("Phases") {
+                PhaseTimeline(revisions: revisions)
+            }
+        }
+    }
+
+
+    /// Icon tile, serif name, compound count and start date, status chip.
+    func protocolHeader(
+        _ record: ProtocolRecord
+    ) -> some View {
+        let current = store.currentRevisions(record.id)
+        let started =
+            store.revisions
+                .filter { $0.protocolID == record.id }
+                .map(\.effectiveFrom)
+                .min()
+        let count =
+            String(current.count)
+            + (current.count == 1 ? " compound" : " compounds")
+        let subtitle =
+            started.map {
+                count
+                + " · since "
+                + $0.formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                )
+            } ?? count
+
+        return HStack(
+            alignment: .center,
+            spacing: Theme.spaceM
+        ) {
+            Image(systemName: "list.bullet.clipboard")
+                .font(Theme.modalTitle)
+                .foregroundStyle(Theme.teal)
+                .frame(
+                    width: Theme.iconTileSize,
+                    height: Theme.iconTileSize
+                )
+                .background(
+                    Theme.tealTint,
+                    in: .rect(cornerRadius: Theme.radiusRow)
+                )
+                .accessibilityHidden(true)
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(record.name)
+                    .font(Theme.modalTitle)
+                    .foregroundStyle(Theme.ink)
+                    .accessibilityAddTraits(.isHeader)
+
+                Text(subtitle)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .monospacedDigit()
+
+                StatusBadge(text: record.status)
+                    .padding(.top, Theme.spaceXXS)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -875,7 +966,7 @@ struct ProtocolEvolutionView: View {
     }
 
     var body: some View {
-        List {
+        Form {
             if store.isPremium {
                 sinceLastChangeSection
 
@@ -914,7 +1005,7 @@ struct ProtocolEvolutionView: View {
 
             revisionTimelineSection
 
-            Section("History") {
+            Section {
                 NavigationLink {
                     HistoryView(
                         protocolID:
@@ -927,6 +1018,8 @@ struct ProtocolEvolutionView: View {
                             "clock.arrow.circlepath"
                     )
                 }
+            } header: {
+                Eyebrow(text: "History")
             }
         }
         .listStyle(.plain)
@@ -1315,75 +1408,10 @@ private extension ProtocolEvolutionView {
 
     var revisionTimelineSection:
         some View {
-        Section("Revision timeline") {
-            ForEach(timeline) {
-                revision in
-
-                VStack(
-                    alignment: .leading,
-                    spacing:
-                        Theme.spaceXS
-                ) {
-                    HStack(
-                        alignment:
-                            .firstTextBaseline,
-                        spacing:
-                            Theme.spaceS
-                    ) {
-                        Text(
-                            revision
-                                .compoundName
-                        )
-                        .font(
-                            Theme.sectionTitle
-                        )
-                        .foregroundStyle(
-                            Theme.ink
-                        )
-
-                        Spacer()
-
-                        StatusBadge(
-                            text:
-                                stateLabel(
-                                    revision
-                                )
-                        )
-                    }
-
-                    RecordRow(
-                        label: "Amount",
-                        value:
-                            DoseText.amount(
-                                revision.amountText,
-                                revision.unitText
-                            )
-                    )
-
-                    RecordRow(
-                        label: "Effective",
-                        value:
-                            effectiveLabel(
-                                revision
-                            )
-                    )
-
-                    RecordRow(
-                        label: "Schedule",
-                        value:
-                            revision.config
-                                .map(
-                                    ScheduleDisplay
-                                        .summary
-                                )
-                            ?? "Not available"
-                    )
-                }
-                .padding(
-                    .vertical,
-                    Theme.spaceXXS
-                )
-            }
+        Section {
+            PhaseTimeline(revisions: timeline)
+        } header: {
+            Eyebrow(text: "Phases")
         }
     }
 
@@ -1393,7 +1421,7 @@ private extension ProtocolEvolutionView {
     ) -> String {
         switch revision.temporalState() {
         case .historical:
-            return "Historical"
+            return "Past"
         case .current:
             return "Current"
         case .planned:

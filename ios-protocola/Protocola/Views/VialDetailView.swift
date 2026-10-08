@@ -32,7 +32,7 @@ struct VialDetailView: View {
                         Theme.spaceXL
                     )
                 }
-                .scrollIndicators(.hidden)
+                .trackingScrollChrome()
                 .background(Theme.paper)
                 .trackingRoutes()
                 .navigationTitle(vial.name)

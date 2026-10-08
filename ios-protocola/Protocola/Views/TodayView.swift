@@ -17,6 +17,7 @@ struct TodayView: View {
     @State private var addVial = false
     @State private var stackCalendar = false
     @State private var shareCard = false
+    @State private var siteHistory = false
     @State private var editingSchedule: ScheduleRevision?
     @State private var undoLog: DoseLog?
     @State private var addingSite: DoseLog?
@@ -72,35 +73,57 @@ struct TodayView: View {
         typeSize.isAccessibilitySize
     }
 
+    private var entryBodyLayout: AnyLayout {
+        usesStackedHero
+            ? AnyLayout(
+                VStackLayout(
+                    alignment: .leading,
+                    spacing: Theme.spaceS
+                )
+            )
+            : AnyLayout(
+                HStackLayout(
+                    alignment: .center,
+                    spacing: Theme.spaceS
+                )
+            )
+    }
+
+    private var entryMetaLayout: AnyLayout {
+        usesStackedHero
+            ? AnyLayout(
+                HStackLayout(
+                    alignment: .center,
+                    spacing: Theme.spaceS
+                )
+            )
+            : AnyLayout(
+                VStackLayout(
+                    alignment: .trailing,
+                    spacing: Theme.spaceXS
+                )
+            )
+    }
+
     var body: some View {
         ScrollView {
             VStack(
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
-                PrimaryPageHeader(
-                    title: "Today",
-                    subtitle:
-                        Date.now.formatted(
-                            .dateTime
-                                .weekday(.wide)
-                                .month(.wide)
-                                .day()
-                        )
-                )
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceL
+                ) {
+                    weekStrip
+
+                    todayHeader
+                }
 
                 Group {
-                    if let next = nextUnloggedEntry {
-                        nextEntryHero(next)
-                            .transition(
-                                reduceMotion
-                                ? .opacity
-                                : .opacity.combined(
-                                    with: .move(
-                                        edge: .top
-                                    )
-                                )
-                            )
+                    if !store.today.isEmpty {
+                        todayList
+                            .transition(.opacity)
                     } else if store.today.isEmpty,
                               let cycle = offCycleContext {
                         offCycleCard(cycle)
@@ -114,6 +137,10 @@ struct TodayView: View {
                     value:
                         nextUnloggedEntry?.id
                 )
+
+                if !store.protocols.isEmpty {
+                    shortcutTiles
+                }
 
                 if !store.isDemo,
                    let status = notificationStatus,
@@ -153,10 +180,10 @@ struct TodayView: View {
                 if lastRecordedLog != nil
                     || activeVial != nil {
                     summaryTiles
-                }
-
-                if !remainingTodayEntries.isEmpty {
-                    todayEntriesSection
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
                 }
 
                 Text(
@@ -167,12 +194,16 @@ struct TodayView: View {
                 .foregroundStyle(Theme.textSecondary)
             }
             .screenPadding()
-            .padding(.bottom, Theme.spaceXL + Theme.spaceL)
+            .padding(.bottom, Theme.spaceXL)
         }
-        .scrollIndicators(.hidden)
+        .trackingScrollChrome()
         .background(Theme.paper)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        // Serif wordmark as the large title; the week strip opens the
+        // calendar, so the bar keeps a single Settings button.
+        .navigationTitle("Protocola")
+        // The demo banner sits under the bar and blanks a large title,
+        // so demo mode uses the inline wordmark.
+        .navigationBarTitleDisplayMode(store.isDemo ? .inline : .large)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let log = undoLog,
                !log.isDeleted {
@@ -201,20 +232,7 @@ struct TodayView: View {
             newValue != nil
         }
         .toolbar {
-            ToolbarItem(
-                placement: .topBarTrailing
-            ) {
-                if !store.protocols.isEmpty {
-                    Button(
-                        "Stack calendar",
-                        systemImage: "calendar"
-                    ) {
-                        stackCalendar = true
-                    }
-                }
-            }
-
-            SettingsToolbarItem()
+            SettingsToolbarItem(placement: .topBarTrailing)
         }
         .refreshable {
             store.refresh()
@@ -258,6 +276,11 @@ struct TodayView: View {
             isPresented: $stackCalendar
         ) {
             StackCalendarView()
+        }
+        .sheet(isPresented: $siteHistory) {
+            InjectionSiteHistoryView(
+                logs: siteLogs
+            )
         }
         .sheet(isPresented: $shareCard) {
             ShareCardPreviewView(
@@ -310,6 +333,295 @@ struct TodayView: View {
 // MARK: - Main sections
 
 private extension TodayView {
+
+    // MARK: - Today (cards)
+
+    /// "Today" in the serif display face, with the date on the right.
+    var todayHeader: some View {
+        HStack(
+            alignment: .firstTextBaseline,
+            spacing: Theme.spaceS
+        ) {
+            Text("Today")
+                .font(Theme.pageTitle)
+                .foregroundStyle(Theme.ink)
+                .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: Theme.spaceS)
+
+            Text(
+                Date.now.formatted(
+                    .dateTime
+                        .weekday(.abbreviated)
+                        .month(.abbreviated)
+                        .day()
+                )
+            )
+            .font(Theme.subheadline)
+            .foregroundStyle(Theme.textSecondary)
+        }
+    }
+
+
+    /// This week at a glance: today is the filled pill, and a dot marks
+    /// each day with scheduled entries. Tapping opens the calendar.
+    var weekStrip: some View {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        let start =
+            calendar.dateInterval(
+                of: .weekOfYear,
+                for: today
+            )?.start ?? today
+        let days = (0..<7).compactMap {
+            calendar.date(
+                byAdding: .day,
+                value: $0,
+                to: start
+            )
+        }
+        let end =
+            calendar.date(
+                byAdding: .day,
+                value: 7,
+                to: start
+            ) ?? start
+        let scheduled =
+            Set(
+                store.entries(
+                    start: start,
+                    end: end
+                ).map {
+                    calendar.startOfDay(for: $0.at)
+                }
+            )
+
+        return Button {
+            stackCalendar = true
+        } label: {
+            HStack(spacing: 0) {
+                ForEach(days, id: \.self) { day in
+                    let isToday =
+                        calendar.isDate(
+                            day,
+                            inSameDayAs: today
+                        )
+
+                    VStack(spacing: Theme.spaceXXS) {
+                        Text(
+                            day.formatted(
+                                .dateTime.weekday(
+                                    usesStackedHero
+                                    ? .narrow
+                                    : .abbreviated
+                                )
+                            )
+                        )
+                        .font(Theme.chipLabel)
+                        .lineLimit(1)
+
+                        Text(
+                            day.formatted(
+                                .dateTime.day()
+                            )
+                        )
+                        .font(Theme.cardTitle)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                        Circle()
+                            .fill(
+                                scheduled.contains(day)
+                                    ? (
+                                        isToday
+                                        ? Theme.onDarkPrimary
+                                        : Theme.textTertiary
+                                    )
+                                    : Color.clear
+                            )
+                            .frame(
+                                width: Theme.statusDot,
+                                height: Theme.statusDot
+                            )
+                    }
+                    .foregroundStyle(
+                        isToday
+                            ? Theme.onDarkPrimary
+                            : Theme.textSecondary
+                    )
+                    .padding(.vertical, Theme.spaceXS)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        if isToday {
+                            Capsule()
+                                .fill(Theme.accentFill)
+                        }
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("This week")
+        .accessibilityHint("Opens the calendar.")
+    }
+
+
+    /// Every entry for today as a card, then the one action: Log a Dose.
+    var todayList: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.sectionHeaderGap
+        ) {
+            VStack(spacing: Theme.spaceS) {
+                ForEach(store.today) { entry in
+                    entryCard(entry)
+                }
+            }
+
+            if let next = nextUnloggedEntry {
+                Button {
+                    open(next)
+                } label: {
+                    Label(
+                        "Log a Dose",
+                        systemImage: "plus"
+                    )
+                }
+                .buttonStyle(
+                    TrackingPrimaryButtonStyle()
+                )
+            } else {
+                resolvedDayState
+            }
+        }
+    }
+
+
+    func entryStatus(
+        _ entry: ScheduledEntry
+    ) -> String {
+        if let log = entry.log {
+            return log.status == "Skipped"
+                ? "Skipped"
+                : "Taken"
+        }
+        return entry.id == nextUnloggedEntry?.id
+            ? "Due"
+            : "Upcoming"
+    }
+
+
+    func entryStripe(
+        _ status: String
+    ) -> Color {
+        switch status {
+        case "Taken": Theme.teal
+        case "Due": Theme.info
+        default: Theme.inactiveFill
+        }
+    }
+
+
+    @ViewBuilder
+    func entryCard(
+        _ entry: ScheduledEntry
+    ) -> some View {
+        let status = entryStatus(entry)
+        let card = HStack(
+            alignment: .center,
+            spacing: Theme.spaceS
+        ) {
+            Capsule()
+                .fill(entryStripe(status))
+                .frame(width: Theme.entryStripeWidth)
+                .frame(maxHeight: .infinity)
+
+            entryBodyLayout {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Text(entry.revision.compoundName)
+                        .font(Theme.cardTitle)
+                        .foregroundStyle(Theme.ink)
+
+                    Text(entry.revision.protocolName)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.textSecondary)
+
+                    Text(
+                        DoseText.amount(
+                            entry.revision.amountText,
+                            entry.revision.unitText
+                        )
+                        + " · "
+                        + entry.revision.routeText
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .monospacedDigit()
+                }
+
+                if !usesStackedHero {
+                    Spacer(minLength: Theme.spaceXS)
+                }
+
+                entryMetaLayout {
+                    StatusBadge(text: status)
+
+                    Text(
+                        (entry.log?.loggedAt ?? entry.at)
+                            .formatted(
+                                date: .omitted,
+                                time: .shortened
+                            )
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .monospacedDigit()
+                }
+
+            }
+
+            Image(systemName: "chevron.right")
+                .font(Theme.micro)
+                .foregroundStyle(Theme.textTertiary)
+                .accessibilityHidden(true)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: RoundedRectangle(
+                cornerRadius: Theme.radiusRow,
+                style: .continuous
+            )
+        )
+        .quietElevation()
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+
+        if let log = entry.log {
+            NavigationLink(
+                value: TrackingRoute.logDetail(log.id)
+            ) {
+                card
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                open(entry)
+            } label: {
+                card
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the log sheet.")
+        }
+    }
+
 
     var todayEmptyState: some View {
         Group {
@@ -719,16 +1031,12 @@ private extension TodayView {
                     }
                 }
             }
-            .overlay(
-                alignment: .top
-            ) {
-                EditorialRule()
-            }
-            .overlay(
-                alignment: .bottom
-            ) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
         }
     }
 
@@ -762,16 +1070,12 @@ private extension TodayView {
             maxWidth: .infinity,
             alignment: .leading
         )
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 
@@ -813,16 +1117,12 @@ private extension TodayView {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 
@@ -951,12 +1251,12 @@ private extension TodayView {
                     }
                 }
             }
-            .overlay(alignment: .top) {
-                EditorialRule()
-            }
-            .overlay(alignment: .bottom) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
         }
     }
 
@@ -1062,16 +1362,12 @@ private extension TodayView {
                     }
                 }
             }
-            .overlay(
-                alignment: .top
-            ) {
-                EditorialRule()
-            }
-            .overlay(
-                alignment: .bottom
-            ) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
             .animation(
                 reduceMotion
                     ? nil
@@ -1079,6 +1375,94 @@ private extension TodayView {
                 value: dropTarget
             )
         }
+    }
+
+
+    /// Logs that carry an injection site, for the Sites shortcut.
+    var siteLogs: [DoseLog] {
+        store.logs.filter {
+            !$0.isDeleted
+            && $0.route.usesInjectionSite
+            && $0.status != "Skipped"
+            && !$0.site
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty
+        }
+    }
+
+
+    var shortcutTiles: some View {
+        let tileCount =
+            2
+            + (siteLogs.isEmpty ? 0 : 1)
+            + (store.isDemo ? 0 : 1)
+        let columns =
+            Array(
+                repeating:
+                    GridItem(
+                        .flexible(),
+                        spacing: Theme.spaceS
+                    ),
+                count: usesStackedHero ? 2 : tileCount
+            )
+
+        return LazyVGrid(
+            columns: columns,
+            spacing: Theme.spaceS
+        ) {
+            shortcutTile("Vials", icon: "testtube.2") {
+                inventory = true
+            }
+
+            shortcutTile("Calendar", icon: "calendar") {
+                stackCalendar = true
+            }
+
+            if !siteLogs.isEmpty {
+                shortcutTile("Sites", icon: "figure.stand") {
+                    siteHistory = true
+                }
+            }
+
+            if !store.isDemo {
+                shortcutTile("Share", icon: "square.and.arrow.up") {
+                    shareCard = true
+                }
+            }
+        }
+    }
+
+
+    func shortcutTile(
+        _ title: String,
+        icon: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: Theme.spaceXS) {
+                Image(systemName: icon)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.teal)
+                    .accessibilityHidden(true)
+
+                Text(title)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Theme.spaceM)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusRow)
+            )
+            .quietElevation()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
 
@@ -1094,7 +1478,7 @@ private extension TodayView {
             : AnyLayout(
                 HStackLayout(
                     alignment: .top,
-                    spacing: Theme.spaceXS
+                    spacing: Theme.spaceS
                 )
             )
 
@@ -1107,6 +1491,7 @@ private extension TodayView {
                 ) {
                     summaryTile(
                         title: "Last entry",
+                        icon: "clock.arrow.circlepath",
                         value: relativeDate(log.loggedAt),
                         detail:
                             DoseText.amount(
@@ -1134,7 +1519,8 @@ private extension TodayView {
                             )
 
                     summaryTile(
-                        title: "Vial inventory",
+                        title: "Vial",
+                        icon: "testtube.2",
                         value:
                             DoseCalculator.text(
                                 balance
@@ -1155,61 +1541,56 @@ private extension TodayView {
 
     func summaryTile(
         title: String,
+        icon: String,
         value: String,
         detail: String
     ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceXXS
+            spacing: Theme.spaceXS
         ) {
-            Eyebrow(text: title)
+            HStack(spacing: Theme.spaceXS) {
+                Image(systemName: icon)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.teal)
+                    .accessibilityHidden(true)
 
-            HStack(
-                alignment: .firstTextBaseline
-            ) {
-                Text(value)
-                    .font(Theme.metricCompact)
-                    .foregroundStyle(
-                        Theme.ink
-                    )
+                Text(title)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.ink)
                     .lineLimit(1)
-                    .monospacedDigit()
 
-                Spacer(
-                    minLength:
-                        Theme.spaceXXS
-                )
+                Spacer(minLength: Theme.spaceXXS)
 
-                Image(
-                    systemName:
-                        "chevron.right"
-                )
-                .font(Theme.micro)
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
+                Image(systemName: "chevron.right")
+                    .font(Theme.micro)
+                    .foregroundStyle(Theme.textTertiary)
+                    .accessibilityHidden(true)
             }
+
+            Text(value)
+                .font(Theme.metricCompact)
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .monospacedDigit()
 
             Text(detail)
                 .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
+                .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
         }
-        .padding(
-            .vertical,
-            Theme.spaceM
-        )
+        .padding(Theme.cardInset)
         .frame(
             maxWidth: .infinity,
-            alignment: .leading
+            maxHeight: .infinity,
+            alignment: .topLeading
         )
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 

@@ -1,12 +1,12 @@
-# Protocola Design System v4
+# Protocola Design System v5
 
 `Theme.swift` is the executable source of truth for visual tokens. This document mirrors it. If the two ever disagree, update the document and code in the same change.
 
 ## Direction
 
-**Clinical Editorial Instrument**
+**Calm Pine Record**
 
-Protocola is a restrained technical record: warm paper, black sans-serif type, one blue-grey accent, sharp geometry, thin rules, and native iOS chrome. Product content should not look like a generic rounded-card wellness app.
+Protocola is a calm, legible record: warm paper canvas, white rounded cards with a soft elevation, serif (New York) titles and figures over SF Pro body text, one pine accent, capsule status chips and pill buttons, inside native iOS chrome. It records what the user did; it never suggests a dose.
 
 The product supports **Light and Dark Mode**. Every foundation colour in `Theme` is adaptive (light value, dark value). `accentFill` (deep teal) stays the same in both appearances so white text on buttons and the hero card keeps 7.9:1; `teal` lightens in Dark Mode for text and marks. Share images always render the light card.
 
@@ -14,13 +14,15 @@ The product supports **Light and Dark Mode**. Every foundation colour in `Theme`
 
 | Token | Value | Role |
 | --- | --- | --- |
-| paper | #F8F7F3 | app canvas |
-| surface | #FBFAF7 | quiet product surface |
+| paper | #FAF8F4 / dark #121514 | app canvas |
+| surface | #FFFFFF / dark #1F2321 | every card and row |
 | surfaceRaised | #FFFFFF | rare foreground surface |
-| ink | #121211 | primary text/icons |
-| textSecondary | #67655F | supporting copy |
-| textTertiary | #747169 | quiet metadata; >=4.5:1 on paper |
-| teal / darkSurface | #30536B | primary action, selection, charts, dark module |
+| ink | #111B29 / dark #EFF2F0 | primary text/icons |
+| textSecondary | #626A73 | supporting copy |
+| textTertiary | #6C737C | quiet metadata; >=4.5:1 on paper |
+| teal (pine) | #1E5B52 / dark #7EC4B6 | primary action, selection, Taken/Active chips, progress |
+| accentFill | #1E5B52 (both) | filled buttons, selected day in the week strip |
+| info | #286BBC / dark #86BCF4 | Due chips and the due-entry stripe |
 | amber | #876832 | attention; >=4.5:1 in status text |
 | danger | #A6534D | destructive semantics |
 | onDarkPrimary | #FDFCF9 | primary content on teal |
@@ -30,13 +32,13 @@ The product supports **Light and Dark Mode**. Every foundation colour in `Theme`
 | inactiveFill | ink @ 12% | fill for empty/inactive marks (status dots, empty heatmap days); never a rule |
 | subtleFill | ink @ 2.5% | quiet fill |
 | tealTint | teal @ 8% | selected/positive background |
-| shadow | ink @ 3.5% | transient elevation only |
+| shadow | black @ 6%, radius 14, y 4 | card elevation (`quietElevation`) |
 
 No local product colors. No decorative gradients or extra accent families.
 
 ## Typography
 
-Apple system sans-serif throughout product content.
+SF Pro carries body, labels, buttons and chips. New York (the system serif) carries page titles, navigation titles, card titles that name a record (`serifTitle`), modal titles and hero figures.
 
 Sizes below are the default text size. Every token scales with the user's text-size setting through `UIFontMetrics` along a matching iOS text style (pageTitle/metrics capped so heroes fit). Share images use the fixed `share*` tokens.
 
@@ -46,10 +48,12 @@ Sizes below are the default text size. Every token scales with the user's text-s
 
 | Token | Size | Weight |
 | --- | ---: | --- |
-| pageTitle | 34 | bold |
-| metricLarge | 34 | semibold, tabular figures |
-| metricCompact | 28 | semibold, tabular figures |
-| modalTitle | 20 | semibold |
+| pageTitle | 34 | serif medium |
+| metricLarge | 34 | serif medium, tabular figures |
+| metricCompact | 28 | serif medium, tabular figures |
+| modalTitle | 20 | serif semibold |
+| serifTitle | 17 | serif medium — the single subject of a page or sheet (vial card name, Log Dose compound). Compound names in list rows use cardTitle (sans). |
+| chipLabel | 13 | medium — status chips |
 | sectionTitle | 17 | semibold — the name of a thing (compound, a chart series), never a section label |
 | cardTitle | 17 | semibold — title of every record or tool row |
 | body | 17 | regular |
@@ -63,7 +67,11 @@ Sizes below are the default text size. Every token scales with the user's text-s
 | segmentLabel | 13 | medium |
 | shareMetric | 64 | semibold, tabular figures |
 
-Doses, times, and calculations use SF Pro with tabular figures; the app has one typeface. Product views must reference `Theme`; local font sizes are forbidden.
+Doses, times and amounts use tabular figures. Two families only: SF Pro and New York. Product views must reference `Theme`; local font sizes are forbidden.
+
+## Bottom spacing owner
+
+Every scrolling screen ends with `screenPadding()` plus `spaceXL` bottom padding, nothing more. The tab bar and home indicator are already in the safe area; never add a second reservation for them. Scrolling screens use `trackingScrollChrome()` (opaque paper navigation bar).
 
 ## Spacing and alignment
 
@@ -83,19 +91,20 @@ Root screens use the same 24pt content grid. Native Lists are acceptable in form
 
 ## Geometry
 
-- card: 2
-- row: 2
-- button: 2
-- field: 0
-- badge: 2
+- card: 18 (continuous)
+- row card: 14
+- button: 26 (pill)
+- field: 12
+- badge: capsule
 - rule thickness: 1
-- primary button height: 48
+- primary button height: 52
 - compact/secondary button height: 44
-- badge minimum height: 22
+- badge minimum height: 28
+- entry status stripe: 4
 - icon column: 24
 - large empty-state icon: 28
 
-Capsules/circles are reserved for native segmented states and true circular/status geometry, not general cards.
+Cards are white rounded rectangles on paper, separated by space (8–12pt), not by rules. Rules only divide rows inside one card.
 
 ## Motion
 
@@ -114,13 +123,16 @@ Respect Reduce Motion.
 ## Canonical components
 
 ### EditorialSection
-Sentence-case `Eyebrow`, 1pt hairline, content, 1pt hairline; spacing 16. Use the shared component rather than recreating this structure.
+Sentence-case `Eyebrow` above one white card holding the content (radius 18, 16pt inset, soft elevation).
+
+### FieldRow / IconBadge
+40pt tinted circle icon, caption label, then the value or control. Used in the Log Dose sheet and info cards.
 
 ### TrackingCard
-Surface background, radius 2, 16pt inset, hairline border, no shadow.
+Surface background, radius 18, 16pt inset, soft elevation, no border.
 
 ### TrackingHeroCard
-Teal dark surface, radius 2, 20pt inset. Used once: Today's next entry. Everything inside uses the on-dark tokens and the inverted primary button.
+accentFill surface, radius 18, 20pt inset. Everything inside uses the on-dark tokens and the inverted primary button.
 
 ### EditorialRule
 The only horizontal rule (1pt, hairline; `onDark` variant on teal). `Divider()` is reserved for menu separators.
@@ -129,13 +141,13 @@ The only horizontal rule (1pt, hairline; `onDark` variant on teal). `Divider()` 
 Label left in Subheadline secondary, value right in Body, tabular figures for values.
 
 ### StatusBadge
-Micro type, radius 2, minimum height 22, 8pt horizontal inset, semantic tint.
+Capsule chip, `chipLabel`, optional leading SF Symbol, minimum height 28, 12% tint fill. Taken/Active pine, Due blue, attention amber, expired red.
 
 ### PrimaryButton
-Teal fill, onDarkPrimary label, radius 2, 48pt minimum height.
+accentFill pill, onDarkPrimary label, 52pt minimum height.
 
 ### SecondaryButton
-Surface fill, controlBorder outline, ink label, radius 2, 44pt minimum height.
+Surface fill pill, controlBorder outline, ink label, 44pt minimum height.
 
 ### CompactButton
 44pt minimum tap target, 12pt horizontal inset, same radius/border semantics as secondary.

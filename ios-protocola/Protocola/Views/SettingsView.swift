@@ -23,7 +23,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            Form {
                 proSection
                 preferencesSection
                 dataPrivacySection

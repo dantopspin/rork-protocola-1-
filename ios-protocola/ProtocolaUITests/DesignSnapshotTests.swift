@@ -168,7 +168,7 @@ final class DesignSnapshotTests: XCTestCase {
 
             if screens == nil {
                 let inventory = app.buttons
-                    .containing(NSPredicate(format: "label CONTAINS[c] 'inventory'"))
+                    .containing(NSPredicate(format: "label CONTAINS[c] 'inventory' OR label == 'Vial' OR label == 'Vials'"))
                     .firstMatch
                 if inventory.waitForExistence(timeout: 2) {
                     inventory.tap()
@@ -213,12 +213,21 @@ final class DesignSnapshotTests: XCTestCase {
                     }
                 }
 
-                let log = app.buttons["Log"].firstMatch
+                app.swipeDown()
+                let log = app.buttons["Log a Dose"].firstMatch
                 if log.waitForExistence(timeout: 2) {
                     log.tap()
                     settle()
                     shot(app, "\(prefix)-06-dose-editor")
-                    dismissSheets(app)
+                    let save = app.buttons["Log Dose"].firstMatch
+                    if save.waitForExistence(timeout: 2) {
+                        save.tap()
+                        settle()
+                        settle()
+                        shot(app, "\(prefix)-06b-today-logged")
+                    } else {
+                        dismissSheets(app)
+                    }
                 }
             }
         }
@@ -251,6 +260,15 @@ final class DesignSnapshotTests: XCTestCase {
                             .firstMatch
                     ) {
                         shot(app, "\(prefix)-09b-labs")
+                        app.navigationBars.buttons.firstMatch.tap()
+                        settle()
+                    }
+                    if tapIfPresent(
+                        app.buttons
+                            .matching(NSPredicate(format: "label CONTAINS 'Protocol evolution'"))
+                            .firstMatch
+                    ) {
+                        shot(app, "\(prefix)-09c-phases")
                         app.navigationBars.buttons.firstMatch.tap()
                         settle()
                     }
