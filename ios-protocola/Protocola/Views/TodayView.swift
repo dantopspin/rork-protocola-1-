@@ -78,29 +78,19 @@ struct TodayView: View {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
-                PrimaryPageHeader(
-                    title: "Today",
-                    subtitle:
-                        Date.now.formatted(
-                            .dateTime
-                                .weekday(.wide)
-                                .month(.wide)
-                                .day()
-                        )
-                )
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceL
+                ) {
+                    weekStrip
+
+                    todayHeader
+                }
 
                 Group {
-                    if let next = nextUnloggedEntry {
-                        nextEntryHero(next)
-                            .transition(
-                                reduceMotion
-                                ? .opacity
-                                : .opacity.combined(
-                                    with: .move(
-                                        edge: .top
-                                    )
-                                )
-                            )
+                    if !store.today.isEmpty {
+                        todayList
+                            .transition(.opacity)
                     } else if store.today.isEmpty,
                               let cycle = offCycleContext {
                         offCycleCard(cycle)
@@ -153,10 +143,6 @@ struct TodayView: View {
                 if lastRecordedLog != nil
                     || activeVial != nil {
                     summaryTiles
-                }
-
-                if !remainingTodayEntries.isEmpty {
-                    todayEntriesSection
                 }
 
                 Text(
@@ -310,6 +296,282 @@ struct TodayView: View {
 // MARK: - Main sections
 
 private extension TodayView {
+
+    // MARK: - Today (cards)
+
+    /// "Today" in the serif display face, with the date on the right.
+    var todayHeader: some View {
+        HStack(
+            alignment: .firstTextBaseline,
+            spacing: Theme.spaceS
+        ) {
+            Text("Today")
+                .font(Theme.pageTitle)
+                .foregroundStyle(Theme.ink)
+                .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: Theme.spaceS)
+
+            Text(
+                Date.now.formatted(
+                    .dateTime
+                        .weekday(.abbreviated)
+                        .month(.abbreviated)
+                        .day()
+                )
+            )
+            .font(Theme.subheadline)
+            .foregroundStyle(Theme.textSecondary)
+        }
+    }
+
+
+    /// This week at a glance: today is the filled pill, and a dot marks
+    /// each day with scheduled entries. Tapping opens the calendar.
+    var weekStrip: some View {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        let start =
+            calendar.dateInterval(
+                of: .weekOfYear,
+                for: today
+            )?.start ?? today
+        let days = (0..<7).compactMap {
+            calendar.date(
+                byAdding: .day,
+                value: $0,
+                to: start
+            )
+        }
+        let end =
+            calendar.date(
+                byAdding: .day,
+                value: 7,
+                to: start
+            ) ?? start
+        let scheduled =
+            Set(
+                store.entries(
+                    start: start,
+                    end: end
+                ).map {
+                    calendar.startOfDay(for: $0.at)
+                }
+            )
+
+        return Button {
+            stackCalendar = true
+        } label: {
+            HStack(spacing: 0) {
+                ForEach(days, id: \.self) { day in
+                    let isToday =
+                        calendar.isDate(
+                            day,
+                            inSameDayAs: today
+                        )
+
+                    VStack(spacing: Theme.spaceXXS) {
+                        Text(
+                            day.formatted(
+                                .dateTime.weekday(.abbreviated)
+                            )
+                        )
+                        .font(Theme.chipLabel)
+
+                        Text(
+                            day.formatted(
+                                .dateTime.day()
+                            )
+                        )
+                        .font(Theme.cardTitle)
+                        .monospacedDigit()
+
+                        Circle()
+                            .fill(
+                                scheduled.contains(day)
+                                    ? (
+                                        isToday
+                                        ? Theme.onDarkPrimary
+                                        : Theme.textTertiary
+                                    )
+                                    : Color.clear
+                            )
+                            .frame(
+                                width: Theme.statusDot,
+                                height: Theme.statusDot
+                            )
+                    }
+                    .foregroundStyle(
+                        isToday
+                            ? Theme.onDarkPrimary
+                            : Theme.textSecondary
+                    )
+                    .padding(.vertical, Theme.spaceXS)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        if isToday {
+                            Capsule()
+                                .fill(Theme.accentFill)
+                        }
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("This week")
+        .accessibilityHint("Opens the calendar.")
+    }
+
+
+    /// Every entry for today as a card, then the one action: Log a Dose.
+    var todayList: some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.sectionHeaderGap
+        ) {
+            VStack(spacing: Theme.spaceS) {
+                ForEach(store.today) { entry in
+                    entryCard(entry)
+                }
+            }
+
+            if let next = nextUnloggedEntry {
+                Button {
+                    open(next)
+                } label: {
+                    Label(
+                        "Log a Dose",
+                        systemImage: "plus"
+                    )
+                }
+                .buttonStyle(
+                    TrackingPrimaryButtonStyle()
+                )
+            } else {
+                resolvedDayState
+            }
+        }
+    }
+
+
+    func entryStatus(
+        _ entry: ScheduledEntry
+    ) -> String {
+        if let log = entry.log {
+            return log.status == "Skipped"
+                ? "Skipped"
+                : "Taken"
+        }
+        return entry.id == nextUnloggedEntry?.id
+            ? "Due"
+            : "Upcoming"
+    }
+
+
+    func entryStripe(
+        _ status: String
+    ) -> Color {
+        switch status {
+        case "Taken": Theme.teal
+        case "Due": Theme.info
+        default: Theme.inactiveFill
+        }
+    }
+
+
+    @ViewBuilder
+    func entryCard(
+        _ entry: ScheduledEntry
+    ) -> some View {
+        let status = entryStatus(entry)
+        let card = HStack(
+            alignment: .center,
+            spacing: Theme.spaceS
+        ) {
+            Capsule()
+                .fill(entryStripe(status))
+                .frame(width: Theme.entryStripeWidth)
+                .frame(maxHeight: .infinity)
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(entry.revision.compoundName)
+                    .font(Theme.cardTitle)
+                    .foregroundStyle(Theme.ink)
+
+                Text(entry.revision.protocolName)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+
+                Text(
+                    DoseText.amount(
+                        entry.revision.amountText,
+                        entry.revision.unitText
+                    )
+                    + " · "
+                    + entry.revision.routeText
+                )
+                .font(Theme.caption)
+                .foregroundStyle(Theme.textSecondary)
+                .monospacedDigit()
+            }
+
+            Spacer(minLength: Theme.spaceXS)
+
+            VStack(
+                alignment: .trailing,
+                spacing: Theme.spaceXS
+            ) {
+                StatusBadge(text: status)
+
+                Text(
+                    (entry.log?.loggedAt ?? entry.at)
+                        .formatted(
+                            date: .omitted,
+                            time: .shortened
+                        )
+                )
+                .font(Theme.caption)
+                .foregroundStyle(Theme.textSecondary)
+                .monospacedDigit()
+            }
+
+            Image(systemName: "chevron.right")
+                .font(Theme.micro)
+                .foregroundStyle(Theme.textTertiary)
+                .accessibilityHidden(true)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(Theme.spaceM)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+
+        if let log = entry.log {
+            NavigationLink(
+                value: TrackingRoute.logDetail(log.id)
+            ) {
+                card
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                open(entry)
+            } label: {
+                card
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the log sheet.")
+        }
+    }
+
 
     var todayEmptyState: some View {
         Group {

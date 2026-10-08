@@ -110,14 +110,33 @@ struct EditorialSection<Content: View>: View {
     }
 
     var body: some View {
+        // Label above, content in a soft rounded card.
         VStack(
             alignment: .leading,
-            spacing: Theme.sectionHeaderGap
+            spacing: Theme.spaceS
         ) {
             Eyebrow(text: title)
-            EditorialRule()
-            content()
-            EditorialRule()
+                .padding(.horizontal, Theme.spaceXXS)
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.sectionHeaderGap
+            ) {
+                content()
+            }
+            .frame(
+                maxWidth: .infinity,
+                alignment: .leading
+            )
+            .padding(Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(
+                    cornerRadius:
+                        Theme.radiusCard
+                )
+            )
+            .quietElevation()
         }
     }
 }
@@ -138,6 +157,7 @@ struct TrackingCard<Content: View>: View {
             alignment: .leading
         )
         .padding(Theme.cardInset)
+        // A soft white card on warm paper: no outline, a quiet shadow.
         .background(
             Theme.surface,
             in: .rect(
@@ -145,10 +165,7 @@ struct TrackingCard<Content: View>: View {
                     Theme.radiusCard
             )
         )
-        .inkBorder(
-            cornerRadius:
-                Theme.radiusCard
-        )
+        .quietElevation()
     }
 }
 

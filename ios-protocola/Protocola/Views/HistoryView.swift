@@ -494,25 +494,11 @@ private extension HistoryView {
                 text: dayTitle(day.date)
             )
 
-            EditorialRule()
-
-            VStack(spacing: 0) {
-                ForEach(
-                    Array(
-                        day.records.enumerated()
-                    ),
-                    id: \.element.id
-                ) { index, record in
+            VStack(spacing: Theme.spaceS) {
+                ForEach(day.records) { record in
                     recordLink(record)
-
-                    if index
-                        < day.records.count - 1 {
-                        EditorialRule()
-                    }
                 }
             }
-
-            EditorialRule()
         }
     }
 
@@ -987,6 +973,16 @@ private struct TimelineRow: View {
                     width: Theme.iconColumn,
                     height: Theme.iconColumn
                 )
+                .padding(Theme.spaceXXS)
+                .background(
+                    Circle()
+                        .fill(
+                            tint.opacity(
+                                Theme.statusFillOpacity
+                            )
+                        )
+                )
+                .accessibilityHidden(true)
 
             VStack(
                 alignment: .leading,
@@ -1017,11 +1013,21 @@ private struct TimelineRow: View {
             .font(Theme.caption)
             .foregroundStyle(Theme.textSecondary)
             .monospacedDigit()
+
+            Image(systemName: "chevron.right")
+                .font(Theme.micro)
+                .foregroundStyle(Theme.textTertiary)
+                .accessibilityHidden(true)
         }
-        .padding(
-            .vertical,
-            Theme.rowPadding
+        .padding(Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: RoundedRectangle(
+                cornerRadius: Theme.radiusRow,
+                style: .continuous
+            )
         )
+        .quietElevation()
     }
 }
 

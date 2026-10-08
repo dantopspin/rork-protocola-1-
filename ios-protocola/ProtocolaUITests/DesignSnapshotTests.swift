@@ -213,12 +213,21 @@ final class DesignSnapshotTests: XCTestCase {
                     }
                 }
 
-                let log = app.buttons["Log"].firstMatch
+                app.swipeDown()
+                let log = app.buttons["Log a Dose"].firstMatch
                 if log.waitForExistence(timeout: 2) {
                     log.tap()
                     settle()
                     shot(app, "\(prefix)-06-dose-editor")
-                    dismissSheets(app)
+                    let save = app.navigationBars.buttons["Save"]
+                    if save.waitForExistence(timeout: 2) {
+                        save.tap()
+                        settle()
+                        settle()
+                        shot(app, "\(prefix)-06b-today-logged")
+                    } else {
+                        dismissSheets(app)
+                    }
                 }
             }
         }

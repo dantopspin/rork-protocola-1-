@@ -59,6 +59,10 @@ struct InventoryView: View {
                     }
                 }
 
+                if !availableVials.isEmpty {
+                    inventorySummary
+                }
+
                 vialSection(
                     "Active",
                     vials: activeVials
@@ -96,7 +100,7 @@ struct InventoryView: View {
         }
         .scrollIndicators(.hidden)
         .background(Theme.paper)
-        .navigationTitle("Inventory")
+        .navigationTitle("Vials")
         .toolbar {
             ToolbarItemGroup(
                 placement:
@@ -149,6 +153,101 @@ private extension InventoryView {
     }
 
 
+    /// Inventory at a glance: how many vials, how long they last, and
+    /// how many expire soon.
+    var inventorySummary: some View {
+        let runwayDays =
+            availableVials
+                .compactMap {
+                    store.estimatedDepletionDate(in: $0)
+                }
+                .max()
+                .map {
+                    max(
+                        0,
+                        Calendar.current.dateComponents(
+                            [.day],
+                            from: .now,
+                            to: $0
+                        ).day ?? 0
+                    )
+                }
+        let expiring =
+            availableVials.filter {
+                expiryText($0) != nil
+            }.count
+
+        return TrackingCard {
+            Text("Inventory at a glance")
+                .font(Theme.serifTitle)
+                .foregroundStyle(Theme.textSecondary)
+
+            HStack(alignment: .top, spacing: 0) {
+                summaryFigure(
+                    value: String(availableVials.count),
+                    label:
+                        availableVials.count == 1
+                        ? "Vial"
+                        : "Vials",
+                    tint: Theme.ink
+                )
+
+                summaryFigure(
+                    value:
+                        runwayDays.map(Self.runwayText)
+                        ?? "—",
+                    label: "Projected supply",
+                    tint: Theme.ink
+                )
+
+                summaryFigure(
+                    value: String(expiring),
+                    label: "Expiring soon",
+                    tint:
+                        expiring > 0
+                        ? Theme.danger
+                        : Theme.ink
+                )
+            }
+        }
+    }
+
+
+    static func runwayText(
+        _ days: Int
+    ) -> String {
+        days >= 14
+            ? String(days / 7) + " weeks"
+            : String(days) + (days == 1 ? " day" : " days")
+    }
+
+
+    func summaryFigure(
+        value: String,
+        label: String,
+        tint: Color
+    ) -> some View {
+        VStack(spacing: Theme.spaceXXS) {
+            Text(value)
+                .font(Theme.metricCompact)
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(label)
+                .font(Theme.caption)
+                .foregroundStyle(
+                    tint == Theme.ink
+                        ? Theme.textSecondary
+                        : tint
+                )
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+
+
     @ViewBuilder
     func vialSection(
         _ title: String,
@@ -161,184 +260,188 @@ private extension InventoryView {
             ) {
                 Eyebrow(text: title)
 
-                VStack(spacing: 0) {
-                    ForEach(
-                        Array(
-                            vials.enumerated()
-                        ),
-                        id:
-                            \.element.id
-                    ) { index, vial in
+                VStack(spacing: Theme.spaceS) {
+                    ForEach(vials) { vial in
                         vialLink(vial)
-
-                        if index
-                            < vials.count - 1 {
-                            EditorialRule()
-                        }
                     }
-                }
-                .overlay(
-                    alignment: .top
-                ) {
-                    EditorialRule()
-                }
-                .overlay(
-                    alignment: .bottom
-                ) {
-                    EditorialRule()
                 }
             }
         }
     }
 
 
+    /// A vial card: icon tile, serif name, remaining bar, runway and expiry.
     func vialLink(
         _ vial: VialRecord
     ) -> some View {
-        NavigationLink(
+        let balance = store.balances[vial.id] ?? 0
+        let fraction: Double = {
+            let total = NSDecimalNumber(decimal: vial.originalMg).doubleValue
+            guard total > 0 else { return 0 }
+            return min(
+                1,
+                max(
+                    0,
+                    NSDecimalNumber(decimal: balance).doubleValue / total
+                )
+            )
+        }()
+        let status = store.vialStatus(vial)
+        let expiry = expiryText(vial)
+        let barTint: Color =
+            expiry == "Expired" || status == "Depleted"
+            ? Theme.danger
+            : (
+                status == "Low recorded balance" || expiry != nil
+                ? Theme.amber
+                : Theme.teal
+            )
+
+        return NavigationLink(
             value:
                 TrackingRoute
                     .vialDetail(vial.id)
         ) {
-            VStack(
-                alignment: .leading,
+            HStack(
+                alignment: .top,
                 spacing: Theme.spaceS
             ) {
-                HStack(
-                    alignment:
-                        .firstTextBaseline,
-                    spacing: Theme.spaceS
+                Image(systemName: "testtube.2")
+                    .font(Theme.modalTitle)
+                    .foregroundStyle(Theme.teal)
+                    .frame(
+                        width: Theme.iconTileSize,
+                        height: Theme.iconTileSize
+                    )
+                    .background(
+                        Theme.tealTint,
+                        in: .rect(cornerRadius: Theme.radiusRow)
+                    )
+                    .accessibilityHidden(true)
+
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
                 ) {
-                    VStack(
-                        alignment: .leading,
-                        spacing:
-                            Theme.spaceXXS
+                    HStack(
+                        alignment: .firstTextBaseline,
+                        spacing: Theme.spaceXS
                     ) {
-                        Text(vial.name)
-                            .font(Theme.cardTitle)
-                            .foregroundStyle(
-                                Theme.ink
-                            )
+                        Text(vial.compoundName)
+                            .font(Theme.serifTitle)
+                            .foregroundStyle(Theme.ink)
                             .lineLimit(2)
 
-                        Text(
-                            vial.compoundName
-                        )
-                        .font(Theme.body)
-                        .foregroundStyle(
-                            Theme
-                                .textSecondary
-                        )
-                    }
+                        Spacer(minLength: Theme.spaceXS)
 
-                    Spacer()
-
-                    VStack(
-                        alignment: .trailing,
-                        spacing:
-                            Theme.spaceXXS
-                    ) {
-                        Eyebrow(
-                            text: "Remaining"
-                        )
-
-                        Text(
-                            DoseCalculator
-                                .text(
-                                    store.balances[
-                                        vial.id
-                                    ] ?? 0
-                                )
-                            + " mg"
-                        )
-                        .font(
-                            Theme.metricCompact
-                        )
-                        .foregroundStyle(
-                            Theme.ink
-                        )
-                    }
-
-                    Image(
-                        systemName:
-                            "chevron.right"
-                    )
-                    .font(Theme.micro)
-                    .foregroundStyle(
-                        Theme.textSecondary
-                    )
-                }
-
-                HStack(
-                    spacing: Theme.spaceS
-                ) {
-                    if let entries =
-                        store
-                            .scheduledEntriesRemaining(
-                                in: vial
-                            ),
-                       entries > 0 {
-                        Text(
-                            "~"
-                            + String(entries)
-                            + " "
-                            + (
-                                entries == 1
-                                ? "entry"
-                                : "entries"
+                        if let expiry {
+                            StatusBadge(
+                                text:
+                                    expiry == "Expired"
+                                    ? "Expiry passed"
+                                    : "Expires soon"
                             )
-                        )
+                            .accessibilityLabel(expiry)
+                        }
                     }
 
-                    if let depletion =
-                        store
-                            .estimatedDepletionDate(
-                                in: vial
-                            ) {
+                    Text(
+                        [
+                            vial.name,
+                            vial.concentration.map {
+                                DoseCalculator.text($0) + " mg/mL"
+                            },
+                            vial.supplier.isEmpty
+                                ? nil
+                                : vial.supplier
+                        ]
+                        .compactMap { $0 }
+                        .joined(separator: " · ")
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .monospacedDigit()
+
+                    ProgressView(value: fraction)
+                        .tint(barTint)
+                        .padding(.vertical, Theme.spaceXS)
+                        .accessibilityHidden(true)
+
+                    HStack(spacing: Theme.spaceXS) {
                         Text(
-                            "Depletes "
-                            + depletion
-                                .formatted(
-                                    date:
-                                        .abbreviated,
-                                    time:
-                                        .omitted
+                            DoseCalculator.text(balance)
+                            + " mg remaining"
+                        )
+                        .foregroundStyle(Theme.ink)
+
+                        Spacer(minLength: Theme.spaceXS)
+
+                        if let entries =
+                            store.scheduledEntriesRemaining(in: vial),
+                           entries > 0 {
+                            Text(
+                                runwaySummary(
+                                    vial,
+                                    entries: entries
                                 )
-                        )
+                            )
+                            .foregroundStyle(Theme.textSecondary)
+                        }
                     }
+                    .font(Theme.caption)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
 
-                    if let expiryText =
-                        expiryText(vial) {
-                        Text(expiryText)
+                    if let expiry {
+                        Text(expiry)
+                            .font(Theme.caption)
+                            .foregroundStyle(barTint)
                     }
                 }
-                .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
 
-                let status =
-                    store.vialStatus(vial)
-
-                if [
-                    "Low recorded balance",
-                    "Depleted"
-                ]
-                .contains(status) {
-                    Text(status)
-                        .font(Theme.micro)
-                        .foregroundStyle(
-                            Theme.amber
-                        )
-                }
+                Image(systemName: "chevron.right")
+                    .font(Theme.micro)
+                    .foregroundStyle(Theme.textTertiary)
+                    .accessibilityHidden(true)
             }
-            .padding(
-                .vertical,
-                Theme.rowPadding
+            .padding(Theme.spaceM)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
             )
+            .quietElevation()
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+
+    /// "~6 weeks (35 entries)" when a depletion date is known, otherwise
+    /// just the entry count.
+    func runwaySummary(
+        _ vial: VialRecord,
+        entries: Int
+    ) -> String {
+        let count =
+            String(entries)
+            + (entries == 1 ? " entry" : " entries")
+        guard
+            let depletion =
+                store.estimatedDepletionDate(in: vial)
+        else {
+            return "~" + count
+        }
+        let days =
+            max(
+                0,
+                Calendar.current.dateComponents(
+                    [.day],
+                    from: .now,
+                    to: depletion
+                ).day ?? 0
+            )
+        return "~" + Self.runwayText(days) + " (" + count + ")"
     }
 
 
