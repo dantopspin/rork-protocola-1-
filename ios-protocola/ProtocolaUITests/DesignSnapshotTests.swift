@@ -212,7 +212,7 @@ final class DesignSnapshotTests: XCTestCase {
 
             if screens == nil {
                 let row = app.buttons
-                    .matching(NSPredicate(format: "label CONTAINS 'Active'"))
+                    .matching(NSPredicate(format: "label CONTAINS 'Sample protocol'"))
                     .firstMatch
                 if row.waitForExistence(timeout: 2) {
                     row.tap()

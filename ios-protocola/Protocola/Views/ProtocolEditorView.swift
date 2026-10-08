@@ -328,11 +328,12 @@ private extension ProtocolEditorView {
     static func nextFullHour(
         after date: Date = .now
     ) -> Date {
+        // At least 30 minutes ahead, so the first entry is never "Due now".
         let calendar = Calendar.current
         let hour =
             calendar.dateInterval(
                 of: .hour,
-                for: date
+                for: date.addingTimeInterval(30 * 60)
             )?.end ?? date
         return hour
     }
