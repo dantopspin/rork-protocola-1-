@@ -201,7 +201,9 @@ struct TodayView: View {
         // Serif wordmark as the large title; the week strip opens the
         // calendar, so the bar keeps a single Settings button.
         .navigationTitle("Protocola")
-        .navigationBarTitleDisplayMode(.large)
+        // The demo banner sits under the bar and blanks a large title,
+        // so demo mode uses the inline wordmark.
+        .navigationBarTitleDisplayMode(store.isDemo ? .inline : .large)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let log = undoLog,
                !log.isDeleted {
