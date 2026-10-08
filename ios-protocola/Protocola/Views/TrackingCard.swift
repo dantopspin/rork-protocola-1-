@@ -291,3 +291,51 @@ extension View {
         )
     }
 }
+
+
+/// Round tinted icon used to lead a field row.
+struct IconBadge: View {
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(Theme.label)
+            .foregroundStyle(Theme.teal)
+            .frame(
+                width: Theme.iconBadgeSize,
+                height: Theme.iconBadgeSize
+            )
+            .background(Theme.tealTint, in: Circle())
+            .accessibilityHidden(true)
+    }
+}
+
+
+/// Icon badge, small label, then the field's value or control.
+struct FieldRow<Content: View>: View {
+    let icon: String
+    let label: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        HStack(
+            alignment: .center,
+            spacing: Theme.spaceS
+        ) {
+            IconBadge(systemImage: icon)
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(label)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+
+                content
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, Theme.spaceXS)
+    }
+}

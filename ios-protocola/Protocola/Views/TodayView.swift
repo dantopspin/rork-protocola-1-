@@ -17,6 +17,7 @@ struct TodayView: View {
     @State private var addVial = false
     @State private var stackCalendar = false
     @State private var shareCard = false
+    @State private var siteHistory = false
     @State private var editingSchedule: ScheduleRevision?
     @State private var undoLog: DoseLog?
     @State private var addingSite: DoseLog?
@@ -136,6 +137,10 @@ struct TodayView: View {
                     value:
                         nextUnloggedEntry?.id
                 )
+
+                if !store.protocols.isEmpty {
+                    shortcutTiles
+                }
 
                 if !store.isDemo,
                    let status = notificationStatus,
@@ -276,6 +281,11 @@ struct TodayView: View {
             isPresented: $stackCalendar
         ) {
             StackCalendarView()
+        }
+        .sheet(isPresented: $siteHistory) {
+            InjectionSiteHistoryView(
+                logs: siteLogs
+            )
         }
         .sheet(isPresented: $shareCard) {
             ShareCardPreviewView(
@@ -1370,6 +1380,90 @@ private extension TodayView {
     }
 
 
+    /// Logs that carry an injection site, for the Sites shortcut.
+    var siteLogs: [DoseLog] {
+        store.logs.filter {
+            !$0.isDeleted
+            && $0.route.usesInjectionSite
+            && $0.status != "Skipped"
+            && !$0.site
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty
+        }
+    }
+
+
+    var shortcutTiles: some View {
+        let columns =
+            Array(
+                repeating:
+                    GridItem(
+                        .flexible(),
+                        spacing: Theme.spaceS
+                    ),
+                count: usesStackedHero ? 2 : 4
+            )
+
+        return LazyVGrid(
+            columns: columns,
+            spacing: Theme.spaceS
+        ) {
+            shortcutTile("Vials", icon: "testtube.2") {
+                inventory = true
+            }
+
+            shortcutTile("Calendar", icon: "calendar") {
+                stackCalendar = true
+            }
+
+            if !siteLogs.isEmpty {
+                shortcutTile("Sites", icon: "figure.stand") {
+                    siteHistory = true
+                }
+            }
+
+            if !store.isDemo {
+                shortcutTile("Share", icon: "square.and.arrow.up") {
+                    shareCard = true
+                }
+            }
+        }
+    }
+
+
+    func shortcutTile(
+        _ title: String,
+        icon: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: Theme.spaceXS) {
+                Image(systemName: icon)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.teal)
+                    .accessibilityHidden(true)
+
+                Text(title)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Theme.spaceM)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusRow)
+            )
+            .quietElevation()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+
     var summaryTiles: some View {
         let layout =
             usesStackedHero
@@ -1382,7 +1476,7 @@ private extension TodayView {
             : AnyLayout(
                 HStackLayout(
                     alignment: .top,
-                    spacing: Theme.spaceXS
+                    spacing: Theme.spaceS
                 )
             )
 
@@ -1395,6 +1489,7 @@ private extension TodayView {
                 ) {
                     summaryTile(
                         title: "Last entry",
+                        icon: "clock.arrow.circlepath",
                         value: relativeDate(log.loggedAt),
                         detail:
                             DoseText.amount(
@@ -1423,6 +1518,7 @@ private extension TodayView {
 
                     summaryTile(
                         title: "Vial inventory",
+                        icon: "testtube.2",
                         value:
                             DoseCalculator.text(
                                 balance
@@ -1443,61 +1539,54 @@ private extension TodayView {
 
     func summaryTile(
         title: String,
+        icon: String,
         value: String,
         detail: String
     ) -> some View {
         VStack(
             alignment: .leading,
-            spacing: Theme.spaceXXS
+            spacing: Theme.spaceXS
         ) {
-            Eyebrow(text: title)
+            HStack(spacing: Theme.spaceXS) {
+                Image(systemName: icon)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.teal)
+                    .accessibilityHidden(true)
 
-            HStack(
-                alignment: .firstTextBaseline
-            ) {
-                Text(value)
-                    .font(Theme.metricCompact)
-                    .foregroundStyle(
-                        Theme.ink
-                    )
-                    .lineLimit(1)
-                    .monospacedDigit()
+                Text(title)
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.ink)
 
-                Spacer(
-                    minLength:
-                        Theme.spaceXXS
-                )
+                Spacer(minLength: Theme.spaceXXS)
 
-                Image(
-                    systemName:
-                        "chevron.right"
-                )
-                .font(Theme.micro)
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
+                Image(systemName: "chevron.right")
+                    .font(Theme.micro)
+                    .foregroundStyle(Theme.textTertiary)
+                    .accessibilityHidden(true)
             }
+
+            Text(value)
+                .font(Theme.metricCompact)
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .monospacedDigit()
 
             Text(detail)
                 .font(Theme.caption)
-                .foregroundStyle(
-                    Theme.textSecondary
-                )
+                .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
         }
-        .padding(
-            .vertical,
-            Theme.spaceM
-        )
+        .padding(Theme.cardInset)
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 

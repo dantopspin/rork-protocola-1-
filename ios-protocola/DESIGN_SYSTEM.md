@@ -14,14 +14,14 @@ The product supports **Light and Dark Mode**. Every foundation colour in `Theme`
 
 | Token | Value | Role |
 | --- | --- | --- |
-| paper | #F7F5F0 / dark #121514 | app canvas |
+| paper | #FAF8F4 / dark #121514 | app canvas |
 | surface | #FFFFFF / dark #1F2321 | every card and row |
 | surfaceRaised | #FFFFFF | rare foreground surface |
-| ink | #161E1C / dark #EFF2F0 | primary text/icons |
-| textSecondary | #67655F | supporting copy |
-| textTertiary | #747169 | quiet metadata; >=4.5:1 on paper |
-| teal (pine) | #24564F / dark #7EC4B6 | primary action, selection, Taken/Active chips, progress |
-| accentFill | #24564F (both) | filled buttons, selected day in the week strip |
+| ink | #111B29 / dark #EFF2F0 | primary text/icons |
+| textSecondary | #626A73 | supporting copy |
+| textTertiary | #6C737C | quiet metadata; >=4.5:1 on paper |
+| teal (pine) | #1E5B52 / dark #7EC4B6 | primary action, selection, Taken/Active chips, progress |
+| accentFill | #1E5B52 (both) | filled buttons, selected day in the week strip |
 | info | #286BBC / dark #86BCF4 | Due chips and the due-entry stripe |
 | amber | #876832 | attention; >=4.5:1 in status text |
 | danger | #A6534D | destructive semantics |
@@ -120,6 +120,9 @@ Respect Reduce Motion.
 
 ### EditorialSection
 Sentence-case `Eyebrow` above one white card holding the content (radius 18, 16pt inset, soft elevation).
+
+### FieldRow / IconBadge
+40pt tinted circle icon, caption label, then the value or control. Used in the Log Dose sheet and info cards.
 
 ### TrackingCard
 Surface background, radius 18, 16pt inset, soft elevation, no border.

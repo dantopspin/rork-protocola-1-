@@ -32,9 +32,9 @@ enum Theme {
 
     // MARK: - Foundation colors
 
-    /// #F8F7F3 — warm near-white paper canvas.
+    /// #FAF8F4 — light warm cream canvas.
     static let paper = adaptive(
-        light: (0.969, 0.961, 0.941),
+        light: (0.980, 0.973, 0.957),
         dark: (0.071, 0.082, 0.078)
     )
 
@@ -44,28 +44,28 @@ enum Theme {
         dark: (0.122, 0.137, 0.129)
     )
 
-    /// #121211 — primary type and rules.
+    /// #111B29 — navy-black primary type.
     static let ink = adaptive(
-        light: (0.086, 0.118, 0.11),
+        light: (0.067, 0.106, 0.161),
         dark: (0.937, 0.949, 0.941)
     )
 
-    /// #67655F — supporting copy.
+    /// #626A73 — supporting copy, cool grey.
     static let textSecondary = adaptive(
-        light: (0.396, 0.42, 0.408),
+        light: (0.384, 0.416, 0.451),
         dark: (0.659, 0.69, 0.675)
     )
 
-    /// #747169 — quiet metadata that still clears 4.5:1 on paper.
+    /// #6C737C — quiet metadata that still clears 4.5:1 on paper.
     static let textTertiary = adaptive(
-        light: (0.443, 0.463, 0.451),
+        light: (0.424, 0.451, 0.486),
         dark: (0.596, 0.624, 0.612)
     )
 
     /// #30536B — the single product accent from the original Peptide Lens
     /// direction. Used for primary actions, progress, selection, and charts.
     static let teal = adaptive(
-        light: (0.141, 0.337, 0.31),
+        light: (0.118, 0.357, 0.322),
         dark: (0.494, 0.769, 0.714)
     )
 
@@ -84,9 +84,9 @@ enum Theme {
     /// Deep teal in both appearances: white text on it stays above 7.9:1,
     /// while `teal` itself lightens in Dark Mode for text and marks.
     static let accentFill = Color(
-        red: 0.141,
-        green: 0.337,
-        blue: 0.310
+        red: 0.118,
+        green: 0.357,
+        blue: 0.322
     )
 
     /// "Due" and other time-sensitive information states.
@@ -364,6 +364,8 @@ enum Theme {
 
     // Permission sheet and recorded-entries heatmap
     static let iconTileSize: CGFloat = 56
+    /// Round icon badge leading a field row (Log Dose sheet).
+    static let iconBadgeSize: CGFloat = 40
     static let heatmapCellMin: CGFloat = 8
     static let heatmapCellMax: CGFloat = 20
     static let heatmapGap: CGFloat = 4

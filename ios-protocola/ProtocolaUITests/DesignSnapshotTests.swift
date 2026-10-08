@@ -219,7 +219,7 @@ final class DesignSnapshotTests: XCTestCase {
                     log.tap()
                     settle()
                     shot(app, "\(prefix)-06-dose-editor")
-                    let save = app.navigationBars.buttons["Save"]
+                    let save = app.buttons["Log Dose"].firstMatch
                     if save.waitForExistence(timeout: 2) {
                         save.tap()
                         settle()

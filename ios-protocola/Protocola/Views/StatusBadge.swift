@@ -13,7 +13,8 @@ struct StatusBadge: View {
             return Theme.teal
 
         case "Due",
-             "Due now":
+             "Due now",
+             "Planned":
             return Theme.info
 
         case "Partial",

@@ -59,22 +59,16 @@ struct InventoryView: View {
                     }
                 }
 
-                if !availableVials.isEmpty {
-                    inventorySummary
+                if !archivedVials.isEmpty {
+                    Picker(
+                        "Vials shown",
+                        selection: $showArchived
+                    ) {
+                        Text("Current").tag(false)
+                        Text("Archived").tag(true)
+                    }
+                    .pickerStyle(.segmented)
                 }
-
-                vialSection(
-                    "Active",
-                    vials: activeVials
-                )
-                vialSection(
-                    "Reserve",
-                    vials: reserveVials
-                )
-                vialSection(
-                    "Sealed",
-                    vials: sealedVials
-                )
 
                 if showArchived {
                     vialSection(
@@ -82,6 +76,27 @@ struct InventoryView: View {
                         vials:
                             archivedVials
                     )
+                } else {
+                    if !availableVials.isEmpty {
+                        inventorySummary
+                    }
+
+                    vialSection(
+                        "Active",
+                        vials: activeVials
+                    )
+                    vialSection(
+                        "Reserve",
+                        vials: reserveVials
+                    )
+                    vialSection(
+                        "Sealed",
+                        vials: sealedVials
+                    )
+
+                    if let depletion = earliestDepletion {
+                        depletionCard(depletion)
+                    }
                 }
 
                 Text(
@@ -106,23 +121,6 @@ struct InventoryView: View {
                 placement:
                     .topBarTrailing
             ) {
-                if !archivedVials
-                    .isEmpty {
-                    Menu {
-                        Toggle(
-                            "Show archived",
-                            isOn:
-                                $showArchived
-                        )
-                    } label: {
-                        Label(
-                            "Inventory options",
-                            systemImage:
-                                "ellipsis.circle"
-                        )
-                    }
-                }
-
                 Button(
                     "Add vial",
                     systemImage: "plus"
@@ -270,6 +268,56 @@ private extension InventoryView {
     }
 
 
+    /// The available vial expected to run out first, from recorded
+    /// schedules. Nil when no runway can be estimated.
+    var earliestDepletion: (vial: VialRecord, date: Date)? {
+        availableVials
+            .compactMap { vial in
+                store.estimatedDepletionDate(in: vial)
+                    .map { (vial: vial, date: $0) }
+            }
+            .min { $0.date < $1.date }
+    }
+
+
+    func depletionCard(
+        _ depletion: (vial: VialRecord, date: Date)
+    ) -> some View {
+        HStack(spacing: Theme.spaceS) {
+            IconBadge(systemImage: "chart.line.downtrend.xyaxis")
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text("Projected depletion")
+                    .font(Theme.label)
+                    .foregroundStyle(Theme.ink)
+
+                Text(
+                    depletion.vial.name
+                    + " · around "
+                    + depletion.date.formatted(
+                        date: .abbreviated,
+                        time: .omitted
+                    )
+                    + ", based on your recorded schedule."
+                )
+                .font(Theme.caption)
+                .foregroundStyle(Theme.textSecondary)
+                .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(Theme.cardInset)
+        .background(
+            Theme.subtleFill,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .accessibilityElement(children: .combine)
+    }
+
+
     /// A vial card: icon tile, serif name, remaining bar, runway and expiry.
     func vialLink(
         _ vial: VialRecord
@@ -289,10 +337,12 @@ private extension InventoryView {
         let status = store.vialStatus(vial)
         let expiry = expiryText(vial)
         let barTint: Color =
-            expiry == "Expired" || status == "Depleted"
+            expiry == "Expired"
+                || status == "Depleted"
+                || status == "Low recorded balance"
             ? Theme.danger
             : (
-                status == "Low recorded balance" || expiry != nil
+                expiry != nil
                 ? Theme.amber
                 : Theme.teal
             )

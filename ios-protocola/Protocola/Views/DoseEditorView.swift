@@ -49,7 +49,11 @@ struct DoseEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
-                entrySection
+                compoundSection
+
+                amountSection
+
+                timeSection
                 if currentRoute.usesInjectionSite {
                     vialSection
 
@@ -68,10 +72,23 @@ struct DoseEditorView: View {
             .doneKeyboard()
             .navigationTitle(
                 correcting == nil
-                    ? "Log entry"
+                    ? "Log Dose"
                     : "Correct entry"
             )
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .safeAreaInset(edge: .bottom) {
+                Button(
+                    correcting == nil
+                        ? "Log Dose"
+                        : "Save correction"
+                ) {
+                    save()
+                }
+                .buttonStyle(TrackingPrimaryButtonStyle())
+                .padding(.horizontal, Theme.pageInset)
+                .padding(.vertical, Theme.spaceS)
+                .background(Theme.paper)
+            }
             .discardGuard(
                 hasChanges: hasUnsavedChanges,
                 confirming: $confirmDiscard
@@ -87,20 +104,14 @@ struct DoseEditorView: View {
                 ToolbarItem(
                     placement: .cancellationAction
                 ) {
-                    Button("Cancel") {
+                    Button {
                         if hasUnsavedChanges {
                             confirmDiscard = true
                         } else {
                             dismiss()
                         }
-                    }
-                }
-
-                ToolbarItem(
-                    placement: .confirmationAction
-                ) {
-                    Button("Save") {
-                        save()
+                    } label: {
+                        Label("Close", systemImage: "xmark")
                     }
                 }
             }
@@ -123,14 +134,20 @@ struct DoseEditorView: View {
 
 private extension DoseEditorView {
 
-    var entrySection: some View {
+    var compoundSection: some View {
         Section {
-            Text(
-                correcting?.compoundName
-                ?? revision?.compoundName
-                ?? "Entry"
-            )
-            .font(Theme.modalTitle)
+            FieldRow(
+                icon: "pills",
+                label: "Compound"
+            ) {
+                Text(
+                    correcting?.compoundName
+                    ?? revision?.compoundName
+                    ?? "Entry"
+                )
+                .font(Theme.serifTitle)
+                .foregroundStyle(Theme.ink)
+            }
 
             if let occurrence {
                 RecordRow(
@@ -165,14 +182,28 @@ private extension DoseEditorView {
                         .tag($0)
                 }
             }
+            .pickerStyle(.segmented)
 
-            if draft.status != "Skipped" {
-                HStack {
+        } header: {
+            Eyebrow(text: "Entry as recorded")
+        }
+    }
+
+
+    @ViewBuilder
+    var amountSection: some View {
+        if draft.status != "Skipped" {
+            Section {
+                VStack(spacing: Theme.spaceXS) {
                     TextField(
-                        "Actual amount",
+                        "0",
                         text: $draft.amount
                     )
+                    .font(Theme.metricLarge)
+                    .monospacedDigit()
+                    .multilineTextAlignment(.center)
                     .keyboardType(.decimalPad)
+                    .accessibilityLabel("Actual amount")
 
                     Picker(
                         "Unit",
@@ -184,7 +215,10 @@ private extension DoseEditorView {
                         }
                     }
                     .labelsHidden()
+                    .tint(Theme.textSecondary)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Theme.spaceXS)
 
                 VStack(
                     alignment: .leading,
@@ -230,22 +264,33 @@ private extension DoseEditorView {
                     )
                     .keyboardType(.decimalPad)
                 }
+
+            } header: {
+                Eyebrow(text: "Amount")
+            } footer: { FormFooter {
+                Text(
+                    "Values reflect your own records, not an administration recommendation."
+                )
             }
-
-            DatePicker(
-                "Recorded time",
-                selection: $draft.loggedAt,
-                in: ...Date.now
-            )
-
-        } header: {
-            Eyebrow(text: "Entry as recorded")
-        } footer: { FormFooter {
-            Text(
-                "Values reflect your own records, not an administration recommendation."
-            )
+            }
         }
-}
+    }
+
+
+    var timeSection: some View {
+        Section {
+            FieldRow(
+                icon: "calendar",
+                label: "Date and time"
+            ) {
+                DatePicker(
+                    "Recorded time",
+                    selection: $draft.loggedAt,
+                    in: ...Date.now
+                )
+                .labelsHidden()
+            }
+        }
     }
 
 
@@ -426,11 +471,16 @@ private extension DoseEditorView {
 
 
     var symptomsSection: some View {
-        Section("Symptoms and notes") {
-            TextField(
-                "Symptoms (optional)",
-                text: $draft.symptoms
-            )
+        Section {
+            FieldRow(
+                icon: "waveform.path.ecg",
+                label: "Symptoms (optional)"
+            ) {
+                TextField(
+                    "What did you notice?",
+                    text: $draft.symptoms
+                )
+            }
 
             if !draft.symptoms.isEmpty {
                 Stepper(
@@ -440,11 +490,18 @@ private extension DoseEditorView {
                 )
             }
 
-            TextField(
-                "Notes (optional)",
-                text: $draft.notes,
-                axis: .vertical
-            )
+            FieldRow(
+                icon: "doc.text",
+                label: "Notes (optional)"
+            ) {
+                TextField(
+                    "How are you feeling today?",
+                    text: $draft.notes,
+                    axis: .vertical
+                )
+            }
+        } header: {
+            Eyebrow(text: "Symptoms and notes")
         }
     }
 

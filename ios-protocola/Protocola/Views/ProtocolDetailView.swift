@@ -63,6 +63,8 @@ private extension ProtocolDetailView {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
+                protocolHeader(record)
+
                 if !store.canEdit(
                     record.id
                 ) {
@@ -111,6 +113,13 @@ private extension ProtocolDetailView {
             .inline
         )
         .toolbar {
+            // The header carries the name; keep the bar quiet like the
+            // reference while the title still names the back button.
+            ToolbarItem(placement: .principal) {
+                Text("")
+                    .accessibilityHidden(true)
+            }
+
             ToolbarItem(
                 placement: .topBarTrailing
             ) {
@@ -273,6 +282,68 @@ private extension ProtocolDetailView {
             ProtocolEditorView(
                 record: record
             )
+        }
+    }
+
+
+    /// Icon tile, serif name, compound count and start date, status chip.
+    func protocolHeader(
+        _ record: ProtocolRecord
+    ) -> some View {
+        let current = store.currentRevisions(record.id)
+        let started =
+            store.revisions
+                .filter { $0.protocolID == record.id }
+                .map(\.effectiveFrom)
+                .min()
+        let count =
+            String(current.count)
+            + (current.count == 1 ? " compound" : " compounds")
+        let subtitle =
+            started.map {
+                count
+                + " · since "
+                + $0.formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                )
+            } ?? count
+
+        return HStack(
+            alignment: .center,
+            spacing: Theme.spaceM
+        ) {
+            Image(systemName: "list.bullet.clipboard")
+                .font(Theme.modalTitle)
+                .foregroundStyle(Theme.teal)
+                .frame(
+                    width: Theme.iconTileSize,
+                    height: Theme.iconTileSize
+                )
+                .background(
+                    Theme.tealTint,
+                    in: .rect(cornerRadius: Theme.radiusRow)
+                )
+                .accessibilityHidden(true)
+
+            VStack(
+                alignment: .leading,
+                spacing: Theme.spaceXXS
+            ) {
+                Text(record.name)
+                    .font(Theme.modalTitle)
+                    .foregroundStyle(Theme.ink)
+                    .accessibilityAddTraits(.isHeader)
+
+                Text(subtitle)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .monospacedDigit()
+            }
+
+            Spacer(minLength: Theme.spaceXS)
+
+            StatusBadge(text: record.status)
         }
     }
 
@@ -1315,75 +1386,117 @@ private extension ProtocolEvolutionView {
 
     var revisionTimelineSection:
         some View {
-        Section("Revision timeline") {
-            ForEach(timeline) {
-                revision in
+        Section {
+            ForEach(
+                Array(timeline.enumerated()),
+                id: \.element.id
+            ) { index, revision in
+                let tint = phaseTint(revision)
 
-                VStack(
-                    alignment: .leading,
-                    spacing:
-                        Theme.spaceXS
+                HStack(
+                    alignment: .top,
+                    spacing: Theme.spaceS
                 ) {
-                    HStack(
-                        alignment:
-                            .firstTextBaseline,
-                        spacing:
-                            Theme.spaceS
-                    ) {
-                        Text(
-                            revision
-                                .compoundName
-                        )
-                        .font(
-                            Theme.sectionTitle
-                        )
-                        .foregroundStyle(
-                            Theme.ink
-                        )
+                    VStack(spacing: Theme.spaceXXS) {
+                        Circle()
+                            .fill(tint)
+                            .frame(
+                                width: Theme.spaceS,
+                                height: Theme.spaceS
+                            )
+                            .padding(.top, Theme.spaceXXS)
 
-                        Spacer()
-
-                        StatusBadge(
-                            text:
-                                stateLabel(
-                                    revision
-                                )
-                        )
+                        if index < timeline.count - 1 {
+                            Rectangle()
+                                .fill(Theme.hairline)
+                                .frame(width: Theme.ruleThickness)
+                                .frame(maxHeight: .infinity)
+                        }
                     }
+                    .accessibilityHidden(true)
 
-                    RecordRow(
-                        label: "Amount",
-                        value:
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceXS
+                    ) {
+                        HStack(
+                            alignment: .firstTextBaseline
+                        ) {
+                            Text(
+                                "Phase \(timeline.count - index)"
+                            )
+                            .font(Theme.sectionLabel)
+                            .foregroundStyle(tint)
+
+                            Spacer()
+
+                            StatusBadge(
+                                text: stateLabel(revision)
+                            )
+                        }
+
+                        Text(revision.compoundName)
+                            .font(Theme.serifTitle)
+                            .foregroundStyle(Theme.ink)
+
+                        Text(
                             DoseText.amount(
                                 revision.amountText,
                                 revision.unitText
                             )
-                    )
-
-                    RecordRow(
-                        label: "Effective",
-                        value:
-                            effectiveLabel(
-                                revision
+                            + " · "
+                            + (
+                                revision.config
+                                    .map(ScheduleDisplay.summary)
+                                ?? "Schedule not available"
                             )
-                    )
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .monospacedDigit()
 
-                    RecordRow(
-                        label: "Schedule",
-                        value:
-                            revision.config
-                                .map(
-                                    ScheduleDisplay
-                                        .summary
-                                )
-                            ?? "Not available"
-                    )
+                        HStack(spacing: Theme.spaceXS) {
+                            Image(systemName: "calendar")
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                                .accessibilityHidden(true)
+
+                            Text(effectiveLabel(revision))
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.ink)
+                                .monospacedDigit()
+                        }
+                        .padding(Theme.spaceS)
+                        .frame(
+                            maxWidth: .infinity,
+                            alignment: .leading
+                        )
+                        .background(
+                            tint.opacity(Theme.statusFillOpacity),
+                            in: .rect(cornerRadius: Theme.radiusField)
+                        )
+                    }
+                    .padding(.bottom, Theme.spaceS)
                 }
-                .padding(
-                    .vertical,
-                    Theme.spaceXXS
-                )
+                .accessibilityElement(children: .combine)
+                .listRowSeparator(.hidden)
             }
+        } header: {
+            Eyebrow(text: "Phases")
+        }
+    }
+
+
+    func phaseTint(
+        _ revision: ScheduleRevision
+    ) -> Color {
+        switch revision.temporalState() {
+        case .historical:
+            return Theme.textTertiary
+        case .current:
+            return Theme.teal
+        case .planned:
+            return Theme.info
         }
     }
 

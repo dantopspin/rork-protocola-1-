@@ -496,8 +496,28 @@ private extension HistoryView {
 
             VStack(spacing: Theme.spaceS) {
                 ForEach(day.records) { record in
-                    recordLink(record)
+                    HStack(spacing: Theme.spaceS) {
+                        Circle()
+                            .fill(Theme.textTertiary)
+                            .frame(
+                                width: Theme.statusDot,
+                                height: Theme.statusDot
+                            )
+                            .accessibilityHidden(true)
+
+                        recordLink(record)
+                    }
                 }
+            }
+            .background(alignment: .leading) {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(width: Theme.ruleThickness)
+                    .padding(
+                        .leading,
+                        (Theme.statusDot - Theme.ruleThickness) / 2
+                    )
+                    .accessibilityHidden(true)
             }
         }
     }
@@ -914,12 +934,19 @@ private extension HistoryView {
         let calendar =
             Calendar.current
 
+        let short =
+            date.formatted(
+                .dateTime
+                    .month(.abbreviated)
+                    .day()
+            )
+
         if calendar.isDateInToday(date) {
-            return "Today"
+            return "Today · " + short
         }
 
         if calendar.isDateInYesterday(date) {
-            return "Yesterday"
+            return "Yesterday · " + short
         }
 
         return date.formatted(
@@ -961,6 +988,15 @@ private struct TimelineRow: View {
     let icon: String
     let tint: Color
 
+    private var isRecordedDose: Bool {
+        guard let log = record.log else { return false }
+        return log.status != "Skipped"
+    }
+
+    private var isSkippedDose: Bool {
+        record.log?.status == "Skipped"
+    }
+
     var body: some View {
         HStack(
             alignment: .top,
@@ -968,20 +1004,35 @@ private struct TimelineRow: View {
         ) {
             Image(systemName: icon)
                 .font(Theme.label)
-                .foregroundStyle(tint)
+                .foregroundStyle(
+                    isRecordedDose
+                    ? Theme.onDarkPrimary
+                    : tint
+                )
                 .frame(
                     width: Theme.iconColumn,
                     height: Theme.iconColumn
                 )
                 .padding(Theme.spaceXXS)
-                .background(
-                    Circle()
-                        .fill(
-                            tint.opacity(
-                                Theme.statusFillOpacity
+                .background {
+                    if isRecordedDose {
+                        Circle()
+                            .fill(Theme.accentFill)
+                    } else if isSkippedDose {
+                        Circle()
+                            .strokeBorder(
+                                Theme.controlBorder,
+                                lineWidth: Theme.ruleThickness
                             )
-                        )
-                )
+                    } else {
+                        Circle()
+                            .fill(
+                                tint.opacity(
+                                    Theme.statusFillOpacity
+                                )
+                            )
+                    }
+                }
                 .accessibilityHidden(true)
 
             VStack(
