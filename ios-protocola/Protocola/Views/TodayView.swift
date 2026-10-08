@@ -586,6 +586,7 @@ private extension TodayView {
                 .accessibilityHidden(true)
         }
         .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Theme.spaceM)
         .background(
             Theme.surface,
