@@ -44,13 +44,23 @@ extension View {
     /// bar so scrolled content never shows behind the bar buttons.
     func trackingScrollChrome() -> some View {
         scrollIndicators(.hidden)
-            .toolbarBackground(Theme.paper, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .hardTopScrollEdge()
+    }
+
+    /// iOS 26: a solid top scroll edge so scrolled text never shows behind
+    /// the bar buttons. Keeps large titles (an opaque toolbar background
+    /// hides them). Earlier systems keep their standard bar blur.
+    @ViewBuilder
+    func hardTopScrollEdge() -> some View {
+        if #available(iOS 26.0, *) {
+            scrollEdgeEffectStyle(.hard, for: .top)
+        } else {
+            self
+        }
     }
 
     func paperList() -> some View {
-        toolbarBackground(Theme.paper, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+        hardTopScrollEdge()
             .scrollContentBackground(.hidden)
             .background(Theme.paper)
             .font(Theme.body)
