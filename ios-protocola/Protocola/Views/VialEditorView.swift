@@ -34,6 +34,7 @@ struct VialEditorView: View {
         NavigationStack {
             Form {
                 labelValuesSection
+                capColorSection
                 lifecycleSection
                 photoSection
 
@@ -187,6 +188,23 @@ private extension VialEditorView {
         }
 }
     }
+
+    var capColorSection: some View {
+        Section {
+            VialCapColorPicker(
+                selection: $draft.capColor,
+                compound: draft.compound
+            )
+        } header: {
+            Eyebrow(text: "Cap colour")
+        } footer: { FormFooter {
+            Text(
+                "A visual label to tell vials apart. It does not describe the contents."
+            )
+        }
+        }
+    }
+
 
     var lifecycleSection: some View {
         Section {

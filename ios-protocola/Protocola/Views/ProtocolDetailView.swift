@@ -1391,7 +1391,8 @@ private extension ProtocolEvolutionView {
                 Array(timeline.enumerated()),
                 id: \.element.id
             ) { index, revision in
-                let tint = phaseTint(revision)
+                let tint =
+                    Theme.phaseTint(timeline.count - index)
 
                 HStack(
                     alignment: .top,
@@ -1487,26 +1488,12 @@ private extension ProtocolEvolutionView {
     }
 
 
-    func phaseTint(
-        _ revision: ScheduleRevision
-    ) -> Color {
-        switch revision.temporalState() {
-        case .historical:
-            return Theme.textTertiary
-        case .current:
-            return Theme.teal
-        case .planned:
-            return Theme.info
-        }
-    }
-
-
     func stateLabel(
         _ revision: ScheduleRevision
     ) -> String {
         switch revision.temporalState() {
         case .historical:
-            return "Historical"
+            return "Past"
         case .current:
             return "Current"
         case .planned:

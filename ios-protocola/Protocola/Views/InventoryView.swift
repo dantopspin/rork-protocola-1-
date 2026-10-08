@@ -356,18 +356,10 @@ private extension InventoryView {
                 alignment: .top,
                 spacing: Theme.spaceS
             ) {
-                Image(systemName: "testtube.2")
-                    .font(Theme.modalTitle)
-                    .foregroundStyle(Theme.teal)
-                    .frame(
-                        width: Theme.iconTileSize,
-                        height: Theme.iconTileSize
-                    )
-                    .background(
-                        Theme.tealTint,
-                        in: .rect(cornerRadius: Theme.radiusRow)
-                    )
-                    .accessibilityHidden(true)
+                VialTile(
+                    vial: vial,
+                    fraction: fraction
+                )
 
                 VStack(
                     alignment: .leading,

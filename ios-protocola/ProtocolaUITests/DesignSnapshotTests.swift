@@ -263,6 +263,15 @@ final class DesignSnapshotTests: XCTestCase {
                         app.navigationBars.buttons.firstMatch.tap()
                         settle()
                     }
+                    if tapIfPresent(
+                        app.buttons
+                            .matching(NSPredicate(format: "label CONTAINS 'Protocol evolution'"))
+                            .firstMatch
+                    ) {
+                        shot(app, "\(prefix)-09c-phases")
+                        app.navigationBars.buttons.firstMatch.tap()
+                        settle()
+                    }
                     app.navigationBars.buttons.firstMatch.tap()
                     settle()
                 }

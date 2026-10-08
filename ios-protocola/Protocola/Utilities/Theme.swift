@@ -95,6 +95,25 @@ enum Theme {
         dark: (0.525, 0.737, 0.957)
     )
 
+    /// #7554B2 — third phase colour only. Never an action or state colour.
+    static let violet = adaptive(
+        light: (0.459, 0.329, 0.698),
+        dark: (0.749, 0.659, 0.937)
+    )
+
+    /// Phases take colours in order: green, blue, purple, then repeat.
+    /// Colour is never the only signal; each phase keeps its label.
+    static let phasePalette: [Color] = [teal, info, violet]
+
+    static func phaseTint(_ number: Int) -> Color {
+        phasePalette[
+            ((max(number, 1) - 1) % phasePalette.count)
+        ]
+    }
+
+    /// Liquid inside a drawn vial, tinted by the cap colour.
+    static let liquidOpacity: Double = 0.28
+
     /// Dark editorial surface; intentionally the same family as the CTA accent.
     static let darkSurface = accentFill
 
@@ -366,6 +385,9 @@ enum Theme {
     static let iconTileSize: CGFloat = 56
     /// Round icon badge leading a field row (Log Dose sheet).
     static let iconBadgeSize: CGFloat = 40
+    /// Drawn vial glyph inside the vial card tile.
+    static let vialGlyphWidth: CGFloat = 22
+    static let vialGlyphHeight: CGFloat = 40
     static let heatmapCellMin: CGFloat = 8
     static let heatmapCellMax: CGFloat = 20
     static let heatmapGap: CGFloat = 4
