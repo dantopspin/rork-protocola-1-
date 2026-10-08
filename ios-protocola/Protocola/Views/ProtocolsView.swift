@@ -212,16 +212,12 @@ private extension ProtocolsView {
                     }
                 }
             }
-            .overlay(
-                alignment: .top
-            ) {
-                EditorialRule()
-            }
-            .overlay(
-                alignment: .bottom
-            ) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
         }
     }
 
@@ -426,16 +422,12 @@ private extension ProtocolsView {
                 }
                 .buttonStyle(.plain)
             }
-            .overlay(
-                alignment: .top
-            ) {
-                EditorialRule()
-            }
-            .overlay(
-                alignment: .bottom
-            ) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
         }
     }
 

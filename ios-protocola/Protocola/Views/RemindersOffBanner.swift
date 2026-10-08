@@ -85,12 +85,12 @@ struct RemindersOffBanner: View {
             .frame(minHeight: Theme.minimumTapTarget)
         }
         .padding(.vertical, Theme.rowPadding)
-        .overlay(alignment: .top) {
-            EditorialRule()
-        }
-        .overlay(alignment: .bottom) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
         .accessibilityElement(children: .combine)
     }
 

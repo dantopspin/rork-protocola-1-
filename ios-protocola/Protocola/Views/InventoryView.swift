@@ -367,31 +367,53 @@ private extension InventoryView {
                         .padding(.vertical, Theme.spaceXS)
                         .accessibilityHidden(true)
 
-                    HStack(spacing: Theme.spaceXS) {
+                    let remainingText =
                         Text(
                             DoseCalculator.text(balance)
                             + " mg remaining"
                         )
                         .foregroundStyle(Theme.ink)
+                    let runway: String? = {
+                        guard
+                            let entries =
+                                store.scheduledEntriesRemaining(in: vial),
+                            entries > 0
+                        else {
+                            return nil
+                        }
+                        return runwaySummary(
+                            vial,
+                            entries: entries
+                        )
+                    }()
 
-                        Spacer(minLength: Theme.spaceXS)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: Theme.spaceXS) {
+                            remainingText
 
-                        if let entries =
-                            store.scheduledEntriesRemaining(in: vial),
-                           entries > 0 {
-                            Text(
-                                runwaySummary(
-                                    vial,
-                                    entries: entries
-                                )
-                            )
-                            .foregroundStyle(Theme.textSecondary)
+                            Spacer(minLength: Theme.spaceXS)
+
+                            if let runway {
+                                Text(runway)
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                        }
+                        .lineLimit(1)
+
+                        VStack(
+                            alignment: .leading,
+                            spacing: Theme.spaceXXS
+                        ) {
+                            remainingText
+
+                            if let runway {
+                                Text(runway)
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
                         }
                     }
                     .font(Theme.caption)
                     .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
 
                     if let expiry {
                         Text(expiry)

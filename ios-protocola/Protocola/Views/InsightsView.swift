@@ -345,16 +345,12 @@ private extension InsightsView {
                 .vertical,
                 Theme.spaceS
             )
-            .overlay(
-                alignment: .top
-            ) {
-                EditorialRule()
-            }
-            .overlay(
-                alignment: .bottom
-            ) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
         }
         .buttonStyle(.plain)
     }
@@ -523,16 +519,12 @@ private extension InsightsView {
             .vertical,
             Theme.spaceM
         )
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 
@@ -564,16 +556,12 @@ private extension InsightsView {
             maxWidth: .infinity,
             alignment: .leading
         )
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 
@@ -611,16 +599,12 @@ private extension InsightsView {
                 dot: Theme.inactiveFill
             )
         }
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 
@@ -864,16 +848,12 @@ private extension InsightsView {
             .vertical,
             Theme.rowPadding
         )
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 }
 
@@ -965,16 +945,12 @@ private extension InsightsView {
                 Theme.rowPadding
             )
             .contentShape(Rectangle())
-            .overlay(
-                alignment: .top
-            ) {
-                EditorialRule()
-            }
-            .overlay(
-                alignment: .bottom
-            ) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
         }
         .buttonStyle(.plain)
     }

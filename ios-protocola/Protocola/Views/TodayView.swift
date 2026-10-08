@@ -72,6 +72,38 @@ struct TodayView: View {
         typeSize.isAccessibilitySize
     }
 
+    private var entryBodyLayout: AnyLayout {
+        usesStackedHero
+            ? AnyLayout(
+                VStackLayout(
+                    alignment: .leading,
+                    spacing: Theme.spaceS
+                )
+            )
+            : AnyLayout(
+                HStackLayout(
+                    alignment: .center,
+                    spacing: Theme.spaceS
+                )
+            )
+    }
+
+    private var entryMetaLayout: AnyLayout {
+        usesStackedHero
+            ? AnyLayout(
+                HStackLayout(
+                    alignment: .center,
+                    spacing: Theme.spaceS
+                )
+            )
+            : AnyLayout(
+                VStackLayout(
+                    alignment: .trailing,
+                    spacing: Theme.spaceXS
+                )
+            )
+    }
+
     var body: some View {
         ScrollView {
             VStack(
@@ -373,10 +405,15 @@ private extension TodayView {
                     VStack(spacing: Theme.spaceXXS) {
                         Text(
                             day.formatted(
-                                .dateTime.weekday(.abbreviated)
+                                .dateTime.weekday(
+                                    usesStackedHero
+                                    ? .narrow
+                                    : .abbreviated
+                                )
                             )
                         )
                         .font(Theme.chipLabel)
+                        .lineLimit(1)
 
                         Text(
                             day.formatted(
@@ -385,6 +422,8 @@ private extension TodayView {
                         )
                         .font(Theme.cardTitle)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
                         Circle()
                             .fill(
@@ -494,49 +533,51 @@ private extension TodayView {
                 .frame(width: Theme.entryStripeWidth)
                 .frame(maxHeight: .infinity)
 
-            VStack(
-                alignment: .leading,
-                spacing: Theme.spaceXXS
-            ) {
-                Text(entry.revision.compoundName)
-                    .font(Theme.cardTitle)
-                    .foregroundStyle(Theme.ink)
+            entryBodyLayout {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Text(entry.revision.compoundName)
+                        .font(Theme.cardTitle)
+                        .foregroundStyle(Theme.ink)
 
-                Text(entry.revision.protocolName)
+                    Text(entry.revision.protocolName)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.textSecondary)
+
+                    Text(
+                        DoseText.amount(
+                            entry.revision.amountText,
+                            entry.revision.unitText
+                        )
+                        + " · "
+                        + entry.revision.routeText
+                    )
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textSecondary)
+                    .monospacedDigit()
+                }
 
-                Text(
-                    DoseText.amount(
-                        entry.revision.amountText,
-                        entry.revision.unitText
+                if !usesStackedHero {
+                    Spacer(minLength: Theme.spaceXS)
+                }
+
+                entryMetaLayout {
+                    StatusBadge(text: status)
+
+                    Text(
+                        (entry.log?.loggedAt ?? entry.at)
+                            .formatted(
+                                date: .omitted,
+                                time: .shortened
+                            )
                     )
-                    + " · "
-                    + entry.revision.routeText
-                )
-                .font(Theme.caption)
-                .foregroundStyle(Theme.textSecondary)
-                .monospacedDigit()
-            }
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .monospacedDigit()
+                }
 
-            Spacer(minLength: Theme.spaceXS)
-
-            VStack(
-                alignment: .trailing,
-                spacing: Theme.spaceXS
-            ) {
-                StatusBadge(text: status)
-
-                Text(
-                    (entry.log?.loggedAt ?? entry.at)
-                        .formatted(
-                            date: .omitted,
-                            time: .shortened
-                        )
-                )
-                .font(Theme.caption)
-                .foregroundStyle(Theme.textSecondary)
-                .monospacedDigit()
             }
 
             Image(systemName: "chevron.right")
@@ -981,16 +1022,12 @@ private extension TodayView {
                     }
                 }
             }
-            .overlay(
-                alignment: .top
-            ) {
-                EditorialRule()
-            }
-            .overlay(
-                alignment: .bottom
-            ) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
         }
     }
 
@@ -1024,16 +1061,12 @@ private extension TodayView {
             maxWidth: .infinity,
             alignment: .leading
         )
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 
@@ -1075,16 +1108,12 @@ private extension TodayView {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .overlay(
-            alignment: .top
-        ) {
-            EditorialRule()
-        }
-        .overlay(
-            alignment: .bottom
-        ) {
-            EditorialRule()
-        }
+        .padding(.horizontal, Theme.cardInset)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
     }
 
 
@@ -1213,12 +1242,12 @@ private extension TodayView {
                     }
                 }
             }
-            .overlay(alignment: .top) {
-                EditorialRule()
-            }
-            .overlay(alignment: .bottom) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
         }
     }
 
@@ -1324,16 +1353,12 @@ private extension TodayView {
                     }
                 }
             }
-            .overlay(
-                alignment: .top
-            ) {
-                EditorialRule()
-            }
-            .overlay(
-                alignment: .bottom
-            ) {
-                EditorialRule()
-            }
+            .padding(.horizontal, Theme.cardInset)
+            .background(
+                Theme.surface,
+                in: .rect(cornerRadius: Theme.radiusCard)
+            )
+            .quietElevation()
             .animation(
                 reduceMotion
                     ? nil
