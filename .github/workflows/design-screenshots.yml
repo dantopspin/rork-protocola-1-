@@ -47,18 +47,27 @@ jobs:
       - name: Capture paywall on other iPhone sizes
         continue-on-error: true
         run: |
-          for device in "iPhone SE (3rd generation)" "iPhone 16e" "iPhone 17 Pro Max"; do
-            slug=$(echo "$device" | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9')
+          # The runner ships only some iPhones; create the smallest and the
+          # newest compact one on the iOS 26.5 runtime so the paywall is
+          # checked from 4.7" up to 6.9".
+          runtime=$(xcrun simctl list runtimes | grep -o 'com.apple.CoreSimulator.SimRuntime.iOS-26-5[^ ]*' | head -n 1)
+          echo "::notice title=paywall runtime::$runtime"
+          for spec in "SE3|com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation" \
+                      "16e|com.apple.CoreSimulator.SimDeviceType.iPhone-16e" \
+                      "17ProMax|com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max"; do
+            slug=${spec%%|*}; type=${spec#*|}
+            udid=$(xcrun simctl create "Paywall $slug" "$type" "$runtime" 2>"create-$slug.log") || {
+              echo "::warning title=paywall $slug::$(cat create-$slug.log | tail -n 1)"; continue; }
             xcodebuild test \
               -project ios-protocola/Protocola.xcodeproj \
               -scheme Protocola \
               -configuration Debug \
-              -destination "platform=iOS Simulator,name=$device,OS=26.5" \
+              -destination "id=$udid" \
               -only-testing:ProtocolaUITests/DesignSnapshotTests/testCapturePaywallOnly \
               -parallel-testing-enabled NO \
               -resultBundlePath "Paywall-$slug.xcresult" \
               CODE_SIGNING_ALLOWED=NO > "paywall-$slug.log" 2>&1 && code=0 || code=$?
-            echo "::notice title=paywall $device::exit $code $(grep -E 'Executed|error:' "paywall-$slug.log" | tail -n 2 | tr '\n' ' ')"
+            echo "::notice title=paywall $slug::exit $code $(grep -E 'Executed|error:' "paywall-$slug.log" | tail -n 2 | tr '\n' ' ')"
           done
           exit 0
 
@@ -77,6 +86,8 @@ jobs:
           for test in manifest:
               for a in test.get("attachments", []):
                   name = a.get("suggestedHumanReadableName") or a["exportedFileName"]
+                  if not name.startswith(("default", "ax-", "dark", "fr-", "pw-", "zz-")):
+                      continue
                   base = name.split("_")[0] if name.startswith(("default", "ax-", "zz-")) else name
                   if not base.endswith(".png"):
                       base += ".png"
@@ -97,7 +108,9 @@ jobs:
               raise SystemExit(0)
           for test in manifest:
               for a in test.get("attachments", []):
-                  shutil.copy(os.path.join("raw-pw", a["exportedFileName"]), os.path.join("shots", "pw-" + slug + ".png"))
+                  name = a.get("suggestedHumanReadableName") or ""
+                  if name.startswith("pw-"):
+                      shutil.copy(os.path.join("raw-pw", a["exportedFileName"]), os.path.join("shots", "pw-" + slug + ".png"))
           EOF
           done
 
