@@ -837,6 +837,20 @@ private extension TodayView {
 
     /// Unrecorded entries from the past week. Logging defaults the recorded
     /// time to the scheduled time, which the editor lets the person change.
+    var missedRowLayout: AnyLayout {
+        usesStackedHero
+            ? AnyLayout(
+                VStackLayout(
+                    alignment: .leading,
+                    spacing: Theme.spaceS
+                )
+            )
+            : AnyLayout(
+                HStackLayout(spacing: Theme.spaceS)
+            )
+    }
+
+
     var missedSection: some View {
         VStack(
             alignment: .leading,
@@ -862,7 +876,7 @@ private extension TodayView {
                     ),
                     id: \.element.id
                 ) { index, entry in
-                    HStack(spacing: Theme.spaceS) {
+                    missedRowLayout {
                         VStack(
                             alignment: .leading,
                             spacing: Theme.spaceXXS
@@ -890,8 +904,13 @@ private extension TodayView {
                             .monospacedDigit()
                         }
 
-                        Spacer(minLength: Theme.spaceXS)
+                        if !usesStackedHero {
+                            Spacer(minLength: Theme.spaceXS)
+                        }
 
+                        // At accessibility sizes the buttons move under the
+                        // text so the name never breaks mid-word.
+                        HStack(spacing: Theme.spaceS) {
                         Button("Skip") {
                             skipEntry(entry)
                         }
@@ -923,6 +942,7 @@ private extension TodayView {
                             + " from "
                             + missedDayLabel(entry.at)
                         )
+                        }
                     }
                     .padding(.vertical, Theme.rowPadding)
 
@@ -2041,16 +2061,32 @@ private extension TodayView {
                     : Theme.teal
             )
 
-            Text(
-                (
-                    log.status == "Skipped"
-                    ? "Skipped · "
-                    : "Logged · "
+            // The recorded time is the confirmation: an early tap is visible
+            // at once, while Undo is still on screen.
+            VStack(
+                alignment: .leading,
+                spacing: 0
+            ) {
+                Text(
+                    (
+                        log.status == "Skipped"
+                        ? "Skipped at "
+                        : "Logged at "
+                    )
+                    + log.loggedAt.formatted(
+                        date: .omitted,
+                        time: .shortened
+                    )
                 )
-                + log.compoundName
-            )
-            .font(Theme.label)
-            .lineLimit(1)
+                .font(Theme.label)
+                .foregroundStyle(Theme.ink)
+                .monospacedDigit()
+
+                Text(log.compoundName)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .lineLimit(1)
+            }
 
             Spacer(
                 minLength: Theme.spaceXS
@@ -2121,8 +2157,9 @@ private extension TodayView {
         undoTask?.cancel()
 
         undoTask = Task {
+            // Long enough to read and reach, including with VoiceOver.
             try? await Task.sleep(
-                for: .seconds(4)
+                for: .seconds(8)
             )
 
             guard !Task.isCancelled else {
@@ -2393,6 +2430,7 @@ struct StackCalendarView: View {
                     systemName:
                         "chevron.left"
                 )
+                .minimumTapTarget()
             }
             .accessibilityLabel(
                 "Previous week"
@@ -2415,6 +2453,7 @@ struct StackCalendarView: View {
                     systemName:
                         "chevron.right"
                 )
+                .minimumTapTarget()
             }
             .accessibilityLabel(
                 "Next week"

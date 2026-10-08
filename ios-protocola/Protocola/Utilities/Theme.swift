@@ -7,66 +7,90 @@ import UIKit
 /// flat, sharp, typographic, and restrained. Native iOS chrome remains native.
 enum Theme {
 
+    /// A colour that follows the system appearance. Every product colour is
+    /// defined for both Light and Dark Mode.
+    private static func adaptive(
+        light: (CGFloat, CGFloat, CGFloat),
+        dark: (CGFloat, CGFloat, CGFloat)
+    ) -> Color {
+        Color(
+            uiColor: UIColor { traits in
+                let value =
+                    traits.userInterfaceStyle == .dark
+                    ? dark
+                    : light
+                return UIColor(
+                    red: value.0,
+                    green: value.1,
+                    blue: value.2,
+                    alpha: 1
+                )
+            }
+        )
+    }
+
+
     // MARK: - Foundation colors
 
     /// #F8F7F3 — warm near-white paper canvas.
-    static let paper = Color(
-        red: 0.9725,
-        green: 0.9686,
-        blue: 0.9529
+    static let paper = adaptive(
+        light: (0.9725, 0.9686, 0.9529),
+        dark: (0.0745, 0.0745, 0.0706)
     )
 
     /// #FBFAF7 — quiet product surface.
-    static let surface = Color(
-        red: 0.9843,
-        green: 0.9804,
-        blue: 0.9686
+    static let surface = adaptive(
+        light: (0.9843, 0.9804, 0.9686),
+        dark: (0.11, 0.11, 0.102)
     )
 
     /// #121211 — primary type and rules.
-    static let ink = Color(
-        red: 0.0706,
-        green: 0.0706,
-        blue: 0.0667
+    static let ink = adaptive(
+        light: (0.0706, 0.0706, 0.0667),
+        dark: (0.949, 0.945, 0.925)
     )
 
     /// #67655F — supporting copy.
-    static let textSecondary = Color(
-        red: 0.4039,
-        green: 0.3961,
-        blue: 0.3725
+    static let textSecondary = adaptive(
+        light: (0.4039, 0.3961, 0.3725),
+        dark: (0.663, 0.651, 0.62)
     )
 
     /// #747169 — quiet metadata that still clears 4.5:1 on paper.
-    static let textTertiary = Color(
-        red: 0.4549,
-        green: 0.4431,
-        blue: 0.4118
+    static let textTertiary = adaptive(
+        light: (0.4549, 0.4431, 0.4118),
+        dark: (0.596, 0.584, 0.549)
     )
 
     /// #30536B — the single product accent from the original Peptide Lens
     /// direction. Used for primary actions, progress, selection, and charts.
-    static let teal = Color(
+    static let teal = adaptive(
+        light: (0.1882, 0.3255, 0.4196),
+        dark: (0.553, 0.702, 0.812)
+    )
+
+    /// #876832 — attention color tuned to clear 4.5:1 in status text.
+    static let amber = adaptive(
+        light: (0.5294, 0.4078, 0.1961),
+        dark: (0.851, 0.698, 0.431)
+    )
+
+    static let danger = adaptive(
+        light: (0.651, 0.3255, 0.302),
+        dark: (0.878, 0.541, 0.502)
+    )
+
+    /// Filled accent surfaces (primary buttons, the hero card, icon tiles).
+    /// Deep teal in both appearances: white text on it stays above 7.9:1,
+    /// while `teal` itself lightens in Dark Mode for text and marks.
+    static let accentFill = Color(
         red: 0.1882,
         green: 0.3255,
         blue: 0.4196
     )
 
-    /// #876832 — attention color tuned to clear 4.5:1 in status text.
-    static let amber = Color(
-        red: 0.5294,
-        green: 0.4078,
-        blue: 0.1961
-    )
-
-    static let danger = Color(
-        red: 0.6510,
-        green: 0.3255,
-        blue: 0.3020
-    )
-
     /// Dark editorial surface; intentionally the same family as the CTA accent.
-    static let darkSurface = teal
+    static let darkSurface = accentFill
 
     static let onDarkPrimary = Color(
         red: 0.9922,
@@ -94,8 +118,13 @@ enum Theme {
     static let subtleFill = ink.opacity(0.025)
     static let tealTint = teal.opacity(0.08)
     /// Past days in a bar chart; today stays full strength.
-    static let chartPastFill = teal.opacity(0.6)
-    static let shadow = ink.opacity(0.035)
+    static let chartPastFill = teal.opacity(0.7)
+    /// Always a darkening shadow, in both appearances.
+    static let shadow = Color(
+        red: 0,
+        green: 0,
+        blue: 0
+    ).opacity(0.035)
 
     // Interaction-state values live here so controls do not invent local
     // transparency or motion values.
@@ -195,6 +224,12 @@ enum Theme {
 
     static var caption: Font {
         scaled(captionSize, .regular, .footnote)
+    }
+
+    /// Section label: Footnote Semibold, sentence case. Replaces the
+    /// uppercase tracked eyebrow, the most common templated tell.
+    static var sectionLabel: Font {
+        scaled(captionSize, .semibold, .footnote)
     }
 
     static var micro: Font {

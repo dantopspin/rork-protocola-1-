@@ -329,7 +329,7 @@ private extension OnboardingView {
                         .foregroundStyle(Theme.ink)
 
                     Text(
-                        "Your records belong to you. Protocola records your protocol — it doesn't prescribe one."
+                        "Your records belong to you. Protocola records your protocol. It doesn't prescribe one."
                     )
                     .font(Theme.body)
                     .foregroundStyle(

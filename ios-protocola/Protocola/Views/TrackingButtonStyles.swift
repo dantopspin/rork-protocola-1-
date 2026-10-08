@@ -19,7 +19,7 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
             )
             .foregroundStyle(
                 inverted
-                    ? Theme.teal
+                    ? Theme.accentFill
                     : Theme.onDarkPrimary
             )
             .background(
@@ -28,13 +28,13 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
                         inverted
                         ? Theme.onDarkPrimary
                             .opacity(Theme.pressedFillOpacity)
-                        : Theme.teal
+                        : Theme.accentFill
                             .opacity(Theme.pressedFillOpacity)
                     )
                     : (
                         inverted
                         ? Theme.onDarkPrimary
-                        : Theme.teal
+                        : Theme.accentFill
                     ),
                 in: .rect(
                     cornerRadius:
@@ -164,7 +164,7 @@ struct TrackingCompactButtonStyle: ButtonStyle {
             )
             .background(
                 prominent
-                    ? Theme.teal
+                    ? Theme.accentFill
                     : Theme.surface,
                 in: .rect(
                     cornerRadius:

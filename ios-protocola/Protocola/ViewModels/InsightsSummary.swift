@@ -23,7 +23,12 @@ struct InsightsSummary {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: period.start)
         let window = max(1, (calendar.dateComponents([.day], from: start, to: period.end).day ?? 0) + 1)
-        let entries = store.entries(start: period.start, end: period.end).filter { protocolID == nil || $0.revision.protocolID == protocolID }
+        // An entry logged early (scheduled later today) counts as soon as it is
+        // logged, so Insights agrees with Today.
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: period.end)) ?? period.end
+        let entries = store.entries(start: period.start, end: dayEnd).filter {
+            ($0.at <= period.end || $0.log != nil) && (protocolID == nil || $0.revision.protocolID == protocolID)
+        }
         days = (0..<window).compactMap { offset in
             guard let day = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
             let inDay = entries.filter { calendar.isDate($0.at, inSameDayAs: day) }

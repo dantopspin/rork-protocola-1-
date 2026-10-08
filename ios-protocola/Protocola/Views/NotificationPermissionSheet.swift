@@ -126,7 +126,7 @@ private extension NotificationPermissionSheet {
         .background(
             phase == .denied
                 ? Theme.amber
-                : Theme.teal,
+                : Theme.accentFill,
             in: .rect(
                 cornerRadius: Theme.radiusCard
             )
