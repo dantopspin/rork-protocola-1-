@@ -255,30 +255,65 @@ struct PaywallView: View {
     private func paywallContent(
         density: PaywallDensity
     ) -> some View {
+        // Adaptive spacing. Each gap has a minimum (the density's section
+        // spacing), so ViewThatFits still measures the tightest layout. The
+        // chosen layout then fills the sheet: the two content gaps grow up
+        // to a cap, and all remaining height goes above the free and legal
+        // links, which settle at the bottom edge, away from the purchase.
         VStack(
             alignment: .leading,
-            spacing: density.sectionSpacing
+            spacing: 0
         ) {
-            topBar
+            VStack(
+                alignment: .leading,
+                spacing: density.sectionSpacing
+            ) {
+                topBar
 
-            hero(
-                density: density
+                hero(
+                    density: density
+                )
+            }
+
+            adaptiveGap(
+                density: density,
+                cap: Theme.spaceXL
             )
 
-            socialProof(
-                density: density
+            VStack(
+                alignment: .leading,
+                spacing: density.sectionSpacing
+            ) {
+                socialProof(
+                    density: density
+                )
+
+                benefits(
+                    density: density
+                )
+            }
+
+            adaptiveGap(
+                density: density,
+                cap: Theme.spaceXL
             )
 
-            benefits(
-                density: density
-            )
+            VStack(
+                alignment: .leading,
+                spacing: density.sectionSpacing
+            ) {
+                plans(
+                    density: density
+                )
 
-            plans(
-                density: density
-            )
+                purchaseArea(
+                    density: density
+                )
+            }
 
-            purchaseArea(
-                density: density
+            adaptiveGap(
+                density: density,
+                cap: nil
             )
 
             footer(
@@ -289,6 +324,30 @@ struct PaywallView: View {
             maxWidth: .infinity,
             alignment: .topLeading
         )
+    }
+
+
+    /// A gap that is at least the density's section spacing and grows with
+    /// the screen, up to `cap` (or without limit when `cap` is nil).
+    @ViewBuilder
+    private func adaptiveGap(
+        density: PaywallDensity,
+        cap: CGFloat?
+    ) -> some View {
+        if let cap {
+            Spacer(
+                minLength:
+                    density.sectionSpacing
+            )
+            .frame(
+                maxHeight: cap
+            )
+        } else {
+            Spacer(
+                minLength:
+                    density.sectionSpacing
+            )
+        }
     }
 
 
@@ -1219,7 +1278,7 @@ struct PaywallView: View {
                 .minimumTapTarget()
             }
             .font(
-                Theme.micro
+                Theme.caption
             )
             .foregroundStyle(
                 Theme.teal
