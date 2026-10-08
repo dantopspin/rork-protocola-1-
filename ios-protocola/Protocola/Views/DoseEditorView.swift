@@ -18,6 +18,8 @@ struct DoseEditorView: View {
     }
     @State private var addVial = false
     @State private var showSiteMap = false
+    @State private var showDetails = false
+    @State private var keyboardShown = false
 
     init(
         revision: ScheduleRevision,
@@ -54,13 +56,16 @@ struct DoseEditorView: View {
                 amountSection
 
                 timeSection
+
+                symptomsSection
+
                 if currentRoute.usesInjectionSite {
                     vialSection
 
                     injectionSiteSection
                 }
 
-                symptomsSection
+                detailsSection
 
                 if correcting != nil {
                     correctionNotice
@@ -76,7 +81,24 @@ struct DoseEditorView: View {
                     : "Correct entry"
             )
             .navigationBarTitleDisplayMode(.large)
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardWillShowNotification
+                )
+            ) { _ in
+                keyboardShown = true
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardWillHideNotification
+                )
+            ) { _ in
+                keyboardShown = false
+            }
             .safeAreaInset(edge: .bottom) {
+                // Hidden while typing so the keyboard and the button never
+                // stack over the form; Done dismisses the keyboard.
+                if !keyboardShown {
                 Button(
                     correcting == nil
                         ? "Log Dose"
@@ -88,6 +110,7 @@ struct DoseEditorView: View {
                 .padding(.horizontal, Theme.pageInset)
                 .padding(.vertical, Theme.spaceS)
                 .background(Theme.paper)
+                }
             }
             .discardGuard(
                 hasChanges: hasUnsavedChanges,
@@ -149,22 +172,6 @@ private extension DoseEditorView {
                 .foregroundStyle(Theme.ink)
             }
 
-            if let occurrence {
-                RecordRow(
-                    label: "Scheduled",
-                    value:
-                        occurrence.at.formatted(
-                            date: .abbreviated,
-                            time: .shortened
-                        )
-                )
-            }
-
-            RecordRow(
-                label: "Route",
-                value: currentRoute.rawValue
-            )
-
             Picker(
                 "Status",
                 selection: $draft.status
@@ -183,10 +190,55 @@ private extension DoseEditorView {
                 }
             }
             .pickerStyle(.segmented)
-
-        } header: {
-            Eyebrow(text: "Entry as recorded")
         }
+    }
+
+
+    /// Step for the − / + buttons, taken from the precision of the user's
+    /// own recorded value (0.25 → 0.01, 250 → 10). Never a suggestion.
+    var amountStep: Decimal {
+        let text =
+            revision?.amountText
+            ?? correcting?.scheduledAmountText
+            ?? draft.amount
+        if let dot = text.firstIndex(of: ".") {
+            let places = text.distance(from: dot, to: text.endIndex) - 1
+            var step = Decimal(1)
+            for _ in 0..<max(places, 0) { step /= 10 }
+            return step
+        }
+        let digits = text.filter(\.isNumber)
+        let zeros = digits.reversed().prefix { $0 == "0" }.count
+        var step = Decimal(1)
+        for _ in 0..<min(zeros, max(digits.count - 1, 0)) { step *= 10 }
+        return step
+    }
+
+    func stepAmount(_ direction: Int) {
+        let current = Decimal(string: draft.amount) ?? 0
+        let next = max(0, current + amountStep * Decimal(direction))
+        draft.amount = DoseCalculator.text(next)
+    }
+
+    func stepButton(
+        _ systemImage: String,
+        label: String,
+        direction: Int
+    ) -> some View {
+        Button {
+            stepAmount(direction)
+        } label: {
+            Image(systemName: systemImage)
+                .font(Theme.label)
+                .foregroundStyle(Theme.ink)
+                .frame(
+                    width: Theme.minimumTapTarget,
+                    height: Theme.minimumTapTarget
+                )
+                .background(Theme.subtleFill, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
 
@@ -194,76 +246,45 @@ private extension DoseEditorView {
     var amountSection: some View {
         if draft.status != "Skipped" {
             Section {
-                VStack(spacing: Theme.spaceXS) {
-                    TextField(
-                        "0",
-                        text: $draft.amount
+                HStack(spacing: Theme.spaceM) {
+                    stepButton(
+                        "minus",
+                        label: "Decrease amount",
+                        direction: -1
                     )
-                    .font(Theme.metricLarge)
-                    .monospacedDigit()
-                    .multilineTextAlignment(.center)
-                    .keyboardType(.decimalPad)
-                    .accessibilityLabel("Actual amount")
 
-                    Picker(
-                        "Unit",
-                        selection: $draft.unit
-                    ) {
-                        ForEach(AmountUnit.allCases) {
-                            Text($0.rawValue)
-                                .tag($0)
-                        }
-                    }
-                    .labelsHidden()
-                    .tint(Theme.textSecondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Theme.spaceXS)
-
-                VStack(
-                    alignment: .leading,
-                    spacing: Theme.spaceXS
-                ) {
-                    Text("Syringe scale")
-                        .font(Theme.label)
-                        .foregroundStyle(
-                            Theme.ink
+                    VStack(spacing: Theme.spaceXXS) {
+                        TextField(
+                            "0",
+                            text: $draft.amount
                         )
+                        .font(Theme.metricLarge)
+                        .monospacedDigit()
+                        .multilineTextAlignment(.center)
+                        .keyboardType(.decimalPad)
+                        .accessibilityLabel("Actual amount")
 
-                    HStack(
-                        spacing: Theme.spaceXS
-                    ) {
-                        ForEach(
-                            SyringeScalePreset
-                                .allCases
-                        ) { preset in
-                            Button(
-                                preset.label
-                            ) {
-                                draft.unitsPerMl =
-                                    preset.valueText
+                        Picker(
+                            "Unit",
+                            selection: $draft.unit
+                        ) {
+                            ForEach(AmountUnit.allCases) {
+                                Text($0.rawValue)
+                                    .tag($0)
                             }
-                            .buttonStyle(
-                                TrackingCompactButtonStyle()
-                            )
-                            .tint(
-                                SyringeScalePreset
-                                    .match(
-                                        draft.unitsPerMl
-                                    ) == preset
-                                ? Theme.teal
-                                : Theme.ink
-                            )
                         }
+                        .labelsHidden()
+                        .tint(Theme.textSecondary)
                     }
+                    .frame(maxWidth: .infinity)
 
-                    TextField(
-                        "Units per mL",
-                        text:
-                            $draft.unitsPerMl
+                    stepButton(
+                        "plus",
+                        label: "Increase amount",
+                        direction: 1
                     )
-                    .keyboardType(.decimalPad)
                 }
+                .padding(.vertical, Theme.spaceXS)
 
             } header: {
                 Eyebrow(text: "Amount")
@@ -274,6 +295,104 @@ private extension DoseEditorView {
             }
             }
         }
+    }
+
+
+    /// Scheduled time, route and syringe scale: reference values kept out
+    /// of the way until needed.
+    var detailsSection: some View {
+        Section {
+            DisclosureGroup(
+                isExpanded: $showDetails
+            ) {
+                if let occurrence {
+                    RecordRow(
+                        label: "Scheduled",
+                        value:
+                            occurrence.at.formatted(
+                                date: .abbreviated,
+                                time: .shortened
+                            )
+                    )
+                }
+
+                RecordRow(
+                    label: "Route",
+                    value: currentRoute.rawValue
+                )
+
+                if draft.status != "Skipped" {
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceXS
+                    ) {
+                        Text("Syringe scale")
+                            .font(Theme.label)
+                            .foregroundStyle(Theme.ink)
+
+                        HStack(spacing: Theme.spaceXS) {
+                            ForEach(
+                                SyringeScalePreset.allCases
+                            ) { preset in
+                                Button(preset.label) {
+                                    draft.unitsPerMl =
+                                        preset.valueText
+                                }
+                                .buttonStyle(
+                                    TrackingCompactButtonStyle()
+                                )
+                                .tint(
+                                    SyringeScalePreset
+                                        .match(draft.unitsPerMl)
+                                        == preset
+                                    ? Theme.teal
+                                    : Theme.ink
+                                )
+                            }
+                        }
+
+                        TextField(
+                            "Units per mL",
+                            text: $draft.unitsPerMl
+                        )
+                        .keyboardType(.decimalPad)
+                    }
+                }
+            } label: {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Text("Details")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+
+                    Text(detailsSummary)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(2)
+                }
+            }
+            .tint(Theme.textSecondary)
+        }
+    }
+
+    var detailsSummary: String {
+        var parts: [String] = []
+        if let occurrence {
+            parts.append(
+                "Scheduled "
+                + occurrence.at.formatted(
+                    date: .omitted,
+                    time: .shortened
+                )
+            )
+        }
+        parts.append(currentRoute.rawValue)
+        if let preset = SyringeScalePreset.match(draft.unitsPerMl) {
+            parts.append(preset.label)
+        }
+        return parts.joined(separator: " · ")
     }
 
 

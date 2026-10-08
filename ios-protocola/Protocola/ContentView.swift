@@ -22,6 +22,8 @@ struct ContentView: View {
                             TodayView()
                                 .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
+                        // Content keeps the ink tint; only the tab bar is green.
+                        .tint(Theme.ink)
                     }
 
                     Tab(
@@ -34,6 +36,8 @@ struct ContentView: View {
                             ProtocolsView()
                                 .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
+                        // Content keeps the ink tint; only the tab bar is green.
+                        .tint(Theme.ink)
                     }
 
                     Tab(
@@ -46,6 +50,8 @@ struct ContentView: View {
                             HistoryView()
                                 .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
+                        // Content keeps the ink tint; only the tab bar is green.
+                        .tint(Theme.ink)
                     }
 
                     Tab(
@@ -60,8 +66,11 @@ struct ContentView: View {
                             }
                             .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
+                        // Content keeps the ink tint; only the tab bar is green.
+                        .tint(Theme.ink)
                     }
                 }
+                .tint(Theme.teal)
             }
         }
         .font(Theme.body)

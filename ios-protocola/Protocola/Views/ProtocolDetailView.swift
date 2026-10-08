@@ -71,10 +71,6 @@ private extension ProtocolDetailView {
                     readOnlyBlock(record)
                 }
 
-                recordedInstructions(
-                    record
-                )
-
                 ForEach(
                     store.currentRevisions(
                         record.id
@@ -98,7 +94,13 @@ private extension ProtocolDetailView {
                     )
                 }
 
+                phasesBlock(record)
+
                 toolsBlock(record)
+
+                recordedInstructions(
+                    record
+                )
             }
             .screenPadding()
             .padding(
@@ -282,6 +284,24 @@ private extension ProtocolDetailView {
             ProtocolEditorView(
                 record: record
             )
+        }
+    }
+
+
+    /// Every recorded schedule for this protocol as phases, inline.
+    @ViewBuilder
+    func phasesBlock(
+        _ record: ProtocolRecord
+    ) -> some View {
+        let revisions =
+            store.revisions
+                .filter { $0.protocolID == record.id }
+                .sorted { $0.effectiveFrom > $1.effectiveFrom }
+
+        if !revisions.isEmpty {
+            EditorialSection("Phases") {
+                PhaseTimeline(revisions: revisions)
+            }
         }
     }
 
@@ -1389,101 +1409,7 @@ private extension ProtocolEvolutionView {
     var revisionTimelineSection:
         some View {
         Section {
-            ForEach(
-                Array(timeline.enumerated()),
-                id: \.element.id
-            ) { index, revision in
-                let tint =
-                    Theme.phaseTint(timeline.count - index)
-
-                HStack(
-                    alignment: .top,
-                    spacing: Theme.spaceS
-                ) {
-                    VStack(spacing: Theme.spaceXXS) {
-                        Circle()
-                            .fill(tint)
-                            .frame(
-                                width: Theme.spaceS,
-                                height: Theme.spaceS
-                            )
-                            .padding(.top, Theme.spaceXXS)
-
-                        if index < timeline.count - 1 {
-                            Rectangle()
-                                .fill(Theme.hairline)
-                                .frame(width: Theme.ruleThickness)
-                                .frame(maxHeight: .infinity)
-                        }
-                    }
-                    .accessibilityHidden(true)
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: Theme.spaceXS
-                    ) {
-                        HStack(
-                            alignment: .firstTextBaseline
-                        ) {
-                            Text(
-                                "Phase \(timeline.count - index)"
-                            )
-                            .font(Theme.sectionLabel)
-                            .foregroundStyle(tint)
-
-                            Spacer()
-
-                            StatusBadge(
-                                text: stateLabel(revision)
-                            )
-                        }
-
-                        Text(revision.compoundName)
-                            .font(Theme.cardTitle)
-                            .foregroundStyle(Theme.ink)
-
-                        Text(
-                            DoseText.amount(
-                                revision.amountText,
-                                revision.unitText
-                            )
-                            + " · "
-                            + (
-                                revision.config
-                                    .map(ScheduleDisplay.summary)
-                                ?? "Schedule not available"
-                            )
-                        )
-                        .font(Theme.caption)
-                        .foregroundStyle(Theme.textSecondary)
-                        .monospacedDigit()
-
-                        HStack(spacing: Theme.spaceXS) {
-                            Image(systemName: "calendar")
-                                .font(Theme.caption)
-                                .foregroundStyle(Theme.textSecondary)
-                                .accessibilityHidden(true)
-
-                            Text(effectiveLabel(revision))
-                                .font(Theme.caption)
-                                .foregroundStyle(Theme.ink)
-                                .monospacedDigit()
-                        }
-                        .padding(Theme.spaceS)
-                        .frame(
-                            maxWidth: .infinity,
-                            alignment: .leading
-                        )
-                        .background(
-                            tint.opacity(Theme.statusFillOpacity),
-                            in: .rect(cornerRadius: Theme.radiusField)
-                        )
-                    }
-                    .padding(.bottom, Theme.spaceS)
-                }
-                .accessibilityElement(children: .combine)
-                .listRowSeparator(.hidden)
-            }
+            PhaseTimeline(revisions: timeline)
         } header: {
             Eyebrow(text: "Phases")
         }

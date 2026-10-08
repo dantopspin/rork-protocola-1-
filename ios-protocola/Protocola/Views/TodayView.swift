@@ -198,8 +198,10 @@ struct TodayView: View {
         }
         .trackingScrollChrome()
         .background(Theme.paper)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        // Serif wordmark as the large title; the week strip opens the
+        // calendar, so the bar keeps a single Settings button.
+        .navigationTitle("Protocola")
+        .navigationBarTitleDisplayMode(.large)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let log = undoLog,
                !log.isDeleted {
@@ -228,20 +230,7 @@ struct TodayView: View {
             newValue != nil
         }
         .toolbar {
-            ToolbarItem(
-                placement: .topBarTrailing
-            ) {
-                if !store.protocols.isEmpty {
-                    Button(
-                        "Stack calendar",
-                        systemImage: "calendar"
-                    ) {
-                        stackCalendar = true
-                    }
-                }
-            }
-
-            SettingsToolbarItem()
+            SettingsToolbarItem(placement: .topBarTrailing)
         }
         .refreshable {
             store.refresh()

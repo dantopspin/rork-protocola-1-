@@ -116,17 +116,13 @@ struct InventoryView: View {
         .trackingScrollChrome()
         .background(Theme.paper)
         .navigationTitle("Vials")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItemGroup(
                 placement:
                     .topBarTrailing
             ) {
-                Button(
-                    "Add vial",
-                    systemImage: "plus"
-                ) {
-                    add = true
-                }
+                addVialButton
             }
         }
         .sheet(isPresented: $add) {
@@ -264,6 +260,27 @@ private extension InventoryView {
                     }
                 }
             }
+        }
+    }
+
+
+    /// Filled accent + on iOS 26; the system button elsewhere.
+    @ViewBuilder
+    var addVialButton: some View {
+        let button =
+            Button(
+                "Add vial",
+                systemImage: "plus"
+            ) {
+                add = true
+            }
+
+        if #available(iOS 26.0, *) {
+            button
+                .buttonStyle(.glassProminent)
+                .tint(Theme.accentFill)
+        } else {
+            button
         }
     }
 

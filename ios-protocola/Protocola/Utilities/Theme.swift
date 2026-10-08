@@ -386,8 +386,8 @@ enum Theme {
     /// Round icon badge leading a field row (Log Dose sheet).
     static let iconBadgeSize: CGFloat = 40
     /// Drawn vial glyph inside the vial card tile.
-    static let vialGlyphWidth: CGFloat = 22
-    static let vialGlyphHeight: CGFloat = 40
+    static let vialGlyphWidth: CGFloat = 28
+    static let vialGlyphHeight: CGFloat = 46
     static let heatmapCellMin: CGFloat = 8
     static let heatmapCellMax: CGFloat = 20
     static let heatmapGap: CGFloat = 4

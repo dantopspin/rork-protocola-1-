@@ -17,12 +17,30 @@ struct HistoryView: View {
     @State private var summary = false
     @State private var siteHistory = false
     @State private var filtersPresented = false
+    /// Doses only by default, like a dose diary; All events adds vial,
+    /// protocol and lab records.
+    @State private var dosesOnly: Bool
+    /// Days back from today; nil shows everything.
+    @State private var rangeDays: Int? = 30
 
     init(protocolID: UUID? = nil) {
         _protocolID =
             State(
                 initialValue: protocolID
             )
+        _dosesOnly = State(initialValue: protocolID == nil)
+    }
+
+    static let rangeOptions: [(label: String, days: Int?)] = [
+        ("Last 7 days", 7),
+        ("Last 30 days", 30),
+        ("Last 90 days", 90),
+        ("All time", nil)
+    ]
+
+    private var rangeLabel: String {
+        Self.rangeOptions.first { $0.days == rangeDays }?.label
+        ?? "All time"
     }
 
     private var injectionSiteLogs: [DoseLog] {
@@ -60,7 +78,18 @@ struct HistoryView: View {
                     == "Metadata"
         )
         .filter { record in
-            (
+            (!dosesOnly || record.log != nil)
+            && (
+                rangeDays.map { days in
+                    record.at
+                        >= Calendar.current.date(
+                            byAdding: .day,
+                            value: -(days - 1),
+                            to: Calendar.current.startOfDay(for: .now)
+                        ) ?? .distantPast
+                } ?? true
+            )
+            && (
                 protocolID == nil
                 || record.protocolID
                     == protocolID
@@ -164,16 +193,36 @@ struct HistoryView: View {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
-                PrimaryPageHeader(
-                    title: "History"
-                )
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceM
+                ) {
+                    HStack(alignment: .center) {
+                        PrimaryPageHeader(
+                            title: "History"
+                        )
 
-                if hasAnyHistory {
-                    TrackingSearchField(
-                        prompt:
-                            "Search your timeline",
-                        text: $search
-                    )
+                        if hasAnyHistory {
+                            rangeMenu
+                        }
+                    }
+
+                    if hasAnyHistory {
+                        Picker(
+                            "Show",
+                            selection: $dosesOnly
+                        ) {
+                            Text("Doses").tag(true)
+                            Text("All events").tag(false)
+                        }
+                        .pickerStyle(.segmented)
+
+                        TrackingSearchField(
+                            prompt:
+                                "Search your timeline",
+                            text: $search
+                        )
+                    }
                 }
 
                 if groupedDays.isEmpty {
@@ -183,8 +232,8 @@ struct HistoryView: View {
                         title:
                             "No records to show",
                         message:
-                            hasActiveFilters
-                            ? "Try changing your filters or search."
+                            hasActiveFilters || hasAnyHistory
+                            ? "Try a longer range, All events, or a different search."
                             : "Recorded entries and protocol changes appear here."
                     )
                 } else {
@@ -199,6 +248,11 @@ struct HistoryView: View {
                                 index: index
                             )
                     }
+                }
+
+                if let week = store.insights[7],
+                   week.scheduled > 0 {
+                    weekPreview(week)
                 }
             }
             .screenPadding()
@@ -482,6 +536,156 @@ private extension HistoryView {
 
 private extension HistoryView {
 
+    var rangeMenu: some View {
+        Menu {
+            ForEach(
+                Self.rangeOptions,
+                id: \.label
+            ) { option in
+                Button {
+                    rangeDays = option.days
+                } label: {
+                    if option.days == rangeDays {
+                        Label(option.label, systemImage: "checkmark")
+                    } else {
+                        Text(option.label)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: Theme.spaceXS) {
+                Text(rangeLabel)
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.down")
+                    .font(Theme.micro)
+                    .accessibilityHidden(true)
+            }
+            .font(Theme.label)
+            .foregroundStyle(Theme.ink)
+            .padding(.horizontal, Theme.spaceS)
+            .frame(minHeight: Theme.minimumTapTarget)
+            .background(
+                Theme.surface,
+                in: Capsule()
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(
+                        Theme.hairline,
+                        lineWidth: Theme.ruleThickness
+                    )
+            )
+        }
+        .accessibilityLabel("Range, " + rangeLabel)
+    }
+
+
+    /// Last 7 days at a glance: consistency and recorded entries per day.
+    func weekPreview(
+        _ week: InsightsSummary
+    ) -> some View {
+        let peak = max(week.days.map(\.recorded).max() ?? 0, 1)
+
+        return VStack(
+            alignment: .leading,
+            spacing: Theme.sectionHeaderGap
+        ) {
+            Eyebrow(text: "Last 7 days")
+
+            HStack(
+                alignment: .top,
+                spacing: Theme.spaceS
+            ) {
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXXS
+                ) {
+                    Label("Consistency", systemImage: "checkmark.circle")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+
+                    Text(week.percentage)
+                        .font(Theme.metricCompact)
+                        .monospacedDigit()
+                        .foregroundStyle(Theme.ink)
+
+                    Text(
+                        "\(week.recorded) of \(week.scheduled) scheduled"
+                    )
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                }
+                .padding(Theme.cardInset)
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: .topLeading
+                )
+                .background(
+                    Theme.surface,
+                    in: .rect(cornerRadius: Theme.radiusCard)
+                )
+                .quietElevation()
+
+                VStack(
+                    alignment: .leading,
+                    spacing: Theme.spaceXS
+                ) {
+                    Label("Recorded", systemImage: "chart.bar")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+
+                    HStack(
+                        alignment: .bottom,
+                        spacing: Theme.spaceXXS
+                    ) {
+                        ForEach(week.days) { day in
+                            Capsule()
+                                .fill(
+                                    day.recorded == 0
+                                    ? Theme.inactiveFill
+                                    : Theme.chartPastFill
+                                )
+                                .frame(
+                                    height:
+                                        Theme.iconTileSize
+                                        * max(
+                                            0.12,
+                                            Double(day.recorded)
+                                                / Double(peak)
+                                        )
+                                )
+                        }
+                    }
+                    .frame(
+                        height: Theme.iconTileSize,
+                        alignment: .bottom
+                    )
+                    .accessibilityHidden(true)
+
+                    Text("Entries per day")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                .padding(Theme.cardInset)
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: .topLeading
+                )
+                .background(
+                    Theme.surface,
+                    in: .rect(cornerRadius: Theme.radiusCard)
+                )
+                .quietElevation()
+                .accessibilityElement(children: .combine)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+
     func dayGroup(
         _ day: TimelineDay
     ) -> some View {
@@ -589,19 +793,7 @@ private extension HistoryView {
         }
 
         if let log = record.log {
-            switch log.status {
-            case "Skipped":
-                return "Entry skipped"
-
-            case "Delayed":
-                return "Entry recorded late"
-
-            case "Partial":
-                return "Partial entry recorded"
-
-            default:
-                return "Entry recorded"
-            }
+            return log.compoundName
         }
 
         if let event = record.event {
@@ -642,17 +834,24 @@ private extension HistoryView {
 
         if let log = record.log {
             var parts = [
-                log.protocolName,
-                DoseText.line(
-                    compound: log.compoundName,
-                    amount: log.actualAmountText,
-                    unit: log.unitText
+                DoseText.amount(
+                    log.actualAmountText,
+                    log.unitText
                 )
             ]
+
+            switch log.status {
+            case "Skipped": parts = ["Skipped"]
+            case "Delayed": parts.append("Late")
+            case "Partial": parts.append("Partial")
+            default: break
+            }
 
             if !log.site.isEmpty,
                log.status != "Skipped" {
                 parts.append(log.site)
+            } else if log.status != "Skipped" {
+                parts.append(log.route.rawValue)
             }
 
             return parts.joined(
