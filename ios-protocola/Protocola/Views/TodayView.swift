@@ -111,6 +111,18 @@ struct TodayView: View {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
+                if store.isDemo {
+                    // In content, not under the bar, so the large
+                    // wordmark stays visible in demo mode.
+                    DemoBanner()
+                        .clipShape(
+                            RoundedRectangle(
+                                cornerRadius: Theme.radiusRow,
+                                style: .continuous
+                            )
+                        )
+                }
+
                 VStack(
                     alignment: .leading,
                     spacing: Theme.spaceL
@@ -203,7 +215,7 @@ struct TodayView: View {
         .navigationTitle("Protocola")
         // The demo banner sits under the bar and blanks a large title,
         // so demo mode uses the inline wordmark.
-        .navigationBarTitleDisplayMode(store.isDemo ? .inline : .large)
+        .navigationBarTitleDisplayMode(.large)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let log = undoLog,
                !log.isDeleted {
@@ -1395,7 +1407,7 @@ private extension TodayView {
 
     var shortcutTiles: some View {
         let tileCount =
-            2
+            1
             + (siteLogs.isEmpty ? 0 : 1)
             + (store.isDemo ? 0 : 1)
         let columns =
@@ -1412,10 +1424,6 @@ private extension TodayView {
             columns: columns,
             spacing: Theme.spaceS
         ) {
-            shortcutTile("Vials", icon: "testtube.2") {
-                inventory = true
-            }
-
             shortcutTile("Calendar", icon: "calendar") {
                 stackCalendar = true
             }

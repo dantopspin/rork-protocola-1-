@@ -167,18 +167,15 @@ final class DesignSnapshotTests: XCTestCase {
             shot(app, "\(prefix)-03-today-bottom")
 
             if screens == nil {
-                let inventory = app.buttons
-                    .containing(NSPredicate(format: "label CONTAINS[c] 'inventory' OR label == 'Vial' OR label == 'Vials'"))
-                    .firstMatch
-                if inventory.waitForExistence(timeout: 2) {
-                    inventory.tap()
+                // Vials is its own tab.
+                if openTab(app, "Vials") {
                     settle()
                     shot(app, "\(prefix)-04-inventory")
                     if tapIfPresent(app.buttons["Add vial"]) {
                         shot(app, "\(prefix)-04b-vial-editor")
                         dismissSheets(app)
                     }
-                    app.navigationBars.buttons.firstMatch.tap()
+                    _ = openTab(app, "Today")
                     settle()
                 }
 

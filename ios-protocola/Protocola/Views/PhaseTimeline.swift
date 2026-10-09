@@ -52,6 +52,13 @@ struct PhaseTimeline: View {
                         .font(Theme.sectionLabel)
                         .foregroundStyle(tint)
 
+                        if let length = Self.lengthText(revision) {
+                            Text(length)
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                                .monospacedDigit()
+                        }
+
                         Spacer()
 
                         StatusBadge(
@@ -148,5 +155,36 @@ struct PhaseTimeline: View {
             revision.isPlanned()
             ? "From " + start
             : start + " – present"
+    }
+
+
+    /// "4 weeks" for a finished or bounded phase, "4 weeks so far" for the
+    /// current one, nil for an open-ended planned phase.
+    static func lengthText(
+        _ revision: ScheduleRevision
+    ) -> String? {
+        let planned = revision.isPlanned()
+        guard let end =
+            revision.effectiveUntil
+            ?? (planned ? nil : Date.now)
+        else {
+            return nil
+        }
+        let days =
+            max(
+                1,
+                Calendar.current.dateComponents(
+                    [.day],
+                    from: revision.effectiveFrom,
+                    to: end
+                ).day ?? 0
+            )
+        let text =
+            days >= 14
+            ? String(days / 7) + " weeks"
+            : String(days) + (days == 1 ? " day" : " days")
+        return revision.effectiveUntil == nil && !planned
+            ? text + " so far"
+            : text
     }
 }

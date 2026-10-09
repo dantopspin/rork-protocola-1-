@@ -22,8 +22,15 @@ struct HistoryView: View {
     @State private var dosesOnly: Bool
     /// Days back from today; nil shows everything.
     @State private var rangeDays: Int? = 30
+    @State private var searchShown = false
+    /// Switches to the Insights tab; nil hides "See more".
+    var openInsights: (() -> Void)? = nil
 
-    init(protocolID: UUID? = nil) {
+    init(
+        protocolID: UUID? = nil,
+        openInsights: (() -> Void)? = nil
+    ) {
+        self.openInsights = openInsights
         _protocolID =
             State(
                 initialValue: protocolID
@@ -217,11 +224,13 @@ struct HistoryView: View {
                         }
                         .pickerStyle(.segmented)
 
-                        TrackingSearchField(
-                            prompt:
-                                "Search your timeline",
-                            text: $search
-                        )
+                        if searchShown || !search.isEmpty {
+                            TrackingSearchField(
+                                prompt:
+                                    "Search your timeline",
+                                text: $search
+                            )
+                        }
                     }
                 }
 
@@ -281,11 +290,31 @@ struct HistoryView: View {
                             systemImage:
                                 hasActiveFilters
                                 ? "line.3.horizontal.decrease.circle.fill"
-                                : "line.3.horizontal.decrease.circle"
+                                : "line.3.horizontal.decrease"
                         )
                     }
                 }
             }
+            .plainToolbarBackground()
+
+            ToolbarItem(
+                placement: .topBarTrailing
+            ) {
+                if hasAnyHistory {
+                    Button {
+                        searchShown.toggle()
+                        if !searchShown { search = "" }
+                    } label: {
+                        Label(
+                            searchShown
+                            ? "Close search"
+                            : "Search history",
+                            systemImage: "magnifyingglass"
+                        )
+                    }
+                }
+            }
+            .plainToolbarBackground()
 
             ToolbarItem(
                 placement: .topBarTrailing
@@ -323,11 +352,12 @@ struct HistoryView: View {
                         Label(
                             "History actions",
                             systemImage:
-                                "ellipsis.circle"
+                                "ellipsis"
                         )
                     }
                 }
             }
+            .plainToolbarBackground()
         }
         .sheet(
             isPresented:
@@ -591,7 +621,40 @@ private extension HistoryView {
             alignment: .leading,
             spacing: Theme.sectionHeaderGap
         ) {
-            Eyebrow(text: "Last 7 days")
+            HStack(alignment: .firstTextBaseline) {
+                Text("Insights")
+                    .font(Theme.modalTitle)
+                    .foregroundStyle(Theme.ink)
+                    .accessibilityAddTraits(.isHeader)
+
+                Spacer(minLength: Theme.spaceXS)
+
+                if let openInsights {
+                    Button {
+                        openInsights()
+                    } label: {
+                        HStack(spacing: Theme.spaceXXS) {
+                            Text("See more")
+                            Image(systemName: "chevron.right")
+                                .font(Theme.micro)
+                                .accessibilityHidden(true)
+                        }
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+                        .padding(.horizontal, Theme.spaceS)
+                        .frame(minHeight: Theme.minimumTapTarget)
+                        .background(Theme.surface, in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(
+                                    Theme.hairline,
+                                    lineWidth: Theme.ruleThickness
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
 
             HStack(
                 alignment: .top,
@@ -611,7 +674,7 @@ private extension HistoryView {
                         .foregroundStyle(Theme.ink)
 
                     Text(
-                        "\(week.recorded) of \(week.scheduled) scheduled"
+                        "\(week.recorded) of \(week.scheduled) scheduled · 7 days"
                     )
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textSecondary)
@@ -664,7 +727,7 @@ private extension HistoryView {
                     )
                     .accessibilityHidden(true)
 
-                    Text("Entries per day")
+                    Text("Entries per day · 7 days")
                         .font(Theme.caption)
                         .foregroundStyle(Theme.textSecondary)
                 }
