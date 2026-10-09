@@ -179,7 +179,10 @@ struct PhaseTimeline: View {
                     to: end
                 ).day ?? 0
             )
-        let text = InventoryView.runwayText(days)
+        let text =
+            days >= 14
+            ? String(days / 7) + " weeks"
+            : String(days) + (days == 1 ? " day" : " days")
         return revision.effectiveUntil == nil && !planned
             ? text + " so far"
             : text
