@@ -46,7 +46,6 @@ struct ContentView: View {
                     ) {
                         NavigationStack {
                             InventoryView()
-                                .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
                         .tint(Theme.ink)
                     }

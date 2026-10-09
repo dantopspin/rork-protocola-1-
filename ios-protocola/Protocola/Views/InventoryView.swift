@@ -59,6 +59,17 @@ struct InventoryView: View {
                     }
                 }
 
+                if store.isDemo {
+                    // In content so the large title stays visible.
+                    DemoBanner()
+                        .clipShape(
+                            RoundedRectangle(
+                                cornerRadius: Theme.radiusRow,
+                                style: .continuous
+                            )
+                        )
+                }
+
                 if !archivedVials.isEmpty {
                     Picker(
                         "Vials shown",
