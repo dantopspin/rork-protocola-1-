@@ -560,12 +560,17 @@ import Observation
         _ draft: VialDraft,
         id: UUID?
     ) -> Bool {
-        perform {
-            try repository.saveVial(
-                draft,
-                id: id
-            )
+        let saved =
+            perform {
+                try repository.saveVial(
+                    draft,
+                    id: id
+                )
+            }
+        if saved, id == nil {
+            Task { await autoEnableInventoryAlertsIfNeeded() }
         }
+        return saved
     }
     func saveLab(
         _ draft: LabDraft,
@@ -839,12 +844,96 @@ import Observation
             }
             : []
 
+        // One gentle follow-up two hours after a reminded entry that is
+        // still unrecorded. Logging or skipping removes it on resync.
+        let followUps =
+            scheduled.map {
+                ReminderPlanner.Candidate(
+                    id: "followup:" + $0.id,
+                    at: $0.at.addingTimeInterval(2 * 60 * 60),
+                    title: "Protocola · not recorded yet",
+                    body:
+                        "An entry scheduled earlier isn't recorded. Log it or mark it skipped.",
+                    floating: $0.floating
+                )
+            }
+
+        // Sunday-evening weekly recap, only for people who already chose
+        // reminders. Factual wording; the numbers live in the app.
+        let weeklyRecaps: [ReminderPlanner.Candidate] =
+            scheduled.isEmpty
+            ? []
+            : Self.weeklyRecapDates(after: now, count: 2).map {
+                ReminderPlanner.Candidate(
+                    id:
+                        "weekly-recap:"
+                        + $0.formatted(
+                            .iso8601.year().month().day()
+                        ),
+                    at: $0,
+                    title: "Protocola · your week",
+                    body:
+                        "Your weekly record is ready: entries recorded, skipped, and vial supply.",
+                    floating: true
+                )
+            }
+
         notifications.update(
             scheduled
+            + followUps
+            + weeklyRecaps
             + cycleRestarts
             + inventory
         )
     }
+    /// The next Sundays at 7:00 PM local time.
+    nonisolated static func weeklyRecapDates(
+        after now: Date,
+        count: Int
+    ) -> [Date] {
+        var dates: [Date] = []
+        var cursor = now
+        let calendar = Calendar.current
+        for _ in 0..<count {
+            guard
+                let next =
+                    calendar.nextDate(
+                        after: cursor,
+                        matching: DateComponents(
+                            hour: 19,
+                            minute: 0,
+                            weekday: 1
+                        ),
+                        matchingPolicy: .nextTime
+                    )
+            else {
+                break
+            }
+            dates.append(next)
+            cursor = next
+        }
+        return dates
+    }
+
+    /// Turns inventory alerts on once, when the first vial is recorded and
+    /// notifications are already allowed. Never prompts; never repeats.
+    func autoEnableInventoryAlertsIfNeeded() async {
+        let key = "protocola.inventoryAlertsAutoEnabled"
+        guard
+            !isDemo,
+            vials.count == 1,
+            !UserDefaults.standard.bool(forKey: key),
+            (try? repository.preferences())?.inventoryAlerts == false,
+            NotificationService.allowsDelivery(
+                await notifications.authorizationStatus()
+            )
+        else {
+            return
+        }
+        UserDefaults.standard.set(true, forKey: key)
+        await setInventoryAlerts(true)
+    }
+
     func enterDemo() {
         do {
             let container = try LocalPersistence.container(inMemory: true)

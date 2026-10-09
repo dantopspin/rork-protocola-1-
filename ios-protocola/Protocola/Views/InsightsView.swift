@@ -213,6 +213,11 @@ private extension InsightsView {
 
                         supportingStats(summary)
 
+                        HealthWeightCard(
+                            period: period,
+                            logs: periodLogs
+                        )
+
                         if let latest {
                             changeContext(latest)
                         }

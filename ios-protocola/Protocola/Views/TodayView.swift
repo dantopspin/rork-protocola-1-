@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 import UserNotifications
 
 struct TodayView: View {
@@ -7,6 +8,7 @@ struct TodayView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
     @State private var notificationStatus: UNAuthorizationStatus?
 
     @State private var target: ScheduledEntry?
@@ -154,6 +156,10 @@ struct TodayView: View {
                     shortcutTiles
                 }
 
+                if let recap = weekRecap {
+                    weekRecapCard(recap)
+                }
+
                 if !store.isDemo,
                    let status = notificationStatus,
                    RemindersOffBanner.isOff(
@@ -252,6 +258,7 @@ struct TodayView: View {
         }
         .task {
             await refreshNotificationStatus()
+            askForRatingIfEarned()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -1617,6 +1624,124 @@ private extension TodayView {
             .first
     }
 
+
+    struct WeekRecap {
+        let recorded: Int
+        let scheduled: Int
+        let skipped: Int
+        let vialLine: String?
+    }
+
+    /// Shown on Sunday and Monday: the week as recorded. Facts only.
+    var weekRecap: WeekRecap? {
+        let weekday = Calendar.current.component(.weekday, from: .now)
+        guard
+            weekday == 1 || weekday == 2,
+            let week = store.insights[7],
+            week.scheduled > 0
+        else {
+            return nil
+        }
+        let start =
+            Calendar.current.date(
+                byAdding: .day,
+                value: -7,
+                to: .now
+            ) ?? .now
+        let skipped =
+            store.logs.filter {
+                !$0.isDeleted
+                && $0.status == "Skipped"
+                && $0.loggedAt >= start
+            }.count
+        let vialLine: String? =
+            activeVial.flatMap { vial in
+                store.estimatedDepletionDate(in: vial).map { date in
+                    let days =
+                        max(
+                            0,
+                            Calendar.current.dateComponents(
+                                [.day],
+                                from: .now,
+                                to: date
+                            ).day ?? 0
+                        )
+                    return vial.name + ": about "
+                        + (
+                            days >= 14
+                            ? String(days / 7) + " weeks"
+                            : String(days) + (days == 1 ? " day" : " days")
+                        )
+                        + " left"
+                }
+            }
+        return WeekRecap(
+            recorded: week.recorded,
+            scheduled: week.scheduled,
+            skipped: skipped,
+            vialLine: vialLine
+        )
+    }
+
+    func weekRecapCard(
+        _ recap: WeekRecap
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: Theme.spaceXS
+        ) {
+            Label("Your week", systemImage: "calendar.badge.checkmark")
+                .font(Theme.label)
+                .foregroundStyle(Theme.ink)
+
+            Text(
+                "\(recap.recorded) of \(recap.scheduled) entries recorded"
+                + (recap.skipped > 0 ? " · \(recap.skipped) skipped" : "")
+            )
+            .font(Theme.serifTitle)
+            .foregroundStyle(Theme.ink)
+            .monospacedDigit()
+
+            if let vialLine = recap.vialLine {
+                Text(vialLine)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .monospacedDigit()
+            }
+        }
+        .padding(Theme.cardInset)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Theme.surface,
+            in: .rect(cornerRadius: Theme.radiusCard)
+        )
+        .quietElevation()
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Asks for an App Store rating after a fully recorded week, at most
+    /// once every 120 days. Apple also caps the prompt itself.
+    func askForRatingIfEarned() {
+        let key = "protocola.lastRatingRequest"
+        guard
+            !store.isDemo,
+            let week = store.insights[7],
+            week.fullyRecorded,
+            week.scheduled >= 3
+        else {
+            return
+        }
+        let last =
+            UserDefaults.standard.object(forKey: key) as? Date
+            ?? .distantPast
+        guard
+            Date.now.timeIntervalSince(last) > 120 * 24 * 60 * 60
+        else {
+            return
+        }
+        UserDefaults.standard.set(Date.now, forKey: key)
+        requestReview()
+    }
 
     var activeVial: VialRecord? {
         store.vials.first {
