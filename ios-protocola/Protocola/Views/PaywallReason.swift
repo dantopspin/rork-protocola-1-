@@ -105,7 +105,7 @@ enum PaywallReason: String, Identifiable {
     var headline: String {
         switch self {
         case .pro:
-            "Your complete record, ready for every check-in."
+            "Your record, ready for every check-in."
 
         case .compare:
             "See what changed over time."
