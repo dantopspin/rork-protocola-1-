@@ -20,6 +20,7 @@ struct DoseEditorView: View {
     @State private var showSiteMap = false
     @State private var showDetails = false
     @State private var keyboardShown = false
+    @State private var editingTime = false
 
     init(
         revision: ScheduleRevision,
@@ -125,7 +126,7 @@ struct DoseEditorView: View {
             }
             .toolbar {
                 ToolbarItem(
-                    placement: .cancellationAction
+                    placement: .topBarTrailing
                 ) {
                     Button {
                         if hasUnsavedChanges {
@@ -377,6 +378,24 @@ private extension DoseEditorView {
         }
     }
 
+    /// "Today, Oct 8, 2026" / "Yesterday, …" / "Mon, Oct 5, 2026".
+    var recordedDayText: String {
+        let date =
+            draft.loggedAt.formatted(
+                .dateTime.month(.abbreviated).day().year()
+            )
+        let calendar = Calendar.current
+        if calendar.isDateInToday(draft.loggedAt) {
+            return "Today, " + date
+        }
+        if calendar.isDateInYesterday(draft.loggedAt) {
+            return "Yesterday, " + date
+        }
+        return draft.loggedAt.formatted(
+            .dateTime.weekday(.abbreviated)
+        ) + ", " + date
+    }
+
     var detailsSummary: String {
         var parts: [String] = []
         if let occurrence {
@@ -398,16 +417,58 @@ private extension DoseEditorView {
 
     var timeSection: some View {
         Section {
-            FieldRow(
-                icon: "calendar",
-                label: "Date and time"
-            ) {
+            Button {
+                withAnimation(.snappy(duration: Theme.motionStateDuration)) {
+                    editingTime.toggle()
+                }
+            } label: {
+                HStack(spacing: Theme.spaceS) {
+                    FieldRow(
+                        icon: "calendar",
+                        label: "Date and time"
+                    ) {
+                        Text(recordedDayText)
+                            .font(Theme.serifTitle)
+                            .foregroundStyle(Theme.ink)
+
+                        Text(
+                            draft.loggedAt.formatted(
+                                date: .omitted,
+                                time: .shortened
+                            )
+                        )
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .monospacedDigit()
+                    }
+
+                    Image(
+                        systemName:
+                            editingTime
+                            ? "chevron.down"
+                            : "chevron.right"
+                    )
+                    .font(Theme.micro)
+                    .foregroundStyle(Theme.textTertiary)
+                    .accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(
+                editingTime
+                ? "Hides the date and time picker."
+                : "Shows the date and time picker."
+            )
+
+            if editingTime {
                 DatePicker(
                     "Recorded time",
                     selection: $draft.loggedAt,
                     in: ...Date.now
                 )
-                .labelsHidden()
+                .datePickerStyle(.graphical)
+                .tint(Theme.teal)
             }
         }
     }

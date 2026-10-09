@@ -176,7 +176,7 @@ private extension InventoryView {
                 .font(Theme.serifTitle)
                 .foregroundStyle(Theme.textSecondary)
 
-            HStack(alignment: .top, spacing: 0) {
+            HStack(alignment: .center, spacing: 0) {
                 summaryFigure(
                     value: String(availableVials.count),
                     label:
@@ -186,6 +186,8 @@ private extension InventoryView {
                     tint: Theme.ink
                 )
 
+                figureDivider
+
                 summaryFigure(
                     value:
                         runwayDays.map(Self.runwayText)
@@ -193,6 +195,8 @@ private extension InventoryView {
                     label: "Projected supply",
                     tint: Theme.ink
                 )
+
+                figureDivider
 
                 summaryFigure(
                     value: String(expiring),
@@ -213,6 +217,16 @@ private extension InventoryView {
         days >= 14
             ? String(days / 7) + " weeks"
             : String(days) + (days == 1 ? " day" : " days")
+    }
+
+
+    /// Thin vertical rule between summary figures.
+    var figureDivider: some View {
+        Rectangle()
+            .fill(Theme.hairline)
+            .frame(width: Theme.ruleThickness)
+            .frame(maxHeight: Theme.iconTileSize)
+            .accessibilityHidden(true)
     }
 
 
@@ -426,10 +440,23 @@ private extension InventoryView {
                         .padding(.vertical, Theme.spaceXS)
                         .accessibilityHidden(true)
 
+                    let remainingMl: String? =
+                        vial.concentration.flatMap { strength in
+                            guard strength > 0 else { return nil }
+                            var ml = balance / strength
+                            var rounded = Decimal()
+                            NSDecimalRound(&rounded, &ml, 2, .plain)
+                            return DoseCalculator.text(rounded) + " mL"
+                        }
                     let remainingText =
                         Text(
-                            DoseCalculator.text(balance)
-                            + " mg remaining"
+                            remainingMl.map {
+                                $0 + " · "
+                                + DoseCalculator.text(balance)
+                                + " mg remaining"
+                            }
+                            ?? DoseCalculator.text(balance)
+                                + " mg remaining"
                         )
                         .foregroundStyle(Theme.ink)
                     let runway: String? = {
