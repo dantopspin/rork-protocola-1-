@@ -467,7 +467,9 @@ private extension AssistantView {
                 } label: {
                     Image(systemName: "arrow.up")
                         .font(Theme.label)
-                        .foregroundStyle(Theme.onDarkPrimary)
+                        .foregroundStyle(
+                            canSend ? Theme.onDarkPrimary : Theme.textTertiary
+                        )
                         .frame(
                             width: Theme.minimumTapTarget,
                             height: Theme.minimumTapTarget
@@ -482,7 +484,12 @@ private extension AssistantView {
                 .accessibilityLabel("Send question")
             }
 
-            if records.isEmpty {
+            if !store.aiSharing {
+                Text("Allow sharing above to send your question.")
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if records.isEmpty {
                 Text("No records in this range yet. Pick a wider range above.")
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textSecondary)
