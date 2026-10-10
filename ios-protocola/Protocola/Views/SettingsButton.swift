@@ -19,7 +19,7 @@ struct SettingsButton: View {
 
 
 struct SettingsToolbarItem: ToolbarContent {
-    var placement: ToolbarItemPlacement = .topBarLeading
+    var placement: ToolbarItemPlacement = .topBarTrailing
 
     var body: some ToolbarContent {
         ToolbarItem(

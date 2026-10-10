@@ -113,17 +113,7 @@ struct TodayView: View {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
-                if store.isDemo {
-                    // In content, not under the bar, so the large
-                    // wordmark stays visible in demo mode.
-                    DemoBanner()
-                        .clipShape(
-                            RoundedRectangle(
-                                cornerRadius: Theme.radiusRow,
-                                style: .continuous
-                            )
-                        )
-                }
+                DemoBannerCard()
 
                 VStack(
                     alignment: .leading,

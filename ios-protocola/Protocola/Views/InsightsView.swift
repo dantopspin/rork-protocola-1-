@@ -106,8 +106,8 @@ struct InsightsView: View {
             }
         }
         .background(Theme.paper)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Insights")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             SettingsToolbarItem()
         }
@@ -133,9 +133,7 @@ private extension InsightsView {
             alignment: .leading,
             spacing: Theme.spaceL
         ) {
-            PrimaryPageHeader(
-                title: "Insights"
-            )
+            DemoBannerCard()
 
             TrackingEmptyState(
                 icon: "chart.xyaxis.line",
@@ -169,9 +167,7 @@ private extension InsightsView {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
-                PrimaryPageHeader(
-                    title: "Insights"
-                )
+                DemoBannerCard()
 
                 if store.protocols.count > 1 {
                     protocolSelector

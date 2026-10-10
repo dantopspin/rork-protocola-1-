@@ -33,7 +33,6 @@ struct ContentView: View {
                     ) {
                         NavigationStack {
                             ProtocolsView()
-                                .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
                         // Content keeps the ink tint; only the tab bar is green.
                         .tint(Theme.ink)
@@ -60,7 +59,6 @@ struct ContentView: View {
                             HistoryView {
                                 tab = 3
                             }
-                                .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
                         // Content keeps the ink tint; only the tab bar is green.
                         .tint(Theme.ink)
@@ -76,7 +74,6 @@ struct ContentView: View {
                             InsightsView {
                                 tab = 0
                             }
-                            .demoBannerInset(demoBanner, shown: store.isDemo)
                         }
                         // Content keeps the ink tint; only the tab bar is green.
                         .tint(Theme.ink)
@@ -134,35 +131,11 @@ struct ContentView: View {
             store.requestPaywall(reason)
         }
     }
-
-
-    private var demoBanner: some View {
-        DemoBanner()
-    }
 }
 
 
-private extension View {
-    /// The demo banner sits inside each tab's navigation stack, below the
-    /// navigation bar, so it never collides with toolbar buttons.
-    func demoBannerInset<Banner: View>(
-        _ banner: Banner,
-        shown: Bool
-    ) -> some View {
-        safeAreaInset(
-            edge: .top,
-            spacing: 0
-        ) {
-            if shown {
-                banner
-            }
-        }
-    }
-}
-
-
-/// "Demo · sample records" with Exit. Shown under the bar on most tabs and
-/// inside Today's content so Today keeps its large wordmark.
+/// "Demo · sample records" with Exit. Shown as `DemoBannerCard` at the top
+/// of every tab's content.
 struct DemoBanner: View {
     @Environment(TrackingStore.self) private var store
 
