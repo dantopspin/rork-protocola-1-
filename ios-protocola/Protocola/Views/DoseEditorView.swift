@@ -8,6 +8,7 @@ struct DoseEditorView: View {
 
     @Environment(TrackingStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var draft: DoseDraft
     @State private var initialSnapshot: String?
@@ -21,6 +22,8 @@ struct DoseEditorView: View {
     @State private var showDetails = false
     @State private var keyboardShown = false
     @State private var editingTime = false
+    /// Blocks a second save while the sheet is dismissing (double tap).
+    @State private var saved = false
 
     init(
         revision: ScheduleRevision,
@@ -125,8 +128,10 @@ struct DoseEditorView: View {
                 }
             }
             .toolbar {
+                // Close leads, as on every iOS sheet; the commit action is
+                // the Log Dose button at the bottom.
                 ToolbarItem(
-                    placement: .topBarTrailing
+                    placement: .cancellationAction
                 ) {
                     Button {
                         if hasUnsavedChanges {
@@ -216,7 +221,9 @@ private extension DoseEditorView {
     }
 
     func stepAmount(_ direction: Int) {
-        let current = Decimal(string: draft.amount) ?? 0
+        // Locale-aware: "1,5" on a comma-decimal phone is 1.5, not 1.
+        let current =
+            (try? DoseCalculator.parse(draft.amount, label: "Amount")) ?? 0
         let next = max(0, current + amountStep * Decimal(direction))
         draft.amount = DoseCalculator.text(next)
     }
@@ -238,7 +245,7 @@ private extension DoseEditorView {
                 )
                 .background(Theme.subtleFill, in: Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .accessibilityLabel(label)
     }
 
@@ -418,7 +425,7 @@ private extension DoseEditorView {
     var timeSection: some View {
         Section {
             Button {
-                withAnimation(.snappy(duration: Theme.motionStateDuration)) {
+                withAnimation(reduceMotion ? nil : Theme.stateSpring) {
                     editingTime.toggle()
                 }
             } label: {
@@ -454,7 +461,7 @@ private extension DoseEditorView {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
             .accessibilityHint(
                 editingTime
                 ? "Hides the date and time picker."
@@ -629,7 +636,7 @@ private extension DoseEditorView {
                                 Rectangle()
                             )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(TrackingCardButtonStyle())
                     }
                 }
             }
@@ -754,6 +761,7 @@ private extension DoseEditorView {
 private extension DoseEditorView {
 
     func save() {
+        guard !saved else { return }
         let corrects = correcting != nil
         if store.saveDose(
             draft,
@@ -761,6 +769,7 @@ private extension DoseEditorView {
             occurrence: occurrence,
             correcting: correcting
         ) {
+            saved = true
             if corrects {
                 Haptics.success()
             }
@@ -891,7 +900,7 @@ struct InjectionSitePickerView: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
 
             Text(
@@ -1241,7 +1250,7 @@ private struct InjectionSiteMapCanvas:
                     selected: selected
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
             .accessibilityLabel(
                 site.rawValue
             )

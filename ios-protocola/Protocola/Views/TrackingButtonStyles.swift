@@ -55,10 +55,7 @@ struct TrackingPrimaryButtonStyle: ButtonStyle {
             .animation(
                 reduceMotion
                     ? nil
-                    : .easeOut(
-                        duration:
-                            Theme.motionPressDuration
-                    ),
+                    : Theme.pressSpring,
                 value:
                     configuration
                         .isPressed
@@ -125,10 +122,7 @@ struct TrackingSecondaryButtonStyle: ButtonStyle {
             .animation(
                 reduceMotion
                     ? nil
-                    : .easeOut(
-                        duration:
-                            Theme.motionPressDuration
-                    ),
+                    : Theme.pressSpring,
                 value:
                     configuration
                         .isPressed
@@ -198,10 +192,7 @@ struct TrackingCompactButtonStyle: ButtonStyle {
             .animation(
                 reduceMotion
                     ? nil
-                    : .easeOut(
-                        duration:
-                            Theme.motionPressDuration
-                    ),
+                    : Theme.pressSpring,
                 value:
                     configuration
                         .isPressed
@@ -232,13 +223,39 @@ struct TrackingRowButtonStyle: ButtonStyle {
             .animation(
                 reduceMotion
                     ? nil
-                    : .easeOut(
-                        duration:
-                            Theme.motionPressDuration
-                    ),
+                    : Theme.pressSpring,
                 value:
                     configuration
                         .isPressed
+            )
+    }
+}
+
+
+/// Tappable cards and tiles: shrink slightly and dim on touch-down, spring
+/// back without overshoot. Reduce Motion keeps only the dim.
+struct TrackingCardButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+        configuration.label
+            .opacity(
+                configuration.isPressed
+                    ? Theme.pressedSurfaceOpacity
+                    : 1
+            )
+            .scaleEffect(
+                configuration.isPressed
+                    && !reduceMotion
+                    ? Theme.pressedCardScale
+                    : 1
+            )
+            .animation(
+                reduceMotion ? nil : Theme.pressSpring,
+                value: configuration.isPressed
             )
     }
 }

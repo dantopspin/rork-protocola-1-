@@ -30,9 +30,7 @@ struct ProtocolsView: View {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
-                PrimaryPageHeader(
-                    title: "Protocols"
-                )
+                DemoBannerCard()
 
                 if !store.isPremium,
                    store.activeProtocolIDs.count > 1 {
@@ -80,8 +78,8 @@ struct ProtocolsView: View {
         }
         .trackingScrollChrome()
         .background(Theme.paper)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Protocols")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             SettingsToolbarItem()
 
@@ -89,9 +87,8 @@ struct ProtocolsView: View {
                 placement:
                     .topBarTrailing
             ) {
-                Button(
-                    "Add protocol",
-                    systemImage: "plus"
+                ProminentAddButton(
+                    title: "Add protocol"
                 ) {
                     if store.canCreateProtocol {
                         create = true
@@ -158,7 +155,7 @@ private extension ProtocolsView {
                 Theme.rowPadding
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .overlay(
             alignment: .bottom
         ) {
@@ -419,7 +416,7 @@ private extension ProtocolsView {
                             inventorySummary
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
             .padding(.horizontal, Theme.cardInset)
             .background(

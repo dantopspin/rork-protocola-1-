@@ -13,6 +13,19 @@ struct AssistantView: View {
     @State private var scope =
         "Since last change"
     @State private var viewData = false
+    @FocusState private var inputFocused: Bool
+
+    private static let suggestions = [
+        ("What changed last month?", "Last month"),
+        ("What did I record after my last change?", "Since last change"),
+        ("Summarize this protocol from the beginning.", "From the beginning")
+    ]
+
+    private static let scopes = [
+        "Since last change",
+        "Last month",
+        "From the beginning"
+    ]
 
     private var selected:
         ProtocolRecord? {
@@ -86,75 +99,120 @@ struct AssistantView: View {
         @Bindable var model = model
 
         NavigationStack {
-            Form {
-                timelineSection
-                    .disabled(
-                        model.isSending
-                    )
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(
+                        alignment: .leading,
+                        spacing: Theme.spaceM
+                    ) {
+                        scopeBar
 
-                questionSection(model)
+                        if !store.aiSharing {
+                            consentCard
+                        }
 
-                if !store.aiSharing {
-                    sharingConsentSection
+                        if model.messages.isEmpty {
+                            emptyConversation(model)
+                        }
+
+                        ForEach(model.messages) { message in
+                            bubble(message)
+                                .id(message.id)
+                        }
+
+                        if model.isSending {
+                            typingBubble
+                                .id("typing")
+                        }
+
+                        Color.clear
+                            .frame(height: Theme.ruleThickness)
+                            .id("bottom")
+                    }
+                    .screenPadding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-
-                actionSection(model)
-
-                if let answer =
-                    model.answer {
-                    answerSection(answer)
-                    supportingRecordsSection
+                .scrollIndicators(.hidden)
+                // Drag down or tap anywhere in the conversation to put the
+                // keyboard away.
+                .scrollDismissesKeyboard(.interactively)
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        inputFocused = false
+                    }
+                )
+                .onChange(of: model.messages.count) {
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: model.isSending) {
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: inputFocused) { _, focused in
+                    if focused { scrollToBottom(proxy) }
                 }
             }
-            .listStyle(.plain)
-            .paperList()
-            .scrollContentBackground(.hidden)
-            .doneKeyboard()
-            .navigationTitle(
-                "Ask Protocola"
-            )
-            .navigationBarTitleDisplayMode(
-                .inline
-            )
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                composer(model)
+            }
+            .background(Theme.paper)
+            .navigationTitle("Ask Protocola")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(
-                    placement:
-                        .confirmationAction
-                ) {
-                    Button("Done") {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
                         model.cancel()
                         dismiss()
+                    } label: {
+                        Label("Close", systemImage: "xmark")
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            model.reset()
+                        } label: {
+                            Label("New conversation", systemImage: "square.and.pencil")
+                        }
+                        .disabled(model.messages.isEmpty)
+
+                        Button {
+                            viewData = true
+                        } label: {
+                            Label("View shared data", systemImage: "doc.text.magnifyingglass")
+                        }
+                    } label: {
+                        Label("Conversation options", systemImage: "ellipsis")
                     }
                 }
             }
             .onAppear {
-                protocolID =
-                    selected?.id
+                protocolID = selected?.id
             }
-            .sheet(
-                isPresented: $viewData
-            ) {
+            .sheet(isPresented: $viewData) {
                 sharedDataSheet(model)
+            }
+            // Presented as a sheet itself, so the paywall needs a sink here
+            // to appear on top of the conversation.
+            .sheet(
+                item:
+                    Binding(
+                        get: { store.pendingPaywall },
+                        set: { if $0 == nil { store.dismissPaywall() } }
+                    )
+            ) { reason in
+                PaywallView(reason: reason)
             }
             .alert(
                 "Ask Protocola unavailable",
                 isPresented:
                     Binding(
-                        get: {
-                            model.error
-                                != nil
-                        },
-                        set: {
-                            if !$0 {
-                                model.error =
-                                    nil
-                            }
-                        }
+                        get: { model.error != nil },
+                        set: { if !$0 { model.error = nil } }
                     )
             ) {
-                Button("OK") {
-                    model.error = nil
-                }
+                Button("OK") { model.error = nil }
             } message: {
                 Text(model.error ?? "")
             }
@@ -163,294 +221,297 @@ struct AssistantView: View {
             }
             .trackingRoutes()
         }
+        .presentationDetents([.large])
+        .interactiveDismissDisabled(model.isSending)
     }
 }
 
 
 private extension AssistantView {
 
-    var timelineSection:
-        some View {
-        Section {
-            Picker(
-                "Protocol",
-                selection: $protocolID
-            ) {
-                ForEach(
-                    store.protocols
-                ) {
-                    Text($0.name)
-                        .tag(
-                            Optional($0.id)
-                        )
+    func scrollToBottom(_ proxy: ScrollViewProxy) {
+        withAnimation(Theme.stateSpring) {
+            proxy.scrollTo("bottom", anchor: .bottom)
+        }
+    }
+
+    /// Which protocol and dates the conversation reads.
+    var scopeBar: some View {
+        HStack(spacing: Theme.spaceXS) {
+            if store.protocols.count > 1 {
+                Menu {
+                    Picker("Protocol", selection: $protocolID) {
+                        ForEach(store.protocols) {
+                            Text($0.name).tag(Optional($0.id))
+                        }
+                    }
+                } label: {
+                    scopeChip(selected?.name ?? "Protocol", icon: "list.bullet.rectangle")
                 }
             }
 
-            Picker(
-                "Dates",
-                selection: $scope
-            ) {
-                ForEach(
-                    [
-                        "Since last change",
-                        "Last month",
-                        "From the beginning"
-                    ],
-                    id: \.self
-                ) {
-                    Text($0)
-                        .tag($0)
-                }
-            }
-
-            Text(
-                start.formatted(
-                    date: .abbreviated,
-                    time: .shortened
-                )
-                + " – "
-                + end.formatted(
-                    date: .abbreviated,
-                    time: .shortened
-                )
-            )
-            .font(Theme.caption)
-            .foregroundStyle(
-                Theme.textSecondary
-            )
-            .monospacedDigit()
-
-        } header: {
-            Eyebrow(text: "Timeline")
-        }
-    }
-
-
-    func questionSection(
-        _ model: AssistantViewModel
-    ) -> some View {
-        Section {
-            Button(
-                "What changed last month?"
-            ) {
-                scope = "Last month"
-                model.question =
-                    "What changed last month?"
-            }
-
-            Button(
-                "What did I record after my last change?"
-            ) {
-                scope =
-                    "Since last change"
-                model.question =
-                    "What did I record after my last change?"
-            }
-
-            Button(
-                "Summarize this protocol from the beginning."
-            ) {
-                scope =
-                    "From the beginning"
-                model.question =
-                    "Summarize this protocol from the beginning."
-            }
-
-            TextField(
-                "Question about your timeline",
-                text: $model.question,
-                axis: .vertical
-            )
-            .font(Theme.body)
-
-            Text(
-                "Recorded events only. No medical advice or causal conclusions."
-            )
-            .font(Theme.caption)
-            .foregroundStyle(
-                Theme.textSecondary
-            )
-
-        } header: {
-            Eyebrow(
-                text:
-                    "Ask about recorded events"
-            )
-        }
-    }
-
-
-    var sharingConsentSection:
-        some View {
-        Section {
-            Text(
-                "When you ask, your typed question and scoped compound, amount, schedule, status, site, and symptom records go to a network AI service. Private notes, protocol names, vial labels, suppliers, labs, and hidden audit metadata are excluded from automatic sharing."
-            )
-            .font(Theme.body)
-
-            Button(
-                "Allow sharing for Ask Protocola"
-            ) {
-                store.setAISharing(true)
-            }
-            .buttonStyle(
-                TrackingSecondaryButtonStyle()
-            )
-
-        } header: {
-            Eyebrow(
-                text:
-                    "Before your first question"
-            )
-
-        } footer: { FormFooter {
-            Text(
-                "AI can make mistakes. Avoid typing information you do not want sent."
-            )
-        }
-}
-    }
-
-
-    func actionSection(
-        _ model: AssistantViewModel
-    ) -> some View {
-        Section {
-            Button("View shared data") {
-                viewData = true
-            }
-
-            Button {
-                if store.isPremium {
-                    model.send(
-                        records: records,
-                        sharingAllowed:
-                            store.aiSharing,
-                        isPro: true
-                    )
-                } else {
-                    store.requestPaywall(
-                        .ask
-                    )
+            Menu {
+                Picker("Dates", selection: $scope) {
+                    ForEach(Self.scopes, id: \.self) {
+                        Text($0).tag($0)
+                    }
                 }
             } label: {
-                if model.isSending {
-                    ProgressView(
-                        "Reading timeline…"
-                    )
-                } else {
-                    Text("Ask Protocola")
-                }
+                scopeChip(scope, icon: "calendar")
             }
-            .buttonStyle(
-                TrackingPrimaryButtonStyle()
-            )
-            .disabled(
-                !store.aiSharing
-                || model.isSending
-                || records.isEmpty
-                || model.question
-                    .trimmingCharacters(
-                        in:
-                            .whitespacesAndNewlines
-                    )
-                    .isEmpty
-            )
+            .disabled(model.isSending)
 
-        } footer: { FormFooter {
-            Text(
-                "Sharing remains enabled until you turn it off in Settings. Nothing is sent in the background."
-            )
+            Spacer(minLength: 0)
         }
-}
+        .accessibilityElement(children: .contain)
     }
 
+    func scopeChip(_ text: String, icon: String) -> some View {
+        HStack(spacing: Theme.spaceXXS) {
+            Image(systemName: icon)
+                .font(Theme.micro)
+                .accessibilityHidden(true)
+            Text(text)
+                .lineLimit(1)
+            Image(systemName: "chevron.down")
+                .font(Theme.micro)
+                .accessibilityHidden(true)
+        }
+        .font(Theme.chipLabel)
+        .foregroundStyle(Theme.ink)
+        .padding(.horizontal, Theme.spaceS)
+        .frame(minHeight: Theme.minimumTapTarget)
+        .background(Theme.surface, in: Capsule())
+        .overlay(
+            Capsule()
+                .strokeBorder(Theme.hairline, lineWidth: Theme.ruleThickness)
+        )
+    }
 
-    func answerSection(
-        _ answer: String
-    ) -> some View {
-        Section {
-            Text(answer)
-                .font(Theme.body)
-                .textSelection(.enabled)
+    var consentCard: some View {
+        VStack(alignment: .leading, spacing: Theme.spaceS) {
+            Label("Before your first question", systemImage: "lock.shield")
+                .font(Theme.label)
+                .foregroundStyle(Theme.ink)
 
             Text(
-                "Verify against the cited records. AI may be incorrect."
+                "When you ask, your typed question and scoped compound, amount, schedule, status, site, and symptom records are sent through "
+                + AIService.processorDescription
+                + ". Private notes, protocol names, vial labels, suppliers, labs, and hidden audit metadata are excluded. AI can make mistakes; avoid typing anything you don't want sent."
             )
             .font(Theme.caption)
-            .foregroundStyle(
-                Theme.textSecondary
-            )
+            .foregroundStyle(Theme.textSecondary)
 
-        } header: {
-            Eyebrow(
-                text:
-                    "Timeline summary · AI-generated"
-            )
+            Button("Allow sharing for Ask Protocola") {
+                store.setAISharing(true)
+            }
+            .buttonStyle(TrackingSecondaryButtonStyle())
         }
+        .padding(Theme.cardInset)
+        .background(Theme.surface, in: .rect(cornerRadius: Theme.radiusCard))
+        .quietElevation()
     }
 
+    func emptyConversation(_ model: AssistantViewModel) -> some View {
+        VStack(alignment: .leading, spacing: Theme.spaceS) {
+            Text("Ask about your recorded history")
+                .font(Theme.serifTitle)
+                .foregroundStyle(Theme.ink)
 
-    var supportingRecordsSection:
-        some View {
-        Section {
-            ForEach(
-                Array(
-                    model
-                        .sentReferences
-                        .enumerated()
-                ),
-                id: \.element.id
-            ) { index, record in
-                if let log = record.log {
-                    NavigationLink(
-                        value:
-                            TrackingRoute
-                                .logDetail(
-                                    log.id
-                                )
-                    ) {
-                        Text(
-                            "[T"
-                            + String(
-                                index + 1
-                            )
-                            + "] "
-                            + record.title
-                            + " · "
-                            + record.at
-                                .formatted()
-                        )
+            Text(
+                rangeText
+                + ". Recorded events only. No medical advice or causal conclusions."
+            )
+            .font(Theme.caption)
+            .foregroundStyle(Theme.textSecondary)
+            .monospacedDigit()
+
+            ForEach(Self.suggestions, id: \.0) { suggestion in
+                Button {
+                    scope = suggestion.1
+                    model.question = suggestion.0
+                    inputFocused = true
+                } label: {
+                    HStack {
+                        Text(suggestion.0)
+                            .font(Theme.subheadline)
+                            .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.leading)
+                        Spacer(minLength: Theme.spaceXS)
+                        Image(systemName: "arrow.up.left")
+                            .font(Theme.micro)
+                            .foregroundStyle(Theme.textTertiary)
+                            .accessibilityHidden(true)
                     }
+                    .padding(Theme.spaceS)
+                    .background(Theme.surface, in: .rect(cornerRadius: Theme.radiusRow))
+                }
+                .buttonStyle(TrackingCardButtonStyle())
+                .accessibilityHint("Puts this question in the message field.")
+            }
+        }
+        .padding(.top, Theme.spaceS)
+    }
 
-                } else if let event =
-                    record.event {
-                    NavigationLink {
-                        EventDetailView(
-                            event: event
-                        )
-                    } label: {
-                        Text(
-                            "[T"
-                            + String(
-                                index + 1
-                            )
-                            + "] "
-                            + event.title
-                            + " · "
-                            + event.at
-                                .formatted()
-                        )
+    var rangeText: String {
+        start.formatted(date: .abbreviated, time: .omitted)
+        + " – "
+        + end.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    @ViewBuilder
+    func bubble(_ message: AssistantViewModel.Message) -> some View {
+        switch message.role {
+        case .user:
+            HStack {
+                Spacer(minLength: Theme.spaceXXL)
+                Text(message.text)
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.onDarkPrimary)
+                    .padding(.horizontal, Theme.spaceS)
+                    .padding(.vertical, Theme.spaceXS)
+                    .background(
+                        Theme.accentFill,
+                        in: RoundedRectangle(cornerRadius: Theme.radiusRow, style: .continuous)
+                    )
+                    .textSelection(.enabled)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("You: " + message.text)
+
+        case .assistant:
+            VStack(alignment: .leading, spacing: Theme.spaceXS) {
+                Text(message.text)
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.ink)
+                    .textSelection(.enabled)
+
+                HStack(spacing: Theme.spaceXS) {
+                    Text("AI-generated · verify against your records")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                    Spacer(minLength: Theme.spaceXS)
+                    if message.id == model.messages.last?.id,
+                       !model.sentReferences.isEmpty {
+                        Button("Records used") {
+                            viewData = true
+                        }
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.teal)
+                        .buttonStyle(TrackingCardButtonStyle())
                     }
                 }
             }
-
-        } header: {
-            Eyebrow(
-                text:
-                    "Supporting records · sent scope"
+            .padding(Theme.spaceS)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                Theme.surface,
+                in: RoundedRectangle(cornerRadius: Theme.radiusRow, style: .continuous)
             )
+            .padding(.trailing, Theme.spaceL)
+            .accessibilityElement(children: .combine)
         }
+    }
+
+    var typingBubble: some View {
+        HStack(spacing: Theme.spaceXS) {
+            ProgressView()
+            Text("Reading your records…")
+                .font(Theme.caption)
+                .foregroundStyle(Theme.textSecondary)
+        }
+        .padding(Theme.spaceS)
+        .background(
+            Theme.surface,
+            in: RoundedRectangle(cornerRadius: Theme.radiusRow, style: .continuous)
+        )
+        .accessibilityElement(children: .combine)
+    }
+
+    func composer(_ model: AssistantViewModel) -> some View {
+        @Bindable var model = model
+        let trimmed = model.question.trimmingCharacters(in: .whitespacesAndNewlines)
+        let canSend =
+            store.aiSharing
+            && !model.isSending
+            && !records.isEmpty
+            && !trimmed.isEmpty
+
+        return VStack(spacing: Theme.spaceXXS) {
+            HStack(alignment: .bottom, spacing: Theme.spaceXS) {
+                // Grows to five lines, then scrolls, so long questions stay
+                // fully visible above the keyboard.
+                TextField(
+                    "Ask about your records",
+                    text: $model.question,
+                    axis: .vertical
+                )
+                .font(Theme.body)
+                .lineLimit(1...5)
+                .focused($inputFocused)
+                .padding(.horizontal, Theme.spaceS)
+                .padding(.vertical, Theme.spaceXS)
+                .frame(minHeight: Theme.minimumTapTarget)
+                .background(
+                    Theme.surface,
+                    in: RoundedRectangle(cornerRadius: Theme.radiusRow, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radiusRow, style: .continuous)
+                        .strokeBorder(Theme.hairline, lineWidth: Theme.ruleThickness)
+                )
+                .disabled(model.isSending)
+
+                Button {
+                    send(model)
+                } label: {
+                    Image(systemName: "arrow.up")
+                        .font(Theme.label)
+                        .foregroundStyle(
+                            canSend ? Theme.onDarkPrimary : Theme.textTertiary
+                        )
+                        .frame(
+                            width: Theme.minimumTapTarget,
+                            height: Theme.minimumTapTarget
+                        )
+                        .background(
+                            canSend ? Theme.accentFill : Theme.inactiveFill,
+                            in: Circle()
+                        )
+                }
+                .buttonStyle(TrackingCardButtonStyle())
+                .disabled(!canSend)
+                .accessibilityLabel("Send question")
+            }
+
+            if !store.aiSharing {
+                Text("Allow sharing above to send your question.")
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if records.isEmpty {
+                Text("No records in this range yet. Pick a wider range above.")
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, Theme.pageInset)
+        .padding(.vertical, Theme.spaceS)
+        .background(Theme.paper)
+    }
+
+    func send(_ model: AssistantViewModel) {
+        guard store.isPremium else {
+            inputFocused = false
+            store.requestPaywall(.ask)
+            return
+        }
+        model.send(
+            records: records,
+            sharingAllowed: store.aiSharing,
+            isPro: true
+        )
     }
 
 

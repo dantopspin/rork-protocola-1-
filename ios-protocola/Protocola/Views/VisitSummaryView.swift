@@ -168,7 +168,7 @@ private extension VisitSummaryView {
             )
 
             Text(
-                "Prepared on this iPhone from retained records. The document is descriptive and does not provide medical interpretation."
+                "Prepared on this device from retained records. The document is descriptive and does not provide medical interpretation."
             )
             .font(Theme.caption)
             .foregroundStyle(

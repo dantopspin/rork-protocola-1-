@@ -59,16 +59,7 @@ struct InventoryView: View {
                     }
                 }
 
-                if store.isDemo {
-                    // In content so the large title stays visible.
-                    DemoBanner()
-                        .clipShape(
-                            RoundedRectangle(
-                                cornerRadius: Theme.radiusRow,
-                                style: .continuous
-                            )
-                        )
-                }
+                DemoBannerCard()
 
                 if !archivedVials.isEmpty {
                     Picker(
@@ -129,11 +120,15 @@ struct InventoryView: View {
         .navigationTitle("Vials")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            SettingsToolbarItem()
+
             ToolbarItemGroup(
                 placement:
                     .topBarTrailing
             ) {
-                addVialButton
+                ProminentAddButton(title: "Add vial") {
+                    add = true
+                }
             }
         }
         .sheet(isPresented: $add) {
@@ -285,27 +280,6 @@ private extension InventoryView {
                     }
                 }
             }
-        }
-    }
-
-
-    /// Filled accent + on iOS 26; the system button elsewhere.
-    @ViewBuilder
-    var addVialButton: some View {
-        let button =
-            Button(
-                "Add vial",
-                systemImage: "plus"
-            ) {
-                add = true
-            }
-
-        if #available(iOS 26.0, *) {
-            button
-                .buttonStyle(.glassProminent)
-                .tint(Theme.accentFill)
-        } else {
-            button
         }
     }
 
@@ -532,7 +506,7 @@ private extension InventoryView {
             .quietElevation()
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
     }
 
 

@@ -5,7 +5,21 @@ import Observation
     /// Ask Protocola gathers the most recent records automatically; the user never hand-picks entries.
     static let recordLimit = 30
     var question: String = ""
-    private(set) var answer: String?
+
+    /// One chat turn. Records stay on the device; only the text is shown.
+    struct Message: Identifiable, Equatable {
+        enum Role { case user, assistant }
+        let id = UUID()
+        let role: Role
+        let text: String
+    }
+
+    private(set) var messages: [Message] = []
+
+    /// The latest answer, if any.
+    var answer: String? {
+        messages.last { $0.role == .assistant }?.text
+    }
     private(set) var isSending: Bool = false
     var error: String?
     private var task: Task<Void, Never>?
@@ -162,16 +176,41 @@ import Observation
     }
     private func send(context: AIRecordContext, sharingAllowed: Bool) {
         guard sharingAllowed, !isSending else { error = "Enable record sharing before asking."; return }
-        isSending = true; answer = nil
-        let question = self.question
+        let question = self.question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !question.isEmpty else { return }
+        // Earlier turns give the model the conversation; records are only
+        // attached to the newest question.
+        let history = messages.map {
+            AIService.Turn(role: $0.role == .user ? "user" : "assistant", text: $0.text)
+        }
+        messages.append(Message(role: .user, text: question))
+        self.question = ""
+        isSending = true
         task = Task {
             defer { isSending = false }
             do {
-                let result = try await AIService().ask(question: question, context: context)
-                try Task.checkCancellation(); answer = result
+                let result = try await AIService().ask(question: question, context: context, history: history)
+                try Task.checkCancellation()
+                messages.append(Message(role: .assistant, text: result))
             } catch is CancellationError { }
-            catch { if !Task.isCancelled { self.error = (error as? TrackingError)?.errorDescription ?? "Ask Protocola could not be reached. Your records remain on this iPhone." } }
+            catch {
+                if !Task.isCancelled {
+                    self.error = (error as? TrackingError)?.errorDescription ?? "Ask Protocola could not be reached. Your records remain on this device."
+                    // Put the unanswered question back so it isn't lost.
+                    if messages.last?.role == .user { messages.removeLast() }
+                    self.question = question
+                }
+            }
         }
     }
     func cancel() { task?.cancel(); task = nil }
+
+    /// Starts a new conversation.
+    func reset() {
+        cancel()
+        messages = []
+        question = ""
+        sentReferences = []
+        sentContext = nil
+    }
 }

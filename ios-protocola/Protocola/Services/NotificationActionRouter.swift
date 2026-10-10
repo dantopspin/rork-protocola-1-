@@ -94,6 +94,12 @@ final class NotificationActionRouter: NSObject, UNUserNotificationCenterDelegate
         }
         store.handleNotificationAction(entryID, action)
         store.detachNotificationHandler()
+        // The store's async reminder resync may not finish before this
+        // background launch ends; drop the now-pointless follow-up directly.
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(
+                withIdentifiers: ["protocola:followup:" + entryID]
+            )
     }
 }
 

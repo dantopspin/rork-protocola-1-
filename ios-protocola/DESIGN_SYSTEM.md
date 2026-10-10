@@ -108,17 +108,13 @@ Cards are white rounded rectangles on paper, separated by space (8–12pt), not 
 
 ## Motion
 
-All explicit product motion uses `Theme` timing tokens.
+Apple's two spring parameters, response and damping. Anything people touch moves on a spring, so it can be interrupted and carries velocity.
 
-- press: 0.12s
-- feedback: 0.15s
-- state: 0.25s
-- transition: 0.30s
-- quick spring: response 0.24 / damping 0.82
-- standard spring: response 0.26 / damping 0.80
-- emphasis spring: response 0.32 / damping 0.86
-
-Respect Reduce Motion.
+- `pressSpring` — response 0.3, damping 1.0. Press feedback on every button and card, starting on touch-down.
+- `stateSpring` — response 0.35, damping 1.0. State changes: logged, expanded, shown, undo banner, staggered entrance.
+- `momentumSpring` — response 0.4, damping 0.8. Only after a drag or flick release (reordering), the one place overshoot is earned.
+- No fixed-duration ease curves for interactive state. Tappable cards use `TrackingCardButtonStyle` (scale 0.98 plus dim).
+- Reduce Motion: no scale or movement; dims and cross-fades only.
 
 ## Canonical components
 

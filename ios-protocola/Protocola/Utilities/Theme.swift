@@ -170,12 +170,33 @@ enum Theme {
     static let pressedRowScale: CGFloat = 0.995
     static let motionEntranceOffset: CGFloat = 8
     static let motionStaggerMaxIndex = 5
-    static let springQuickResponse = 0.24
-    static let springQuickDamping = 0.82
-    static let springStandardResponse = 0.26
-    static let springStandardDamping = 0.80
-    static let springEmphasisResponse = 0.32
-    static let springEmphasisDamping = 0.86
+    // Springs, in Apple's two parameters. Critically damped (1.0, no
+    // overshoot) by default; bounce only after a gesture carried momentum.
+    static let springQuickResponse = 0.3
+    static let springQuickDamping = 1.0
+    static let springStandardResponse = 0.35
+    static let springStandardDamping = 1.0
+    static let springEmphasisResponse = 0.4
+    static let springEmphasisDamping = 1.0
+    static let springMomentumResponse = 0.4
+    static let springMomentumDamping = 0.8
+    static let pressedCardScale: CGFloat = 0.98
+
+    /// Press feedback: instant on touch-down, settles without overshoot.
+    static let pressSpring = Animation.spring(
+        response: springQuickResponse,
+        dampingFraction: springQuickDamping
+    )
+    /// State changes (logged, expanded, shown): interruptible, no bounce.
+    static let stateSpring = Animation.spring(
+        response: springStandardResponse,
+        dampingFraction: springStandardDamping
+    )
+    /// Only after a drag or flick release.
+    static let momentumSpring = Animation.spring(
+        response: springMomentumResponse,
+        dampingFraction: springMomentumDamping
+    )
 
 
     // MARK: - Typography

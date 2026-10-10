@@ -39,10 +39,7 @@ private struct TrackingStaggerModifier: ViewModifier {
 
                 if shouldAnimate {
                     withAnimation(
-                        .easeOut(
-                            duration:
-                                Theme.motionStateDuration
-                        )
+                        Theme.stateSpring
                         .delay(
                             Theme.motionStaggerDelay
                             * Double(index)
@@ -104,10 +101,7 @@ private struct TrackingStateAnimationModifier<
         content.animation(
             reduceMotion
                 ? nil
-                : .easeOut(
-                    duration:
-                        Theme.motionStateDuration
-                ),
+                : Theme.stateSpring,
             value: value
         )
     }

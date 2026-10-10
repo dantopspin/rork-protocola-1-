@@ -22,7 +22,7 @@ struct FreeProtocolChoiceView: View {
                     spacing: Theme.sectionGap
                 ) {
                     Text(
-                        "Free includes one actively tracked protocol. Choose which one stays editable and available for logging. All other protocols and their history remain on this iPhone as read-only records."
+                        "Free includes one actively tracked protocol. Choose which one stays editable and available for logging. All other protocols and their history remain on this device as read-only records."
                     )
                     .font(Theme.body)
                     .foregroundStyle(

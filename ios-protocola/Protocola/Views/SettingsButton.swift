@@ -19,7 +19,7 @@ struct SettingsButton: View {
 
 
 struct SettingsToolbarItem: ToolbarContent {
-    var placement: ToolbarItemPlacement = .topBarLeading
+    var placement: ToolbarItemPlacement = .topBarTrailing
 
     var body: some ToolbarContent {
         ToolbarItem(
@@ -27,20 +27,6 @@ struct SettingsToolbarItem: ToolbarContent {
         ) {
             SettingsButton()
         }
-        .plainToolbarBackground()
     }
 }
 
-
-extension ToolbarContent {
-    /// iOS 26: a plain icon without the shared glass circle, like the
-    /// reference design. Earlier systems already draw plain bar buttons.
-    @ToolbarContentBuilder
-    func plainToolbarBackground() -> some ToolbarContent {
-        if #available(iOS 26.0, *) {
-            sharedBackgroundVisibility(.hidden)
-        } else {
-            self
-        }
-    }
-}

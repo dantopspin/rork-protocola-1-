@@ -289,6 +289,33 @@ final class DesignSnapshotTests: XCTestCase {
             app.swipeUp()
             settle()
             shot(app, "\(prefix)-13-insights-bottom")
+
+            // Ask Protocola: opens as its own sheet, typing stays visible
+            // above the keyboard, a tap on the conversation hides it.
+            if screens == nil {
+                let ask = app.buttons
+                    .matching(NSPredicate(format: "label BEGINSWITH 'Ask'"))
+                    .firstMatch
+                if tapIfPresent(ask) {
+                    settle()
+                    shot(app, "\(prefix)-14-ask")
+                    // A multi-line field is a text view to XCUITest.
+                    var field = app.textFields["Ask about your records"].firstMatch
+                    if !field.waitForExistence(timeout: 1) {
+                        field = app.textViews.firstMatch
+                    }
+                    if field.waitForExistence(timeout: 2) {
+                        field.tap()
+                        field.typeText("How many entries did I skip after my last change?")
+                        settle()
+                        shot(app, "\(prefix)-14b-ask-typing")
+                        app.staticTexts["Ask about your recorded history"].firstMatch.tap()
+                        settle()
+                        shot(app, "\(prefix)-14c-ask-keyboard-dismissed")
+                    }
+                    dismissSheets(app)
+                }
+            }
         }
     }
 

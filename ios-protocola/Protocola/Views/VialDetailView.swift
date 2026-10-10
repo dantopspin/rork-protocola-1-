@@ -465,7 +465,7 @@ private extension VialDetailView {
 
             RecordRow(
                 label:
-                    "Supplier / clinic",
+                    "Pharmacy / clinic",
                 value:
                     vial.supplier.isEmpty
                     ? "Not recorded"

@@ -120,7 +120,7 @@ enum PaywallReason: String, Identifiable {
             "Take your complete record with you."
 
         case .secondProtocol:
-            "Track every compound in your stack."
+            "Track every protocol you follow."
 
         case .health:
             "See your weight next to your doses."

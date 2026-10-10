@@ -33,6 +33,14 @@ import SwiftData
         let vial = try all(VialRecord.self).first { $0.id == recordedVialID }
         if let vial, vial.isArchived || vial.compoundName.caseInsensitiveCompare(compoundName) != .orderedSame { throw TrackingError.invalidInput("Choose an available vial for this compound.") }
         if recordedVialID != nil && vial == nil { throw TrackingError.missingRecord }
+        if let vial {
+            if draft.unit == .iu {
+                throw TrackingError.invalidInput("IU can't be drawn from a vial recorded in mg. Record IU entries without a vial, or use mg or mcg.")
+            }
+            if (draft.unit == .mL || draft.unit == .units), vial.concentration == nil {
+                throw TrackingError.invalidInput("Add the vial's diluent volume first so mL or syringe units can be converted.")
+            }
+        }
         let existing = protocols.first { $0.id == protocolID }
         let priorRevision =
             revisions
@@ -1192,8 +1200,8 @@ import SwiftData
                 context.insert(vial)
             }
 
-            vial.name = draft.name
-            vial.compoundName = draft.compound
+            vial.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            vial.compoundName = draft.compound.trimmingCharacters(in: .whitespacesAndNewlines)
             vial.originalMgText =
                 DoseCalculator.text(amount)
             vial.diluentMlText =
@@ -1622,7 +1630,13 @@ import SwiftData
         if let vial { _ = try InventoryEngine.reconcile(currentMg: balance(vial), oldConsumptionMg: correcting?.consumptionMg ?? 0, newConsumptionMg: consumption) }
         let logs = try all(DoseLog.self)
         if let correcting, !logs.contains(where: { $0.id == correcting.id }) { throw TrackingError.missingRecord }
-        if correcting == nil, let occurrence, logs.contains(where: { $0.occurrenceID == occurrence.id }) { throw TrackingError.duplicateEntry }
+        if correcting == nil, let occurrence, logs.contains(where: {
+            $0.occurrenceID == occurrence.id
+            || (
+                $0.compoundID == occurrence.revision.compoundID
+                && $0.scheduledAt.map { Int($0.timeIntervalSince1970) } == Int(occurrence.at.timeIntervalSince1970)
+            )
+        }) { throw TrackingError.duplicateEntry }
         if correcting == nil, let revision, let vial, vial.compoundName.caseInsensitiveCompare(revision.compoundName) != .orderedSame { throw TrackingError.invalidInput("The selected vial must match the recorded compound.") }
         try transaction {
             if let log = correcting {

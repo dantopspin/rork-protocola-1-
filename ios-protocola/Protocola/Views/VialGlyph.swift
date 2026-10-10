@@ -187,7 +187,7 @@ struct VialCapColorPicker: View {
                         )
                         .minimumTapTarget()
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
                 .accessibilityLabel(color.rawValue + " cap")
                 .accessibilityAddTraits(
                     current == color ? .isSelected : []

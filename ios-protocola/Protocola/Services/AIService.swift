@@ -2,8 +2,21 @@ import Foundation
 
 /// Only automatically gathered record projections cross the network boundary.
 nonisolated struct AIService: Sendable {
+    /// The one place to switch models. Rork's gateway speaks the OpenAI chat
+    /// format, so a ChatGPT model only needs a new ID here (for example
+    /// "openai/gpt-4.1-mini") and a matching `processorDescription`.
+    static let model = "google/gemini-2.5-flash"
+    /// Shown in the consent text and the Privacy Policy.
+    static let processorDescription = "Rork's AI gateway (via Vercel) to Google's Gemini model"
+
+    /// An earlier turn of the conversation, sent for context.
+    struct Turn: Sendable {
+        let role: String
+        let text: String
+    }
+
     static let refusal = "I cannot recommend a dose or protocol change. Review the instructions you were given or contact a qualified healthcare professional. I can summarize your recorded history for that conversation."
-    func ask(question: String, context: AIRecordContext) async throws -> String {
+    func ask(question: String, context: AIRecordContext, history: [Turn] = []) async throws -> String {
         guard !context.lines.isEmpty, !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw TrackingError.invalidInput("Enter a question about your records.") }
         guard let url = URL(string: Config.EXPO_PUBLIC_TOOLKIT_URL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/v2/vercel/v1/chat/completions"), url.scheme == "https", !Config.EXPO_PUBLIC_RORK_TOOLKIT_SECRET_KEY.isEmpty else { throw TrackingError.invalidInput("Ask Protocola is not configured in this build. Local tracking remains available.") }
         let system = """
@@ -13,7 +26,7 @@ nonisolated struct AIService: Sendable {
         var request = URLRequest(url: url); request.httpMethod = "POST"; request.timeoutInterval = 45
         request.setValue("Bearer " + Config.EXPO_PUBLIC_RORK_TOOLKIT_SECRET_KEY, forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(ChatRequest(model: "google/gemini-2.5-flash", messages: [.init(role: "system", content: system), .init(role: "user", content: "RECORDS:\n\(context.text)\nQUESTION:\n\(question.prefix(1000))")], max_tokens: 1500, temperature: 0))
+        request.httpBody = try JSONEncoder().encode(ChatRequest(model: Self.model, messages: [.init(role: "system", content: system)] + history.suffix(6).map { .init(role: $0.role, content: String($0.text.prefix(1000))) } + [.init(role: "user", content: "RECORDS:\n\(context.text)\nQUESTION:\n\(question.prefix(1000))")], max_tokens: 1500, temperature: 0))
         let config = URLSessionConfiguration.ephemeral; config.urlCache = nil; config.timeoutIntervalForResource = 50
         let session = URLSession(configuration: config); defer { session.invalidateAndCancel() }
         let (data, response) = try await session.data(for: request)

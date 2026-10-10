@@ -106,8 +106,8 @@ struct InsightsView: View {
             }
         }
         .background(Theme.paper)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Insights")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             SettingsToolbarItem()
         }
@@ -133,9 +133,7 @@ private extension InsightsView {
             alignment: .leading,
             spacing: Theme.spaceL
         ) {
-            PrimaryPageHeader(
-                title: "Insights"
-            )
+            DemoBannerCard()
 
             TrackingEmptyState(
                 icon: "chart.xyaxis.line",
@@ -169,9 +167,7 @@ private extension InsightsView {
                 alignment: .leading,
                 spacing: Theme.sectionGap
             ) {
-                PrimaryPageHeader(
-                    title: "Insights"
-                )
+                DemoBannerCard()
 
                 if store.protocols.count > 1 {
                     protocolSelector
@@ -357,7 +353,7 @@ private extension InsightsView {
             )
             .quietElevation()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
     }
 
 
@@ -726,7 +722,7 @@ private extension InsightsView {
                 )
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
         }
     }
 
@@ -789,7 +785,7 @@ private extension InsightsView {
                 } label: {
                     estimatedLevelsLabel
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
 
             } else {
                 Button {
@@ -797,7 +793,7 @@ private extension InsightsView {
                 } label: {
                     estimatedLevelsLabel
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
         }
     }
@@ -957,7 +953,7 @@ private extension InsightsView {
             )
             .quietElevation()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
     }
 }
 
@@ -1065,7 +1061,7 @@ private extension InsightsView {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         }
     }
 
@@ -1207,8 +1203,10 @@ private extension InsightsView {
                   !periodLogs.isEmpty,
                   let protocolName =
                     selected?.name {
+            // Free users can open the chat and see how it works; sending
+            // a question shows the paywall.
             Button {
-                store.requestPaywall(.ask)
+                assistant = true
             } label: {
                 Label(
                     "Ask about \(protocolName)",
@@ -1875,7 +1873,7 @@ private extension EstimatedLevelsView {
                         Rectangle()
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
         }
     }

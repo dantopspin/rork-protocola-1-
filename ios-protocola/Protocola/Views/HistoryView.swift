@@ -204,25 +204,25 @@ struct HistoryView: View {
                     alignment: .leading,
                     spacing: Theme.spaceM
                 ) {
-                    HStack(alignment: .center) {
-                        PrimaryPageHeader(
-                            title: "History"
-                        )
-
-                        if hasAnyHistory {
-                            rangeMenu
-                        }
-                    }
+                    DemoBannerCard()
 
                     if hasAnyHistory {
-                        Picker(
-                            "Show",
-                            selection: $dosesOnly
-                        ) {
-                            Text("Doses").tag(true)
-                            Text("All events").tag(false)
+                        // Filters share one row; they stack at large
+                        // text sizes instead of squeezing.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: Theme.spaceS) {
+                                dosesPicker
+                                rangeMenu
+                            }
+
+                            VStack(
+                                alignment: .leading,
+                                spacing: Theme.spaceS
+                            ) {
+                                dosesPicker
+                                rangeMenu
+                            }
                         }
-                        .pickerStyle(.segmented)
 
                         if searchShown || !search.isEmpty {
                             TrackingSearchField(
@@ -272,8 +272,8 @@ struct HistoryView: View {
         }
         .trackingScrollChrome()
         .background(Theme.paper)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("History")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             SettingsToolbarItem()
 
@@ -295,7 +295,6 @@ struct HistoryView: View {
                     }
                 }
             }
-            .plainToolbarBackground()
 
             ToolbarItem(
                 placement: .topBarTrailing
@@ -314,7 +313,6 @@ struct HistoryView: View {
                     }
                 }
             }
-            .plainToolbarBackground()
 
             ToolbarItem(
                 placement: .topBarTrailing
@@ -357,7 +355,6 @@ struct HistoryView: View {
                     }
                 }
             }
-            .plainToolbarBackground()
         }
         .sheet(
             isPresented:
@@ -566,6 +563,18 @@ private extension HistoryView {
 
 private extension HistoryView {
 
+    var dosesPicker: some View {
+        Picker(
+            "Show",
+            selection: $dosesOnly
+        ) {
+            Text("Doses").tag(true)
+            Text("All events").tag(false)
+        }
+        .pickerStyle(.segmented)
+    }
+
+
     var rangeMenu: some View {
         Menu {
             ForEach(
@@ -652,7 +661,7 @@ private extension HistoryView {
                                 )
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(TrackingCardButtonStyle())
                 }
             }
 

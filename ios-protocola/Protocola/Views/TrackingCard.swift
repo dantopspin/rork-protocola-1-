@@ -339,3 +339,47 @@ struct FieldRow<Content: View>: View {
         .padding(.vertical, Theme.spaceXS)
     }
 }
+
+
+/// Demo-mode notice as a card at the top of every tab's content, so the
+/// large title above it stays visible and all tabs match.
+struct DemoBannerCard: View {
+    @Environment(TrackingStore.self) private var store
+
+    var body: some View {
+        if store.isDemo {
+            DemoBanner()
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: Theme.radiusRow,
+                        style: .continuous
+                    )
+                )
+        }
+    }
+}
+
+
+/// The one "add" action on a tab: filled accent + on iOS 26, the system
+/// button elsewhere. Same look on Protocols and Vials.
+struct ProminentAddButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        let button =
+            Button(
+                title,
+                systemImage: "plus",
+                action: action
+            )
+
+        if #available(iOS 26.0, *) {
+            button
+                .buttonStyle(.glassProminent)
+                .tint(Theme.accentFill)
+        } else {
+            button
+        }
+    }
+}

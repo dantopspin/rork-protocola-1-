@@ -425,7 +425,7 @@ private extension ProtocolEditorView {
                 }
 
                 Toggle(
-                    "Follow this iPhone's time zone",
+                    "Follow this device's time zone",
                     isOn: $draft.followsDeviceTimeZone
                 )
 
@@ -452,7 +452,7 @@ private extension ProtocolEditorView {
                     "Set each time from your instructions. "
                     + (
                     draft.followsDeviceTimeZone
-                    ? "Times follow this iPhone's time zone, so a time you recorded stays the same local time when you travel."
+                    ? "Times follow this device's time zone, so a time you recorded stays the same local time when you travel."
                     : "Times stay in "
                         + (
                             TimeZone(identifier: draft.timeZoneID)?
@@ -706,6 +706,7 @@ private extension ProtocolEditorView {
 
 
     func save() {
+        guard !saving else { return }
         guard
             record.map({
                 store.canEdit($0.id)

@@ -95,7 +95,7 @@ private extension OnboardingView {
                 nextEntryPreview
 
                 Text(
-                    "No account required · Core records stay on this iPhone"
+                    "No account required · Core records stay on this device"
                 )
                 .font(Theme.caption)
                 .foregroundStyle(Theme.textSecondary)
@@ -349,7 +349,7 @@ private extension OnboardingView {
                         icon: "iphone",
                         title: "Stored locally",
                         detail:
-                            "Your core tracking records stay on this iPhone."
+                            "Your core tracking records stay on this device."
                     )
 
                     workflowStep(
