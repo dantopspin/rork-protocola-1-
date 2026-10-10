@@ -532,7 +532,7 @@ private extension InventoryView {
             .quietElevation()
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
     }
 
 

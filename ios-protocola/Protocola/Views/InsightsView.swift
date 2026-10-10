@@ -357,7 +357,7 @@ private extension InsightsView {
             )
             .quietElevation()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
     }
 
 
@@ -726,7 +726,7 @@ private extension InsightsView {
                 )
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
         }
     }
 
@@ -789,7 +789,7 @@ private extension InsightsView {
                 } label: {
                     estimatedLevelsLabel
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
 
             } else {
                 Button {
@@ -797,7 +797,7 @@ private extension InsightsView {
                 } label: {
                     estimatedLevelsLabel
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
         }
     }
@@ -957,7 +957,7 @@ private extension InsightsView {
             )
             .quietElevation()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
     }
 }
 
@@ -1065,7 +1065,7 @@ private extension InsightsView {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         }
     }
 
@@ -1875,7 +1875,7 @@ private extension EstimatedLevelsView {
                         Rectangle()
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
         }
     }

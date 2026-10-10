@@ -81,7 +81,7 @@ struct RemindersOffBanner: View {
             }
             .font(Theme.label)
             .foregroundStyle(Theme.teal)
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
             .frame(minHeight: Theme.minimumTapTarget)
         }
         .padding(.vertical, Theme.rowPadding)

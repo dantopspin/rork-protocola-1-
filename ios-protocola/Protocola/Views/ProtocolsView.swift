@@ -158,7 +158,7 @@ private extension ProtocolsView {
                 Theme.rowPadding
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .overlay(
             alignment: .bottom
         ) {
@@ -419,7 +419,7 @@ private extension ProtocolsView {
                             inventorySummary
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
             .padding(.horizontal, Theme.cardInset)
             .background(

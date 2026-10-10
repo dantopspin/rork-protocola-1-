@@ -295,7 +295,6 @@ struct HistoryView: View {
                     }
                 }
             }
-            .plainToolbarBackground()
 
             ToolbarItem(
                 placement: .topBarTrailing
@@ -314,7 +313,6 @@ struct HistoryView: View {
                     }
                 }
             }
-            .plainToolbarBackground()
 
             ToolbarItem(
                 placement: .topBarTrailing
@@ -357,7 +355,6 @@ struct HistoryView: View {
                     }
                 }
             }
-            .plainToolbarBackground()
         }
         .sheet(
             isPresented:
@@ -652,7 +649,7 @@ private extension HistoryView {
                                 )
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(TrackingCardButtonStyle())
                 }
             }
 

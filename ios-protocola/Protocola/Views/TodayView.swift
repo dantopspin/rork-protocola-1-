@@ -231,7 +231,7 @@ struct TodayView: View {
         .animation(
             reduceMotion
                 ? nil
-                : .snappy(duration: Theme.motionTransitionDuration),
+                : Theme.stateSpring,
             value: undoLog?.id
         )
         .onDisappear {
@@ -481,7 +481,7 @@ private extension TodayView {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .accessibilityLabel("This week")
         .accessibilityHint("Opens the calendar.")
     }
@@ -629,14 +629,14 @@ private extension TodayView {
             ) {
                 card
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
         } else {
             Button {
                 open(entry)
             } label: {
                 card
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
             .accessibilityHint("Opens the log sheet.")
         }
     }
@@ -726,7 +726,7 @@ private extension TodayView {
                                 )
                                 .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(TrackingCardButtonStyle())
                         .accessibilityLabel("View entry")
                     }
                 }
@@ -754,7 +754,7 @@ private extension TodayView {
                     )
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
         }
         .frame(
@@ -1135,7 +1135,7 @@ private extension TodayView {
             )
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .padding(.horizontal, Theme.cardInset)
         .background(
             Theme.surface,
@@ -1390,7 +1390,7 @@ private extension TodayView {
             .animation(
                 reduceMotion
                     ? nil
-                    : .easeIn(duration: Theme.motionFeedbackDuration),
+                    : Theme.pressSpring,
                 value: dropTarget
             )
         }
@@ -1477,7 +1477,7 @@ private extension TodayView {
             .quietElevation()
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
     }
 
 
@@ -1515,7 +1515,7 @@ private extension TodayView {
                             )
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
 
             if let vial = activeVial {
@@ -1548,7 +1548,7 @@ private extension TodayView {
                             ?? "Open inventory"
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TrackingCardButtonStyle())
             }
         }
     }
@@ -1821,7 +1821,7 @@ private extension TodayView {
             .padding(Theme.spaceM)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .background(
             Theme.surface,
             in: .rect(
@@ -2012,7 +2012,7 @@ private extension TodayView {
             )
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .accessibilityHint(
             "Opens protocol details."
         )
@@ -2065,7 +2065,7 @@ private extension TodayView {
                 )
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
 
         } else {
             Button {
@@ -2111,7 +2111,7 @@ private extension TodayView {
                 )
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TrackingCardButtonStyle())
         }
     }
 
@@ -2227,7 +2227,7 @@ private extension TodayView {
             )
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .accessibilityHint(
             "Opens the protocol schedule editor."
         )
@@ -2394,7 +2394,7 @@ private extension TodayView {
         .animation(
             reduceMotion
                 ? nil
-                : .snappy(duration: Theme.motionStateDuration),
+                : Theme.stateSpring,
             value: entry.log?.id
         )
     }
@@ -2446,7 +2446,7 @@ private extension TodayView {
         withAnimation(
             reduceMotion
                 ? nil
-                : .snappy(duration: Theme.motionTransitionDuration)
+                : Theme.momentumSpring
         ) {
             if store.moveTodayEntry(
                 draggedID,
@@ -2468,7 +2468,7 @@ private extension TodayView {
         withAnimation(
             reduceMotion
                 ? nil
-                : .snappy(duration: Theme.motionTransitionDuration)
+                : Theme.stateSpring
         ) {
             if store.moveTodayEntry(
                 entry.id,
@@ -3074,7 +3074,7 @@ struct StackCalendarView: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TrackingCardButtonStyle())
         .accessibilityLabel(
             day.formatted(
                 .dateTime

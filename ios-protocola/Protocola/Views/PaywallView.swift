@@ -150,10 +150,7 @@ struct PaywallView: View {
                 withAnimation(
                     reduceMotion
                         ? nil
-                        : .easeOut(
-                            duration:
-                                Theme.motionStateDuration
-                        )
+                        : Theme.stateSpring
                 ) {
                     showSuccess = true
                 }
