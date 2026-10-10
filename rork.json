@@ -6,9 +6,14 @@
       "path": "ios-protocola",
       "framework": "swift",
       "settings": {
-        "swiftSibling": false,
-        "iosBundleId": "app.rork.protocola"
+        "iosBundleId": "app.rork.protocola",
+        "swiftSibling": false
       }
+    },
+    {
+      "name": "Functions",
+      "path": "functions",
+      "framework": "cloudflare"
     }
   ]
 }
