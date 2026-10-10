@@ -603,9 +603,16 @@ struct PaywallView: View {
                 density: density
             )
 
+        } else {
+            // No invented testimonials: the trust line is a fact about
+            // the product instead. Ask Protocola sends data only when the
+            // user turns record sharing on.
+            trustItem(
+                icon: "lock.shield",
+                text: "No account. Your records stay on this iPhone."
+            )
+            .accessibilityElement(children: .combine)
         }
-        // Without a verified testimonial nothing is shown here: the
-        // benefit list already says what Pro adds.
     }
 
 

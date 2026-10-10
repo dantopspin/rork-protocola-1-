@@ -200,14 +200,20 @@ final class NotificationService {
 
                 // Dose reminders carry Log / Skip actions; cycle and
                 // inventory notes do not.
+                // A follow-up nudge acts on its original entry.
                 if !entry.id.hasPrefix("cycle-restart:"),
-                   !entry.id.hasPrefix("vial-") {
+                   !entry.id.hasPrefix("vial-"),
+                   !entry.id.hasPrefix("weekly-recap:") {
+                    let entryID =
+                        entry.id.hasPrefix("followup:")
+                        ? String(entry.id.dropFirst("followup:".count))
+                        : entry.id
                     content.categoryIdentifier =
                         NotificationActionRouter
                             .entryCategory
                     content.userInfo = [
                         NotificationActionRouter
-                            .entryIDKey: entry.id
+                            .entryIDKey: entryID
                     ]
                 }
 

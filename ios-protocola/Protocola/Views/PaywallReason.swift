@@ -26,14 +26,14 @@ struct PaywallBenefit: Identifiable {
 
     static let completeRecord = PaywallBenefit(
         icon: "doc.text",
-        title: "Use your complete record",
-        detail: "Ask your timeline and export Visit Summary PDFs."
+        title: "Visit Summary for check-ins",
+        detail: "Export a PDF of your record for your provider, and ask your own timeline."
     )
 
     static let catalog: [PaywallBenefit] = [
         .unlimitedProtocols,
-        .patternsOverTime,
-        .completeRecord
+        .completeRecord,
+        .patternsOverTime
     ]
 }
 
@@ -73,6 +73,7 @@ enum PaywallReason: String, Identifiable {
     case ask
     case summary
     case secondProtocol
+    case health
 
     var id: String { rawValue }
 
@@ -95,13 +96,16 @@ enum PaywallReason: String, Identifiable {
 
         case .secondProtocol:
             "Unlimited protocols · Pro"
+
+        case .health:
+            "Apple Health · Pro"
         }
     }
 
     var headline: String {
         switch self {
         case .pro:
-            "Know what changed. See the full picture."
+            "Your record, ready for every check-in."
 
         case .compare:
             "See what changed over time."
@@ -116,14 +120,17 @@ enum PaywallReason: String, Identifiable {
             "Take your complete record with you."
 
         case .secondProtocol:
-            "Track every protocol separately."
+            "Track every compound in your stack."
+
+        case .health:
+            "See your weight next to your doses."
         }
     }
 
     var supportingCopy: String {
         switch self {
         case .pro:
-            "Turn doses, changes, and history into one clear protocol record."
+            "Every protocol, every change, and a Visit Summary PDF when you need it."
 
         case .compare:
             "Compare recorded periods around a change without digging through your timeline."
@@ -138,7 +145,10 @@ enum PaywallReason: String, Identifiable {
             "Create a structured PDF from the protocol history you already recorded."
 
         case .secondProtocol:
-            "Keep separate schedules, logs, changes, and history for every protocol."
+            "Free covers one active protocol. Pro keeps a separate schedule, log and history for each one."
+
+        case .health:
+            "Read weight from Apple Health and view it beside your recorded entries. Read-only."
         }
     }
 
@@ -147,7 +157,7 @@ enum PaywallReason: String, Identifiable {
         case .pro, .secondProtocol:
             .unlimitedProtocols
 
-        case .compare, .levels:
+        case .compare, .levels, .health:
             .patternsOverTime
 
         case .ask, .summary:
