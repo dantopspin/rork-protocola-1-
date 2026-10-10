@@ -284,7 +284,7 @@ private extension NotificationPermissionSheet {
                 ),
                 Benefit(
                     symbol: "lock",
-                    text: "Scheduled on this iPhone. Reminders never show compound names or amounts."
+                    text: "Scheduled on this device. Reminders never show compound names or amounts."
                 )
             ]
         case .inventory:
@@ -299,7 +299,7 @@ private extension NotificationPermissionSheet {
                 ),
                 Benefit(
                     symbol: "lock",
-                    text: "Built only from your own records on this iPhone"
+                    text: "Built only from your own records on this device"
                 )
             ]
         }

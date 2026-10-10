@@ -170,7 +170,7 @@ import Observation
                 let result = try await AIService().ask(question: question, context: context)
                 try Task.checkCancellation(); answer = result
             } catch is CancellationError { }
-            catch { if !Task.isCancelled { self.error = (error as? TrackingError)?.errorDescription ?? "Ask Protocola could not be reached. Your records remain on this iPhone." } }
+            catch { if !Task.isCancelled { self.error = (error as? TrackingError)?.errorDescription ?? "Ask Protocola could not be reached. Your records remain on this device." } }
         }
     }
     func cancel() { task?.cancel(); task = nil }

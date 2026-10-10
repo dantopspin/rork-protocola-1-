@@ -383,13 +383,32 @@ import Observation
         }
     }
     func entries(start: Date, end: Date) -> [ScheduledEntry] {
-        revisions.filter(\.enabled).flatMap { revision -> [ScheduledEntry] in
+        // One pass over logs instead of a scan per entry. A log also matches
+        // by compound and scheduled time, so a dose logged early still counts
+        // after an edit splits the schedule into a new revision (new key).
+        var byOccurrence: [String: DoseLog] = [:]
+        var bySlot: [String: DoseLog] = [:]
+        for log in logs {
+            if let key = log.occurrenceID, byOccurrence[key] == nil {
+                byOccurrence[key] = log
+            }
+            if let at = log.scheduledAt {
+                let slot = Self.slotKey(log.compoundID, at)
+                if bySlot[slot] == nil { bySlot[slot] = log }
+            }
+        }
+        return revisions.filter(\.enabled).flatMap { revision -> [ScheduledEntry] in
             guard let config = revision.config else { return [] }
             return SchedulingEngine.occurrences(config: config, effectiveFrom: revision.effectiveFrom, effectiveUntil: revision.effectiveUntil, start: start, end: end).map { at in
                 let id = SchedulingEngine.occurrenceKey(compoundID: revision.compoundID, revisionID: revision.id, at: at, config: config)
-                return ScheduledEntry(id: id, revision: revision, at: at, log: logs.first { $0.occurrenceID == id })
+                let log = byOccurrence[id] ?? bySlot[Self.slotKey(revision.compoundID, at)]
+                return ScheduledEntry(id: id, revision: revision, at: at, log: log)
             }
         }.sorted { $0.at < $1.at }
+    }
+
+    nonisolated static func slotKey(_ compoundID: UUID, _ at: Date) -> String {
+        compoundID.uuidString + "@" + String(Int(at.timeIntervalSince1970))
     }
     func currentRevisions(
         _ protocolID: UUID,

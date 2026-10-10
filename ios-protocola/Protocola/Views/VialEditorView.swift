@@ -156,7 +156,7 @@ private extension VialEditorView {
             )
 
             TextField(
-                "Supplier / clinic (optional)",
+                "Pharmacy / clinic (optional)",
                 text: $draft.supplier
             )
 
@@ -358,11 +358,13 @@ private extension VialEditorView {
             draft,
             id: vial?.id
         ) {
+            // Stays true while the sheet dismisses, so a second tap can't
+            // insert the same vial twice.
             Haptics.success()
             dismiss()
+        } else {
+            saving = false
         }
-
-        saving = false
     }
 
     func loadSelectedPhoto() async {

@@ -102,7 +102,7 @@ struct SettingsView: View {
             } message: {
                 Text(
                     """
-                    This permanently removes your protocols, recorded entries, inventory, symptoms, and other local data from this iPhone.
+                    This permanently removes your protocols, recorded entries, inventory, symptoms, and other local data from this device.
 
                     This cannot be undone. Your Pro subscription, if active, will not be cancelled.
                     """
@@ -391,7 +391,7 @@ private extension SettingsView {
                 "Ask Protocola sharing is optional and can be turned off here at any time. "
                 + "When enabled, only the scoped record fields described in AI & Data Use are sent when you actively ask a question; nothing is sent in the background. "
                 + "Export My Data creates portable CSV copies of your protocols, schedules, entries, vial and inventory records, audit events, and labs.\n\n"
-                + "Your records are stored only on this iPhone. They are not synced to iCloud. "
+                + "Your records are stored only on this device. They are not synced to iCloud. "
                 + "To move them to a new iPhone, use an iCloud or computer backup of this device. "
                 + "CSV exports are for reading and sharing; they can't be imported back into Protocola."
             )
@@ -455,7 +455,7 @@ private extension SettingsView {
             ) {
                 Text(
                     "Permanently removes all local Protocola records from "
-                    + "this iPhone. This does not cancel an active subscription."
+                    + "this device. This does not cancel an active subscription."
                 )
 
                 Text(appVersionText)

@@ -29,9 +29,10 @@ struct InsightsSummary {
         let entries = store.entries(start: period.start, end: dayEnd).filter {
             ($0.at <= period.end || $0.log != nil) && (protocolID == nil || $0.revision.protocolID == protocolID)
         }
+        let byDay = Dictionary(grouping: entries) { calendar.startOfDay(for: $0.at) }
         days = (0..<window).compactMap { offset in
             guard let day = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
-            let inDay = entries.filter { calendar.isDate($0.at, inSameDayAs: day) }
+            let inDay = byDay[calendar.startOfDay(for: day)] ?? []
             return Day(date: day, scheduled: inDay.count, recorded: inDay.filter { $0.log != nil && $0.log?.status != "Skipped" }.count)
         }
         scheduled = entries.count; recorded = entries.filter { $0.log != nil && $0.log?.status != "Skipped" }.count

@@ -151,9 +151,12 @@ final class NotificationService {
                 .write(ledger)
         }
 
+        // Wall-clock reminders recompute their time after travel; the ledger
+        // would otherwise treat the moved reminder as already delivered.
         let eligible =
             entries.filter {
-                ledger.shouldSchedule(
+                ($0.floating && $0.at > now)
+                || ledger.shouldSchedule(
                     id: $0.id,
                     at: $0.at,
                     now: now

@@ -22,6 +22,8 @@ struct DoseEditorView: View {
     @State private var showDetails = false
     @State private var keyboardShown = false
     @State private var editingTime = false
+    /// Blocks a second save while the sheet is dismissing (double tap).
+    @State private var saved = false
 
     init(
         revision: ScheduleRevision,
@@ -219,7 +221,9 @@ private extension DoseEditorView {
     }
 
     func stepAmount(_ direction: Int) {
-        let current = Decimal(string: draft.amount) ?? 0
+        // Locale-aware: "1,5" on a comma-decimal phone is 1.5, not 1.
+        let current =
+            (try? DoseCalculator.parse(draft.amount, label: "Amount")) ?? 0
         let next = max(0, current + amountStep * Decimal(direction))
         draft.amount = DoseCalculator.text(next)
     }
@@ -757,6 +761,7 @@ private extension DoseEditorView {
 private extension DoseEditorView {
 
     func save() {
+        guard !saved else { return }
         let corrects = correcting != nil
         if store.saveDose(
             draft,
@@ -764,6 +769,7 @@ private extension DoseEditorView {
             occurrence: occurrence,
             correcting: correcting
         ) {
+            saved = true
             if corrects {
                 Haptics.success()
             }

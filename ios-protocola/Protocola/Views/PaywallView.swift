@@ -606,7 +606,7 @@ struct PaywallView: View {
             // user turns record sharing on.
             trustItem(
                 icon: "lock.shield",
-                text: "No account. Your records stay on this iPhone."
+                text: "No account. Your records stay on this device."
             )
             .accessibilityElement(children: .combine)
         }
@@ -1541,7 +1541,7 @@ struct PaywallView: View {
             (
                 savings * 100
             )
-            .rounded()
+            .rounded(.down)
         )
     }
 

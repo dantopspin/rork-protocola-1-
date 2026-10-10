@@ -284,7 +284,7 @@ private extension AssistantView {
         some View {
         Section {
             Text(
-                "When you ask, your typed question and scoped compound, amount, schedule, status, site, and symptom records go to a network AI service. Private notes, protocol names, vial labels, suppliers, labs, and hidden audit metadata are excluded from automatic sharing."
+                "When you ask, your typed question and scoped compound, amount, schedule, status, site, and symptom records are sent through Rork's AI gateway (via Vercel) to Google's Gemini model. Private notes, protocol names, vial labels, suppliers, labs, and hidden audit metadata are excluded from automatic sharing."
             )
             .font(Theme.body)
 
