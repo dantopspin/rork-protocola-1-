@@ -120,6 +120,8 @@ struct InventoryView: View {
         .navigationTitle("Vials")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            SettingsToolbarItem()
+
             ToolbarItemGroup(
                 placement:
                     .topBarTrailing
