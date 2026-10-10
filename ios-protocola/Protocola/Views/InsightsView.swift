@@ -1203,8 +1203,10 @@ private extension InsightsView {
                   !periodLogs.isEmpty,
                   let protocolName =
                     selected?.name {
+            // Free users can open the chat and see how it works; sending
+            // a question shows the paywall.
             Button {
-                store.requestPaywall(.ask)
+                assistant = true
             } label: {
                 Label(
                     "Ask about \(protocolName)",
